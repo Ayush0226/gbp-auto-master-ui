@@ -763,6 +763,12 @@ export default function MasterDashboardPage() {
                                     <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
                                         <button className="btn btn-primary btn-sm">Manage Billing</button>
                                         <button className="btn btn-red-ghost btn-sm">Cancel Plan</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                    )}
+
                 </main>
 
                 {/* MOBILE BOTTOM NAV */}
