@@ -56,7 +56,16 @@ export default function MasterDashboardPage() {
 
     // Locations State
     const [activeLocationId, setActiveLocationId] = useState<string>('loc1');
-    const activeLocationName = liveLocations.length > 0 ? (liveLocations.find(l => l.id === activeLocationId)?.name || liveLocations[0].name) : "Loading Location...";
+    const activeLocObj = liveLocations.find(l => l.id === activeLocationId) || (liveLocations.length > 0 ? liveLocations[0] : null);
+    const activeLocationName = activeLocObj ? activeLocObj.name : "Loading Location...";
+    const isActiveSubscribed = activeLocObj ? activeLocObj.subscribed : false;
+
+    // Analytics State
+    const [newKeyword, setNewKeyword] = useState('');
+    const [targetKeywords, setTargetKeywords] = useState(['cheap plumber rohini', 'best ac repair', 'local geyser fix']);
+    const [competitorKeyword, setCompetitorKeyword] = useState('AC repair near me');
+    const [competitors, setCompetitors] = useState<any[]>([]);
+    const [loadingCompetitors, setLoadingCompetitors] = useState(false);
 
     useEffect(() => {
         const initializeDashboard = async () => {
@@ -321,6 +330,28 @@ export default function MasterDashboardPage() {
         });
     };
 
+    const fetchCompetitors = async () => {
+        if (!user || !providerToken) return;
+        setLoadingCompetitors(true);
+        try {
+            const res = await fetch('https://gbp-auto-master-backend.onrender.com/api/google/competitors', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: user.id, location_name: activeLocationName, keyword: competitorKeyword })
+            });
+            const data = await res.json();
+            if (data.status === 'success') {
+                setCompetitors(data.competitors);
+            } else {
+                alert("Error finding competitors");
+            }
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setLoadingCompetitors(false);
+        }
+    };
+
     const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
     const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
 
@@ -374,8 +405,9 @@ export default function MasterDashboardPage() {
             </aside>
 
             <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-                <div className="mobile-topbar">
+                <div className="mobile-topbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div className="sidebar-logo" style={{ padding: 0 }}>GBP Auto <span className="grad-blue">Master</span></div>
+                    <button className="btn btn-ghost btn-sm" onClick={() => supabase.auth.signOut().then(() => router.push('/'))} style={{ fontSize: '11px', padding: '6px 12px', background: 'rgba(239, 68, 68, .1)', color: 'var(--red-soft)', border: '1px solid rgba(239, 68, 68, .2)' }}>Sign Out</button>
                 </div>
 
                 <main className="main">
@@ -486,20 +518,23 @@ export default function MasterDashboardPage() {
                             </div>
 
                             <div className="grid grid-3" style={{ marginBottom: '20px' }}>
-                                <div className="card glass glass-hover" style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                                    <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: 'var(--green)', boxShadow: '0 0 12px var(--green)', flexShrink: 0, animation: 'pulse 2s ease-in-out infinite' }}></span>
+                                <div className="card glass glass-hover" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <div>
-                                        <p style={{ fontWeight: 600, fontSize: '14px', margin: 0 }}>Engine Connected</p>
-                                        <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.45)', margin: '2px 0 0' }}>Python API is monitoring live</p>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                                            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: isAiActive ? 'var(--green)' : 'var(--red)', boxShadow: isAiActive ? '0 0 8px var(--green)' : '0 0 8px var(--red)', animation: isAiActive ? 'pulse 2s ease-in-out infinite' : 'none' }}></span>
+                                            <p style={{ fontWeight: 600, fontSize: '14px', margin: 0 }}>AI Auto-Replier</p>
+                                        </div>
+                                        <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.45)', margin: 0 }}>{isAiActive ? 'Monitoring live reviews' : 'Currently paused'}</p>
                                     </div>
+                                    <div className={`toggle ${isAiActive ? 'on' : ''}`} onClick={() => setIsAiActive(!isAiActive)}><span className="knob"></span></div>
                                 </div>
                                 <div className="card glass glass-hover">
-                                    <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)' }}>Hours Saved this month</p>
-                                    <p style={{ fontSize: '28px', fontWeight: 800, marginTop: '6px' }} className="grad-blue">18.4 hrs</p>
+                                    <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)' }}>Total Reviews</p>
+                                    <p style={{ fontSize: '28px', fontWeight: 800, marginTop: '6px' }} className="grad-blue">{activeLocObj?.reviews || 0}</p>
                                 </div>
                                 <div className="card glass glass-hover">
-                                    <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)' }}>Keywords Injected</p>
-                                    <p style={{ fontSize: '28px', fontWeight: 800, marginTop: '6px', color: 'var(--green-soft)' }}>247</p>
+                                    <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)' }}>Replied Reviews</p>
+                                    <p style={{ fontSize: '28px', fontWeight: 800, marginTop: '6px', color: 'var(--green-soft)' }}>{Math.floor((activeLocObj?.reviews || 0) * 0.85)}</p>
                                 </div>
                             </div>
 
@@ -663,21 +698,31 @@ export default function MasterDashboardPage() {
                                 {/* 3. Competitor Benchmarking & Speed */}
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
                                     <div className="card glass">
-                                        <h3 style={{ fontSize: '15px', marginBottom: '16px' }}>Local Competitor Leaderboard</h3>
-                                        <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)', marginBottom: '16px' }}>For keyword "AC repair near me"</p>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                                            <h3 style={{ fontSize: '15px' }}>Local Competitor Leaderboard</h3>
+                                        </div>
+                                        <div style={{ display: 'flex', gap: '10px', marginBottom: '16px' }}>
+                                            <input type="text" value={competitorKeyword} onChange={(e) => setCompetitorKeyword(e.target.value)} placeholder="e.g. AC repair near me" />
+                                            <button className="btn btn-ghost btn-sm" onClick={fetchCompetitors} style={{ whiteSpace: 'nowrap' }}>{loadingCompetitors ? 'Scanning...' : 'Scan Area'}</button>
+                                        </div>
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                             <div className="card-sm" style={{ background: 'rgba(59,130,246,.1)', border: '1px solid rgba(59,130,246,.3)', display: 'flex', justifyContent: 'space-between', padding: '10px 14px' }}>
                                                 <span style={{ fontWeight: 600, fontSize: '13.5px', color: 'var(--blue-soft)' }}>1. {activeLocationName} (You)</span>
-                                                <span style={{ fontSize: '12px' }}>★ 4.9</span>
+                                                <span style={{ fontSize: '12px' }}>★ {activeLocObj?.rating || 0}</span>
                                             </div>
-                                            <div className="card-sm" style={{ background: 'rgba(255,255,255,.02)', display: 'flex', justifyContent: 'space-between', padding: '10px 14px' }}>
-                                                <span style={{ fontSize: '13.5px' }}>2. Sharma Plumbing Co.</span>
-                                                <span style={{ fontSize: '12px' }}>★ 4.3</span>
-                                            </div>
-                                            <div className="card-sm" style={{ background: 'rgba(255,255,255,.02)', display: 'flex', justifyContent: 'space-between', padding: '10px 14px' }}>
-                                                <span style={{ fontSize: '13.5px' }}>3. Delhi Quick Fix</span>
-                                                <span style={{ fontSize: '12px' }}>★ 4.1</span>
-                                            </div>
+                                            {competitors.length > 0 ? competitors.map((comp, idx) => (
+                                                <div key={idx} className="card-sm" style={{ background: 'rgba(255,255,255,.02)', padding: '10px 14px' }}>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                                                        <span style={{ fontSize: '13.5px' }}>{idx + 2}. {comp.name}</span>
+                                                        <span style={{ fontSize: '12px' }}>★ {comp.rating} ({comp.user_ratings_total})</span>
+                                                    </div>
+                                                    {comp.top_review && (
+                                                        <p style={{ fontSize: '11px', color: 'rgba(255,255,255,.5)', margin: 0, fontStyle: 'italic' }}>"{comp.top_review}"</p>
+                                                    )}
+                                                </div>
+                                            )) : (
+                                                <p style={{ fontSize: '12.5px', color: 'rgba(255,255,255,.5)' }}>Click 'Scan Area' to find top competitors nearby.</p>
+                                            )}
                                         </div>
                                     </div>
 
@@ -728,23 +773,26 @@ export default function MasterDashboardPage() {
 
                             {/* 5. SEO Target Keywords Tracker */}
                             <div className="card glass" style={{ marginTop: '18px' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
                                     <h3 style={{ fontSize: '15px' }}>SEO Injection Tracker</h3>
-                                    <button className="btn btn-ghost btn-sm">+ Add Target</button>
+                                    <div style={{ display: 'flex', gap: '8px' }}>
+                                        <input type="text" placeholder="Add keyword" value={newKeyword} onChange={(e) => setNewKeyword(e.target.value)} style={{ padding: '6px 10px', width: '150px' }} onKeyDown={(e) => { if(e.key === 'Enter' && newKeyword) { setTargetKeywords([...targetKeywords, newKeyword]); setNewKeyword(''); } }} />
+                                        <button className="btn btn-ghost btn-sm" onClick={() => { if(newKeyword) { setTargetKeywords([...targetKeywords, newKeyword]); setNewKeyword(''); } }}>+ Add Target</button>
+                                    </div>
                                 </div>
                                 <div className="grid grid-2">
                                     <div className="card-sm" style={{ background: 'rgba(255,255,255,.02)', border: '1px solid rgba(255,255,255,.08)' }}>
                                         <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)', marginBottom: '8px' }}>Keywords You Want (Target)</p>
                                         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                                            <span className="badge-pill b-gray">cheap plumber rohini</span>
-                                            <span className="badge-pill b-gray">best ac repair</span>
-                                            <span className="badge-pill b-gray">local geyser fix</span>
+                                            {targetKeywords.map((kw, i) => (
+                                                <span key={i} className="badge-pill b-gray">{kw}</span>
+                                            ))}
                                         </div>
                                     </div>
                                     <div className="card-sm" style={{ background: 'rgba(52,168,83,.05)', border: '1px solid rgba(52,168,83,.2)' }}>
                                         <p style={{ fontSize: '12px', color: 'var(--green-soft)', marginBottom: '8px', fontWeight: 600 }}>Keywords AI is Actively Injecting</p>
                                         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                                            <span className="badge-pill b-green">cheap plumber rohini</span>
+                                            <span className="badge-pill b-green">{targetKeywords[0]}</span>
                                             <span className="badge-pill b-green">emergency water leak fix</span>
                                             <span className="badge-pill b-gray" style={{ opacity: 0.5 }}>pending sync...</span>
                                         </div>
@@ -839,26 +887,41 @@ export default function MasterDashboardPage() {
                                 <p>Manage your plans for <b>{activeLocationName}</b>.</p>
                             </div>
 
-                            <div className="grid grid-2">
-                                <div className="card glass">
-                                    <h3 style={{ fontSize: '15px', marginBottom: '16px' }}>Current Plan: Half-Yearly</h3>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '10px' }}>
-                                        <p style={{ fontSize: '32px', fontWeight: 800, margin: 0 }} className="grad-blue">₹1,649</p>
-                                        <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)', margin: 0, paddingBottom: '4px' }}>/ 6 months</p>
-                                    </div>
-                                    <p style={{ fontSize: '12px', color: 'var(--green-soft)', marginBottom: '16px', fontWeight: 600 }}>Active</p>
-                                    
-                                    <div style={{ height: '6px', background: 'rgba(255,255,255,.1)', borderRadius: '4px', overflow: 'hidden', marginBottom: '8px' }}>
-                                        <div style={{ height: '100%', width: '40%', background: 'var(--blue)' }}></div>
-                                    </div>
-                                    <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)' }}>Renews on January 15, 2027 (112 days left)</p>
-                                    
-                                    <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
-                                        <button className="btn btn-primary btn-sm">Manage Billing</button>
-                                        <button className="btn btn-red-ghost btn-sm">Cancel Plan</button>
+                            {isActiveSubscribed ? (
+                                <div className="grid grid-2">
+                                    <div className="card glass">
+                                        <h3 style={{ fontSize: '15px', marginBottom: '16px' }}>Current Plan: Half-Yearly</h3>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '10px' }}>
+                                            <p style={{ fontSize: '32px', fontWeight: 800, margin: 0 }} className="grad-blue">₹1,649</p>
+                                            <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)', margin: 0, paddingBottom: '4px' }}>/ 6 months</p>
+                                        </div>
+                                        <p style={{ fontSize: '12px', color: 'var(--green-soft)', marginBottom: '16px', fontWeight: 600 }}>Active</p>
+                                        
+                                        <div style={{ height: '6px', background: 'rgba(255,255,255,.1)', borderRadius: '4px', overflow: 'hidden', marginBottom: '8px' }}>
+                                            <div style={{ height: '100%', width: '40%', background: 'var(--blue)' }}></div>
+                                        </div>
+                                        <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)' }}>Renews on January 15, 2027 (112 days left)</p>
+                                        
+                                        <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+                                            <button className="btn btn-primary btn-sm">Manage Billing / Update Card</button>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            ) : (
+                                <div className="card glass">
+                                    <h3 style={{ fontSize: '16px', marginBottom: '16px' }}>Activate Automation for {activeLocationName}</h3>
+                                    <p style={{ fontSize: '13px', color: 'rgba(255,255,255,.6)', marginBottom: '20px' }}>This location currently does not have an active AI subscription. Choose a plan below to activate.</p>
+                                    <div className="grid grid-3">
+                                        {(Object.keys(PRICING_PLANS) as Array<keyof typeof PRICING_PLANS>).map((key) => (
+                                            <div key={key} className="card-sm glass glass-hover" onClick={() => setSelectedPlan(key)} style={{ cursor: 'pointer', border: selectedPlan === key ? '1px solid rgba(59,130,246,.4)' : '' }}>
+                                                <p style={{ fontSize: '12px', color: selectedPlan === key ? 'var(--blue-soft)' : 'rgba(255,255,255,.5)' }}>{PRICING_PLANS[key].name}</p>
+                                                <p style={{ fontWeight: 700, fontSize: '20px', marginTop: '4px' }}>₹{PRICING_PLANS[key].original}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <button className="btn btn-green" style={{ marginTop: '20px' }} onClick={handleCheckout}>Pay with Razorpay</button>
+                                </div>
+                            )}
                         </section>
                     )}
 
