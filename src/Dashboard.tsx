@@ -117,7 +117,7 @@ export default function MasterDashboardPage() {
 
     // Fetch Live Locations from Python Backend
     useEffect(() => {
-        if (appState === 'dashboard' && providerToken && user) {
+        if (appState !== 'loading' && providerToken && user) {
             fetch('https://gbp-auto-master-backend.onrender.com/api/google/locations', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
