@@ -256,23 +256,23 @@ export default function MasterDashboardPage() {
                 </div>
 
                 <nav>
-                    <div className={`nav-item ${activeView === 'dashboard' ? 'active' : ''}`} onClick={() => { setActiveView('dashboard'); setSidebarOpen(false); }}>
+                    <div className={`nav-item ${activeView === 'dashboard' ? 'active' : ''}`} onClick={() => { setActiveView('dashboard'); }}>
                         <span className="ic">◆</span> Dashboard
                     </div>
-                    <div className={`nav-item ${activeView === 'calendar' ? 'active' : ''}`} onClick={() => { setActiveView('calendar'); setSidebarOpen(false); }}>
+                    <div className={`nav-item ${activeView === 'calendar' ? 'active' : ''}`} onClick={() => { setActiveView('calendar'); }}>
                         <span className="ic">▦</span> Content Calendar
                     </div>
-                    <div className={`nav-item ${activeView === 'analytics' ? 'active' : ''}`} onClick={() => { setActiveView('analytics'); setSidebarOpen(false); }}>
+                    <div className={`nav-item ${activeView === 'analytics' ? 'active' : ''}`} onClick={() => { setActiveView('analytics'); }}>
                         <span className="ic">◈</span> Analytics & SEO
                     </div>
-                    <div className={`nav-item ${activeView === 'brain' ? 'active' : ''}`} onClick={() => { setActiveView('brain'); setSidebarOpen(false); }}>
+                    <div className={`nav-item ${activeView === 'brain' ? 'active' : ''}`} onClick={() => { setActiveView('brain'); }}>
                         <span className="ic">◉</span> AI Brain Settings
                     </div>
-                    <div className={`nav-item ${activeView === 'locations' ? 'active' : ''}`} onClick={() => { setActiveView('locations'); setSidebarOpen(false); }}>
+                    <div className={`nav-item ${activeView === 'locations' ? 'active' : ''}`} onClick={() => { setActiveView('locations'); }}>
                         <span className="ic">▤</span> Switch Locations
                     </div>
-                    <div className={`nav-item ${activeView === 'billing' ? 'active' : ''}`} onClick={() => { setActiveView('billing'); setSidebarOpen(false); }}>
-                        <span className="ic">💳</span> Billing & Subscription
+                    <div className={`nav-item ${activeView === 'billing' ? 'active' : ''}`} onClick={() => { setActiveView('billing'); }}>
+                        <span className="ic">💳</span> Billing
                     </div>
                 </nav>
 
@@ -283,9 +283,7 @@ export default function MasterDashboardPage() {
 
             <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
                 <div className="mobile-topbar">
-                    <button className="burger" onClick={() => setSidebarOpen(!sidebarOpen)}>☰</button>
                     <div className="sidebar-logo" style={{ padding: 0 }}>GBP Auto <span className="grad-blue">Master</span></div>
-                    <div style={{ width: '36px' }}></div>
                 </div>
 
                 <main className="main">
@@ -765,13 +763,29 @@ export default function MasterDashboardPage() {
                                     <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
                                         <button className="btn btn-primary btn-sm">Manage Billing</button>
                                         <button className="btn btn-red-ghost btn-sm">Cancel Plan</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </section>
-                    )}
-
                 </main>
+
+                {/* MOBILE BOTTOM NAV */}
+                {appState === 'dashboard' && (
+                    <nav className="mobile-bottom-nav">
+                        <div className={`mob-nav-item ${activeView === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveView('dashboard')}>
+                            <span className="ic">◆</span>
+                            <span>Home</span>
+                        </div>
+                        <div className={`mob-nav-item ${activeView === 'calendar' ? 'active' : ''}`} onClick={() => setActiveView('calendar')}>
+                            <span className="ic">▦</span>
+                            <span>Calendar</span>
+                        </div>
+                        <div className={`mob-nav-item ${activeView === 'analytics' ? 'active' : ''}`} onClick={() => setActiveView('analytics')}>
+                            <span className="ic">◈</span>
+                            <span>Analytics</span>
+                        </div>
+                        <div className={`mob-nav-item ${activeView === 'billing' ? 'active' : ''}`} onClick={() => setActiveView('billing')}>
+                            <span className="ic">💳</span>
+                            <span>Billing</span>
+                        </div>
+                    </nav>
+                )}
             </div>
         </div>
     );
