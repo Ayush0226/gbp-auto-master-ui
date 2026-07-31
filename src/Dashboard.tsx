@@ -11,6 +11,8 @@ const MOCK_LOCATIONS = [
 export default function MasterDashboardPage() {
     const [user, setUser] = useState<any>(null);
     const [hasGoogleConnected, setHasGoogleConnected] = useState(false);
+    const [providerToken, setProviderToken] = useState<string | null>(null);
+    const [liveLocations, setLiveLocations] = useState<any[]>([]);
     
     // Core App State
     const [appState, setAppState] = useState<'loading' | 'demo-select' | 'demo-running' | 'demo-success' | 'payment' | 'dashboard'>('loading');
@@ -43,11 +45,7 @@ export default function MasterDashboardPage() {
     const [file, setFile] = useState<File | null>(null);
     const [postText, setPostText] = useState('');
     const [loadingAction, setLoadingAction] = useState(false);
-    const [scheduledPosts, setScheduledPosts] = useState<any>({
-        6: [{ caption: 'Monsoon AC servicing offer', img: true }],
-        14: [{ caption: 'Before/after pipe repair', img: true }],
-        22: [{ caption: 'Team spotlight photo', img: true }, { caption: 'Customer testimonial card', img: true }],
-    });
+    const [scheduledPosts, setScheduledPosts] = useState<any>({});
     const [isSchedulingNew, setIsSchedulingNew] = useState(false);
 
     // AI Brain State
@@ -58,7 +56,7 @@ export default function MasterDashboardPage() {
 
     // Locations State
     const [activeLocationId, setActiveLocationId] = useState<string>('loc1');
-    const activeLocationName = MOCK_LOCATIONS.find(l => l.id === activeLocationId)?.name || "Rohini AC & Plumbing";
+    const activeLocationName = liveLocations.length > 0 ? (liveLocations.find(l => l.id === activeLocationId)?.name || liveLocations[0].name) : "Loading Location...";
 
     useEffect(() => {
         const initializeDashboard = async () => {
@@ -72,7 +70,8 @@ export default function MasterDashboardPage() {
                 });
                 if (!error && data.user) {
                     window.history.replaceState({}, document.title, "/dashboard");
-                    await checkUserRoute(data.user);
+                    const { data: { session: newSession } } = await supabase.auth.getSession();
+                    await checkUserRoute(data.user, newSession?.provider_token || null);
                     return;
                 }
             }
@@ -83,14 +82,15 @@ export default function MasterDashboardPage() {
                 return;
             }
             
-            await checkUserRoute(session.user);
+            await checkUserRoute(session.user, session.provider_token || null);
         };
 
         initializeDashboard();
     }, []);
 
-    const checkUserRoute = async (currentUser: any) => {
+    const checkUserRoute = async (currentUser: any, pToken: string | null) => {
         setUser(currentUser);
+        setProviderToken(pToken);
         setHasGoogleConnected(true);
 
         const metadata = currentUser.user_metadata || {};
@@ -105,6 +105,56 @@ export default function MasterDashboardPage() {
             setAppState('dashboard');
         }
     };
+
+    // Fetch Live Locations from Python Backend
+    useEffect(() => {
+        if (appState === 'dashboard' && providerToken && user) {
+            fetch('https://gbp-auto-master-backend.onrender.com/api/google/locations', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: user.id, provider_token: providerToken })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success' && data.locations.length > 0) {
+                    setLiveLocations(data.locations);
+                    setActiveLocationId(data.locations[0].id);
+                } else if (data.status === 'error') {
+                    console.error("Google API Error:", data.message);
+                }
+            })
+            .catch(err => console.error("Error fetching locations:", err));
+        }
+    }, [appState, providerToken, user]);
+
+    // Fetch Calendar Posts from Supabase
+    useEffect(() => {
+        const fetchCalendar = async () => {
+            if (!user) return;
+            // For now fetching all posts for the user and grouping by day
+            const { data, error } = await supabase
+                .from('calendar_posts')
+                .select('*')
+                .eq('user_id', user.id);
+                
+            if (data && !error) {
+                const postsByDay: any = {};
+                data.forEach(post => {
+                    const postDate = new Date(post.post_date);
+                    // Check if it matches current month and year
+                    if (postDate.getMonth() === currentMonth && postDate.getFullYear() === currentYear) {
+                        const day = postDate.getDate();
+                        if (!postsByDay[day]) postsByDay[day] = [];
+                        postsByDay[day].push({ id: post.id, caption: post.caption, img: !!post.image_url });
+                    }
+                });
+                setScheduledPosts(postsByDay);
+            }
+        };
+        if (appState === 'dashboard') {
+            fetchCalendar();
+        }
+    }, [user, appState, currentMonth, currentYear]);
 
     // ==========================================
     // DEMO & PAYMENT FLOWS
@@ -204,25 +254,67 @@ export default function MasterDashboardPage() {
     // ==========================================
 
     const handleSchedule = async () => {
-        if (!selectedDate) return;
+        if (!selectedDate || !user) return;
         setLoadingAction(true);
         
-        // Mocking the upload process
-        setTimeout(() => {
-            const newPost = { caption: postText || 'New scheduled post', img: true };
-            setScheduledPosts(prev => ({
+        try {
+            let image_url = null;
+            if (file) {
+                const fileExt = file.name.split('.').pop();
+                const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+                const { error: uploadError } = await supabase.storage
+                    .from('calendar_images')
+                    .upload(fileName, file);
+                
+                if (uploadError) throw uploadError;
+                
+                const { data: urlData } = supabase.storage.from('calendar_images').getPublicUrl(fileName);
+                image_url = urlData.publicUrl;
+            }
+
+            // Format date as YYYY-MM-DD
+            const postDateObj = new Date(currentYear, currentMonth, selectedDate);
+            // using local time to format YYYY-MM-DD to avoid UTC shifting
+            const year = postDateObj.getFullYear();
+            const month = String(postDateObj.getMonth() + 1).padStart(2, '0');
+            const day = String(postDateObj.getDate()).padStart(2, '0');
+            const postDateStr = `${year}-${month}-${day}`;
+
+            const { data: insertData, error } = await supabase.from('calendar_posts').insert([
+                {
+                    user_id: user.id,
+                    location_id: activeLocationId,
+                    post_date: postDateStr,
+                    caption: postText,
+                    image_url: image_url,
+                    status: 'scheduled'
+                }
+            ]).select();
+
+            if (error) throw error;
+
+            setScheduledPosts((prev: any) => ({
                 ...prev,
-                [selectedDate]: [...(prev[selectedDate] || []), newPost]
+                [selectedDate]: [...(prev[selectedDate] || []), { id: insertData[0].id, caption: postText, img: !!image_url }]
             }));
             
             setIsSchedulingNew(false);
             setPostText('');
+            setFile(null);
+        } catch (error) {
+            console.error('Error scheduling post:', error);
+            alert("Error scheduling post");
+        } finally {
             setLoadingAction(false);
-        }, 1000);
+        }
     };
 
-    const cancelPost = (day: number, idx: number) => {
-        setScheduledPosts(prev => {
+    const cancelPost = async (day: number, idx: number) => {
+        const post = scheduledPosts[day][idx];
+        if (post.id) {
+            await supabase.from('calendar_posts').delete().eq('id', post.id);
+        }
+        setScheduledPosts((prev: any) => {
             const newPosts = [...prev[day]];
             newPosts.splice(idx, 1);
             return { ...prev, [day]: newPosts };
@@ -302,7 +394,7 @@ export default function MasterDashboardPage() {
                                     <p style={{ fontSize: '13px', color: 'rgba(255,255,255,.5)', margin: '0 0 18px' }}>Choose one profile to run the free AI demo on.</p>
 
                                     <div className="grid grid-2">
-                                        {MOCK_LOCATIONS.map(loc => (
+                                        {liveLocations.length > 0 ? liveLocations.map(loc => (
                                             <div key={loc.id} className="card-sm glass glass-hover" onClick={() => setDemoSelectedLoc(loc.id)} style={{ cursor: 'pointer', border: demoSelectedLoc === loc.id ? '1px solid rgba(59,130,246,.35)' : '' }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                                     {demoSelectedLoc === loc.id && <span className="badge-pill b-blue">Selected</span>}
@@ -310,7 +402,7 @@ export default function MasterDashboardPage() {
                                                 <p style={{ fontWeight: 600, fontSize: '14px', margin: '10px 0 2px' }}>{loc.name}</p>
                                                 <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.45)', margin: 0 }}>{loc.reviews} reviews · ★ {loc.rating}</p>
                                             </div>
-                                        ))}
+                                        )) : <p style={{ fontSize: '13px', color: 'rgba(255,255,255,.5)' }}>Loading live Google locations...</p>}
                                     </div>
 
                                     <button className="btn btn-green" style={{ marginTop: '20px' }} disabled={!demoSelectedLoc} onClick={handleRunDemo}>Start Demo →</button>
@@ -503,8 +595,9 @@ export default function MasterDashboardPage() {
                                         <input type="text" value={selectedDate || 1} onChange={(e) => setSelectedDate(parseInt(e.target.value) || 1)} style={{ marginBottom: '14px' }} />
                                         
                                         <label className="field-label">Image</label>
-                                        <div style={{ border: '1px dashed rgba(255,255,255,.2)', borderRadius: '12px', padding: '24px', textAlign: 'center', fontSize: '12.5px', color: 'rgba(255,255,255,.4)', marginBottom: '14px' }}>
-                                            📷 Drop an image or click to upload
+                                        <div style={{ border: '1px dashed rgba(255,255,255,.2)', borderRadius: '12px', padding: '24px', textAlign: 'center', fontSize: '12.5px', color: 'rgba(255,255,255,.4)', marginBottom: '14px', position: 'relative' }}>
+                                            {file ? file.name : "📷 Drop an image or click to upload"}
+                                            <input type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] || null)} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }} />
                                         </div>
                                         
                                         <label className="field-label">Caption (optional)</label>
@@ -715,7 +808,7 @@ export default function MasterDashboardPage() {
                             </div>
 
                             <div className="grid grid-3">
-                                {MOCK_LOCATIONS.map(loc => (
+                                {liveLocations.length > 0 ? liveLocations.map(loc => (
                                     <div 
                                         key={loc.id} 
                                         className="card glass glass-hover" 
@@ -733,7 +826,7 @@ export default function MasterDashboardPage() {
                                             <button className="btn btn-primary btn-sm btn-block" onClick={() => { setActiveLocationId(loc.id); setActiveView('billing'); }}>Activate Automation</button>
                                         )}
                                     </div>
-                                ))}
+                                )) : <p style={{ fontSize: '13px', color: 'rgba(255,255,255,.5)' }}>Loading live Google locations...</p>}
                             </div>
                         </section>
                     )}
