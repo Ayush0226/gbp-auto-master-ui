@@ -928,7 +928,18 @@ export default function MasterDashboardPage() {
                                     <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)', marginTop: '16px' }}>
                                         * Note: After the initial payment, the original standard price will apply upon renewal.
                                     </p>
-                                    <button className="btn btn-green" style={{ marginTop: '16px' }} onClick={handleCheckout}>Pay with Razorpay</button>
+                                    
+                                    <div style={{ marginTop: '20px', padding: '12px', background: 'rgba(255,255,255,.03)', borderRadius: '8px', border: '1px solid rgba(255,255,255,.08)' }}>
+                                        <p style={{ fontSize: '12.5px', marginBottom: '8px', fontWeight: 600 }}>Have a promo code?</p>
+                                        <div style={{ display: 'flex', gap: '8px' }}>
+                                            <input type="text" placeholder="Enter code" value={promoCode} onChange={(e) => setPromoCode(e.target.value)} style={{ padding: '8px 12px', flex: 1, textTransform: 'uppercase' }} />
+                                            <button className="btn btn-primary" onClick={applyPromo}>Apply</button>
+                                        </div>
+                                    </div>
+
+                                    <button className="btn btn-green btn-block" style={{ marginTop: '16px', fontSize: '15px', padding: '12px' }} onClick={handleCheckout}>
+                                        {discountApplied === 'ATYAUNSUHJ' ? 'Activate 100% Free Trial' : 'Pay with Razorpay'}
+                                    </button>
                                 </div>
                             )}
                         </section>
