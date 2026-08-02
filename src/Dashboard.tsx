@@ -200,12 +200,16 @@ export default function MasterDashboardPage() {
 
             if (data.free_trial) {
                 // Backend bypassed Razorpay for ATYAUNSUHJ and activated subscription
+                alert('100% Free Trial Activated successfully!');
                 setAppState('dashboard');
                 return;
             }
 
+            const keyRes = await fetch("https://gbp-auto-master-backend.onrender.com/api/payment/key");
+            const keyData = await keyRes.json();
+
             const options = {
-                key: "rzp_test_TIyI2A54AzLbux", // Remember to change to Live Key later
+                key: keyData.key,
                 amount: data.amount,
                 currency: "INR",
                 name: "GBP Auto Master",
@@ -250,8 +254,10 @@ export default function MasterDashboardPage() {
     const applyPromo = () => {
         if (promoCode === 'FIRSTUNDER10') {
             setDiscountApplied('FIRSTUNDER10');
+            alert('Discount Applied: FIRSTUNDER10');
         } else if (promoCode === 'ATYAUNSUHJ') {
             setDiscountApplied('ATYAUNSUHJ');
+            alert('100% Free Trial Code Applied!');
         } else {
             setDiscountApplied('none');
             alert("Invalid or expired code");
@@ -630,10 +636,10 @@ export default function MasterDashboardPage() {
                                         <input type="text" value={selectedDate || 1} onChange={(e) => setSelectedDate(parseInt(e.target.value) || 1)} style={{ marginBottom: '14px' }} />
                                         
                                         <label className="field-label">Image</label>
-                                        <div style={{ border: '1px dashed rgba(255,255,255,.2)', borderRadius: '12px', padding: '24px', textAlign: 'center', fontSize: '12.5px', color: 'rgba(255,255,255,.4)', marginBottom: '14px', position: 'relative' }}>
-                                            {file ? file.name : "📷 Drop an image or click to upload"}
-                                            <input type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] || null)} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }} />
-                                        </div>
+                                        <label style={{ display: 'block', border: '1px dashed rgba(255,255,255,.2)', borderRadius: '12px', padding: '24px', textAlign: 'center', fontSize: '12.5px', color: 'rgba(255,255,255,.4)', marginBottom: '14px', cursor: 'pointer' }}>
+                                            {file ? file.name : "📷 Click to upload image"}
+                                            <input type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] || null)} style={{ display: 'none' }} />
+                                        </label>
                                         
                                         <label className="field-label">Caption (optional)</label>
                                         <textarea rows={3} placeholder="New summer discount on AC servicing!" value={postText} onChange={(e) => setPostText(e.target.value)}></textarea>
@@ -919,7 +925,10 @@ export default function MasterDashboardPage() {
                                             </div>
                                         ))}
                                     </div>
-                                    <button className="btn btn-green" style={{ marginTop: '20px' }} onClick={handleCheckout}>Pay with Razorpay</button>
+                                    <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)', marginTop: '16px' }}>
+                                        * Note: After the initial payment, the original standard price will apply upon renewal.
+                                    </p>
+                                    <button className="btn btn-green" style={{ marginTop: '16px' }} onClick={handleCheckout}>Pay with Razorpay</button>
                                 </div>
                             )}
                         </section>
