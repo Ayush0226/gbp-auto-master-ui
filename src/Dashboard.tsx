@@ -198,6 +198,12 @@ export default function MasterDashboardPage() {
             });
             const data = await res.json();
 
+            // Check if the backend returned an error
+            if (res.status !== 200 || data.detail) {
+                alert("Backend Error during create-order: " + (data.detail || JSON.stringify(data)));
+                return;
+            }
+
             if (data.free_trial) {
                 // Backend bypassed Razorpay for ATYAUNSUHJ and activated subscription
                 alert('100% Free Trial Activated successfully!');
@@ -228,10 +234,11 @@ export default function MasterDashboardPage() {
                         })
                     });
                     const verifyData = await verifyRes.json();
+                    
                     if (verifyData.status === 'success') {
                         setAppState('dashboard');
                     } else {
-                        alert("Payment verification failed!");
+                        alert("Payment verification failed! Server said: " + (verifyData.detail || JSON.stringify(verifyData)));
                     }
                 },
                 prefill: {
