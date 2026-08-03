@@ -581,8 +581,20 @@ export default function MasterDashboardPage() {
 
                             <div className="page-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '12px' }}>
                                 <div>
-                                    <h2>Content Calendar</h2>
-                                    <p>July 2026 · click a day to see or schedule posts.</p>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                        <h2 style={{ margin: 0 }}>Content Calendar</h2>
+                                        <div style={{ display: 'flex', gap: '4px' }}>
+                                            <button className="btn btn-ghost btn-sm" style={{ padding: '4px 10px', fontSize: '14px' }} onClick={() => {
+                                                if (currentMonth === 0) { setCurrentMonth(11); setCurrentYear(currentYear - 1); }
+                                                else setCurrentMonth(currentMonth - 1);
+                                            }}>{"<"}</button>
+                                            <button className="btn btn-ghost btn-sm" style={{ padding: '4px 10px', fontSize: '14px' }} onClick={() => {
+                                                if (currentMonth === 11) { setCurrentMonth(0); setCurrentYear(currentYear + 1); }
+                                                else setCurrentMonth(currentMonth + 1);
+                                            }}>{">"}</button>
+                                        </div>
+                                    </div>
+                                    <p style={{ marginTop: '8px' }}>{new Date(currentYear, currentMonth).toLocaleString('default', { month: 'long', year: 'numeric' })} · click a day to schedule.</p>
                                 </div>
                                 <button className="btn btn-green btn-sm" onClick={() => setIsSchedulingNew(true)}>+ Schedule New Post</button>
                             </div>
@@ -614,7 +626,7 @@ export default function MasterDashboardPage() {
                             {selectedDate && (
                                 <div className="card glass" style={{ marginTop: '18px' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                                        <h3 style={{ fontSize: '15px' }}>July {selectedDate}</h3>
+                                        <h3 style={{ fontSize: '15px' }}>{new Date(currentYear, currentMonth).toLocaleString('default', { month: 'long' })} {selectedDate}</h3>
                                         <button className="btn btn-ghost btn-sm" onClick={() => setIsSchedulingNew(true)}>+ Add post</button>
                                     </div>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -639,7 +651,7 @@ export default function MasterDashboardPage() {
                                     <div className="card glass" style={{ maxWidth: '420px', width: '100%' }}>
                                         <h3 style={{ fontSize: '16px', marginBottom: '16px' }}>Schedule new post</h3>
                                         
-                                        <label className="field-label">Date (July)</label>
+                                        <label className="field-label">Date ({new Date(currentYear, currentMonth).toLocaleString('default', { month: 'long' })})</label>
                                         <input type="text" value={selectedDate || 1} onChange={(e) => setSelectedDate(parseInt(e.target.value) || 1)} style={{ marginBottom: '14px' }} />
                                         
                                         <label className="field-label">Image</label>
@@ -672,10 +684,15 @@ export default function MasterDashboardPage() {
                             </div>
 
                             {/* 1. Traffic & Conversion Metrics */}
-                            <div className="grid grid-3" style={{ marginBottom: '18px' }}>
+                            <div className="grid grid-2" style={{ marginBottom: '24px' }}>
+                                <div className="card glass">
+                                    <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)' }}>Profile Visitors</p>
+                                    <p style={{ fontSize: '28px', fontWeight: 800, marginTop: '6px' }} className="grad-blue">1,204</p>
+                                    <p style={{ fontSize: '11.5px', color: 'var(--green-soft)', marginTop: '4px' }}>▲ +18% this week</p>
+                                </div>
                                 <div className="card glass">
                                     <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)' }}>Total Map Views</p>
-                                    <p style={{ fontSize: '28px', fontWeight: 800, marginTop: '6px' }} className="grad-blue">14.2k</p>
+                                    <p style={{ fontSize: '28px', fontWeight: 800, marginTop: '6px' }}>14.2k</p>
                                     <p style={{ fontSize: '11.5px', color: 'var(--green-soft)', marginTop: '4px' }}>▲ +12% this week</p>
                                 </div>
                                 <div className="card glass">
