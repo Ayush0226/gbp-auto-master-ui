@@ -420,6 +420,18 @@ export default function MasterDashboardPage() {
             <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
                 <div className="mobile-topbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div className="sidebar-logo" style={{ padding: 0 }}>GBP Auto <span className="grad-blue">Master</span></div>
+                    
+                    {appState === 'dashboard' && gbpNames.length > 0 && (
+                        <select 
+                            className="input" 
+                            style={{ margin: '0 10px', padding: '4px 8px', fontSize: '12px', flex: 1, minWidth: 0, height: '32px' }}
+                            value={activeLocationName}
+                            onChange={(e) => setActiveLocationName(e.target.value)}
+                        >
+                            {gbpNames.map((name, i) => <option key={i} value={name}>{name}</option>)}
+                        </select>
+                    )}
+
                     <button className="btn btn-ghost btn-sm" onClick={() => supabase.auth.signOut().then(() => router.push('/'))} style={{ fontSize: '11px', padding: '6px 12px', background: 'rgba(239, 68, 68, .1)', color: 'var(--red-soft)', border: '1px solid rgba(239, 68, 68, .2)' }}>Sign Out</button>
                 </div>
 
