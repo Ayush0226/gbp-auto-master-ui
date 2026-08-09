@@ -44,6 +44,7 @@ export default function MasterDashboardPage() {
     const [selectedDate, setSelectedDate] = useState<number | null>(null);
     const [file, setFile] = useState<File | null>(null);
     const [postText, setPostText] = useState('');
+    const [postType, setPostType] = useState<'LOCAL_POST' | 'PHOTO' | 'VIDEO'>('LOCAL_POST');
     const [loadingAction, setLoadingAction] = useState(false);
     const [scheduledPosts, setScheduledPosts] = useState<any>({});
     const [isSchedulingNew, setIsSchedulingNew] = useState(false);
@@ -236,7 +237,7 @@ export default function MasterDashboardPage() {
                     if (postDate.getMonth() === currentMonth && postDate.getFullYear() === currentYear) {
                         const day = postDate.getDate();
                         if (!postsByDay[day]) postsByDay[day] = [];
-                        postsByDay[day].push({ id: post.id, caption: post.caption, image_url: post.image_url, img: !!post.image_url });
+                        postsByDay[day].push({ id: post.id, caption: post.caption, image_url: post.image_url, img: !!post.image_url, post_type: post.post_type || 'LOCAL_POST' });
                     }
                 });
                 setScheduledPosts(postsByDay);
@@ -412,6 +413,7 @@ export default function MasterDashboardPage() {
                     post_date: postDateStr,
                     caption: postText,
                     image_url: image_url,
+                    post_type: postType,
                     status: 'scheduled'
                 }
             ]).select();
@@ -420,12 +422,13 @@ export default function MasterDashboardPage() {
 
             setScheduledPosts((prev: any) => ({
                 ...prev,
-                [selectedDate]: [...(prev[selectedDate] || []), { id: insertData[0].id, caption: postText, image_url: image_url, img: !!image_url }]
+                [selectedDate]: [...(prev[selectedDate] || []), { id: insertData[0].id, caption: postText, image_url: image_url, img: !!image_url, post_type: postType }]
             }));
             
             setIsSchedulingNew(false);
             setPostText('');
             setFile(null);
+            setPostType('LOCAL_POST');
         } catch (error) {
             console.error('Error scheduling post:', error);
             alert("Error scheduling post");
@@ -456,7 +459,8 @@ export default function MasterDashboardPage() {
                     provider_token: providerToken,
                     location_id: activeLocationId,
                     summary: post.caption,
-                    image_url: post.image_url
+                    image_url: post.image_url,
+                    post_type: post.post_type || 'LOCAL_POST'
                 })
             });
             const data = await res.json();
@@ -808,8 +812,10 @@ export default function MasterDashboardPage() {
                                         {scheduledPosts[selectedDate]?.map((post: any, idx: number) => (
                                             <div key={idx} className="card-sm" style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                                    <span style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(59,130,246,.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>📷</span>
-                                                    <span style={{ fontSize: '13px' }}>{post.caption}</span>
+                                                    <span style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(59,130,246,.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                        {post.post_type === 'VIDEO' ? '🎥' : post.post_type === 'PHOTO' ? '🖼️' : '📷'}
+                                                    </span>
+                                                    <span style={{ fontSize: '13px' }}>{post.post_type === 'LOCAL_POST' ? post.caption : post.post_type.replace('_', ' ')}</span>
                                                 </div>
                                                 <div style={{ display: 'flex', gap: '8px' }}>
                                                     <button className="btn-ghost btn btn-sm" onClick={() => publishNow(post)}>Publish Now</button>
@@ -829,17 +835,28 @@ export default function MasterDashboardPage() {
                                     <div className="card glass" style={{ maxWidth: '420px', width: '100%' }}>
                                         <h3 style={{ fontSize: '16px', marginBottom: '16px' }}>Schedule new post</h3>
                                         
+                                        <label className="field-label">Media Type</label>
+                                        <select className="input" style={{ marginBottom: '14px', width: '100%', padding: '8px' }} value={postType} onChange={(e) => setPostType(e.target.value as any)}>
+                                            <option value="LOCAL_POST">Google Update (Local Post)</option>
+                                            <option value="PHOTO">Photo Gallery Upload</option>
+                                            <option value="VIDEO">Video Gallery Upload</option>
+                                        </select>
+
                                         <label className="field-label">Date ({new Date(currentYear, currentMonth).toLocaleString('default', { month: 'long' })})</label>
                                         <input type="text" value={selectedDate || 1} onChange={(e) => setSelectedDate(parseInt(e.target.value) || 1)} style={{ marginBottom: '14px' }} />
                                         
-                                        <label className="field-label">Image</label>
+                                        <label className="field-label">{postType === 'VIDEO' ? 'Video' : 'Image'}</label>
                                         <label style={{ display: 'block', border: '1px dashed rgba(255,255,255,.2)', borderRadius: '12px', padding: '24px', textAlign: 'center', fontSize: '12.5px', color: 'rgba(255,255,255,.4)', marginBottom: '14px', cursor: 'pointer' }}>
-                                            {file ? file.name : "📷 Click to upload image"}
-                                            <input type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] || null)} style={{ display: 'none' }} />
+                                            {file ? file.name : (postType === 'VIDEO' ? "🎥 Click to upload video" : "📷 Click to upload image")}
+                                            <input type="file" accept={postType === 'VIDEO' ? "video/*" : "image/*"} onChange={(e) => setFile(e.target.files?.[0] || null)} style={{ display: 'none' }} />
                                         </label>
                                         
-                                        <label className="field-label">Caption (optional)</label>
-                                        <textarea rows={3} placeholder="New summer discount on AC servicing!" value={postText} onChange={(e) => setPostText(e.target.value)}></textarea>
+                                        {postType === 'LOCAL_POST' && (
+                                            <>
+                                                <label className="field-label">Caption (optional)</label>
+                                                <textarea rows={3} placeholder="New summer discount on AC servicing!" value={postText} onChange={(e) => setPostText(e.target.value)}></textarea>
+                                            </>
+                                        )}
                                         
                                         <div style={{ display: 'flex', gap: '10px', marginTop: '18px' }}>
                                             <button className="btn btn-ghost btn-block" onClick={() => setIsSchedulingNew(false)}>Cancel</button>
