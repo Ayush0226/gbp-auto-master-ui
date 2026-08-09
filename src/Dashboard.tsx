@@ -77,6 +77,54 @@ export default function MasterDashboardPage() {
     const [loadingCompetitors, setLoadingCompetitors] = useState(false);
     const [searchKeywords, setSearchKeywords] = useState<any[]>([]);
 
+    // Chatbot State
+    const [isChatOpen, setIsChatOpen] = useState(false);
+    const [chatHistory, setChatHistory] = useState<any[]>([{role: 'ai', content: 'Hi! I am your AI Business Consultant. You can ask me to analyze your latest reviews, summarize your SEO keywords, or give you advice based on your GBP analytics.'}]);
+    const [chatInput, setChatInput] = useState('');
+    const [chatLoading, setChatLoading] = useState(false);
+
+    const handleSendChat = async () => {
+        if (!chatInput.trim()) return;
+        
+        const newMsg = { role: 'user', content: chatInput };
+        setChatHistory(prev => [...prev, newMsg]);
+        setChatInput('');
+        setChatLoading(true);
+
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) throw new Error("Not logged in");
+
+            const contextDump = `
+Live Reviews: ${JSON.stringify(liveReviews)}
+Search Keywords: ${JSON.stringify(searchKeywords)}
+Target SEO Keywords: ${JSON.stringify(targetKeywords)}
+Analytics: ${JSON.stringify(analyticsData)}
+            `;
+
+            const resp = await fetch('https://gbp-auto-master-backend-us.onrender.com/api/ai/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_id: user?.id,
+                    message: chatInput,
+                    history: chatHistory.filter(m => m.role !== 'system'),
+                    context_dump: contextDump
+                })
+            });
+
+            const data = await resp.json();
+            if (data.status === 'success') {
+                setChatHistory(prev => [...prev, { role: 'ai', content: data.reply }]);
+            } else {
+                setChatHistory(prev => [...prev, { role: 'ai', content: 'Oops! I encountered an error checking your data.' }]);
+            }
+        } catch (e) {
+            setChatHistory(prev => [...prev, { role: 'ai', content: 'Failed to connect to the AI engine.' }]);
+        }
+        setChatLoading(false);
+    };
+
     useEffect(() => {
         const initializeDashboard = async () => {
             const searchParams = new URLSearchParams(window.location.search);
@@ -1261,6 +1309,72 @@ export default function MasterDashboardPage() {
                     </nav>
                 )}
             </div>
+
+            {/* FLOATING AI ASSISTANT WIDGET */}
+            {appState === 'dashboard' && (
+                <>
+                    {/* The Chat Window */}
+                    <div className={`chat-widget-window glass ${isChatOpen ? 'open' : ''}`}>
+                        <div style={{ padding: '16px', borderBottom: '1px solid rgba(255,255,255,.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: 'var(--green-soft)' }}></div>
+                                <h3 style={{ fontSize: '15px', margin: 0 }}>AI Consultant</h3>
+                            </div>
+                            <button className="btn btn-ghost btn-sm" onClick={() => setIsChatOpen(false)} style={{ padding: '4px', fontSize: '16px' }}>✕</button>
+                        </div>
+                        <div style={{ flex: 1, overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }} className="custom-scroll">
+                            {chatHistory.map((msg, i) => (
+                                <div key={i} style={{ display: 'flex', justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start' }}>
+                                    <div style={{
+                                        background: msg.role === 'user' ? 'var(--blue)' : 'rgba(255,255,255,.05)',
+                                        border: msg.role === 'user' ? 'none' : '1px solid rgba(255,255,255,.1)',
+                                        padding: '10px 14px',
+                                        borderRadius: '12px',
+                                        borderBottomRightRadius: msg.role === 'user' ? '4px' : '12px',
+                                        borderBottomLeftRadius: msg.role === 'ai' ? '4px' : '12px',
+                                        maxWidth: '85%',
+                                        fontSize: '13px',
+                                        lineHeight: '1.5',
+                                        whiteSpace: 'pre-wrap'
+                                    }}>
+                                        {msg.content}
+                                    </div>
+                                </div>
+                            ))}
+                            {chatLoading && (
+                                <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+                                    <div style={{ background: 'rgba(255,255,255,.05)', padding: '10px 14px', borderRadius: '12px', fontSize: '13px' }}>
+                                        <span style={{ opacity: 0.5 }}>Thinking...</span>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                        <div style={{ padding: '12px', borderTop: '1px solid rgba(255,255,255,.1)', display: 'flex', gap: '8px' }}>
+                            <input 
+                                type="text" 
+                                className="input" 
+                                placeholder="Ask about reviews, SEO..." 
+                                style={{ flex: 1, padding: '10px' }}
+                                value={chatInput}
+                                onChange={e => setChatInput(e.target.value)}
+                                onKeyDown={e => e.key === 'Enter' && handleSendChat()}
+                            />
+                            <button className="btn btn-primary" onClick={handleSendChat} disabled={chatLoading || !chatInput.trim()} style={{ padding: '0 16px' }}>
+                                ↗
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* The Floating Button */}
+                    <button 
+                        className={`chat-widget-fab ${isChatOpen ? 'hide' : ''}`}
+                        onClick={() => setIsChatOpen(true)}
+                    >
+                        <span style={{ fontSize: '24px' }}>✨</span>
+                    </button>
+                </>
+            )}
+
         </div>
     );
 }

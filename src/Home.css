@@ -278,3 +278,79 @@
   }
 }
 
+/* =========================================
+   FLOATING AI CHAT WIDGET
+========================================= */
+
+.chat-widget-fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--blue), #6366f1);
+  border: none;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 24px rgba(59,130,246,0.4);
+  cursor: pointer;
+  z-index: 9999;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.chat-widget-fab:hover {
+  transform: scale(1.05) translateY(-2px);
+}
+
+.chat-widget-fab.hide {
+  transform: scale(0);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.chat-widget-window {
+  position: fixed;
+  bottom: 100px;
+  right: 24px;
+  width: 380px;
+  height: 600px;
+  max-height: calc(100vh - 120px);
+  background: rgba(10, 10, 15, 0.95);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  z-index: 9998;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+  transform: translateY(20px) scale(0.95);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
+}
+
+.chat-widget-window.open {
+  transform: translateY(0) scale(1);
+  opacity: 1;
+  pointer-events: all;
+}
+
+/* Mobile optimizations for chat widget */
+@media(max-width: 768px) {
+  .chat-widget-window {
+    width: calc(100vw - 32px);
+    right: 16px;
+    bottom: 90px;
+    height: 500px;
+  }
+  .chat-widget-fab {
+    bottom: 90px;
+    right: 16px;
+    width: 50px;
+    height: 50px;
+  }
+}
+
