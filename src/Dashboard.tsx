@@ -555,18 +555,9 @@ export default function MasterDashboardPage() {
                                 <h3 style={{ fontSize: '15px', marginBottom: '14px' }}>Live Review Feed</h3>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                     
-                                    <div className="card-sm" style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.08)' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
-                                            <div>
-                                                <p style={{ fontWeight: 600, fontSize: '13.5px', margin: 0 }}>Ankit Verma <span style={{ color: 'var(--orange-soft)' }}>★★★★★</span></p>
-                                                <p style={{ fontSize: '12.5px', color: 'rgba(255,255,255,.55)', margin: '6px 0 0' }}>"Fixed our AC within an hour, incredibly professional."</p>
-                                            </div>
-                                            <span className="badge-pill b-gray" style={{ flexShrink: 0 }}>2h ago</span>
-                                        </div>
-                                        <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid rgba(255,255,255,.06)' }}>
-                                            <p style={{ fontSize: '11px', color: 'var(--blue-soft)', fontWeight: 600, margin: '0 0 4px' }}>AI reply published</p>
-                                            <p style={{ fontSize: '12.5px', color: 'rgba(255,255,255,.6)', margin: 0 }}>"Thank you Ankit! Our emergency AC repair team is always ready — glad we could help fast."</p>
-                                        </div>
+                                    <div className="card-sm" style={{ background: 'rgba(255,255,255,.03)', border: '1px dashed rgba(255,255,255,.2)', textAlign: 'center', padding: '32px 20px' }}>
+                                        <p style={{ fontWeight: 600, fontSize: '14px', margin: '0 0 6px' }}>Live Review Sync will be starting soon</p>
+                                        <p style={{ fontSize: '13px', color: 'rgba(255,255,255,.5)', margin: 0 }}>Awaiting Google API Approval.</p>
                                     </div>
 
                                 </div>
@@ -731,28 +722,9 @@ export default function MasterDashboardPage() {
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                                             <h3 style={{ fontSize: '15px' }}>Local Competitor Leaderboard</h3>
                                         </div>
-                                        <div style={{ display: 'flex', gap: '10px', marginBottom: '16px' }}>
-                                            <input type="text" value={competitorKeyword} onChange={(e) => setCompetitorKeyword(e.target.value)} placeholder="e.g. AC repair near me" />
-                                            <button className="btn btn-ghost btn-sm" onClick={fetchCompetitors} style={{ whiteSpace: 'nowrap' }}>{loadingCompetitors ? 'Scanning...' : 'Scan Area'}</button>
-                                        </div>
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                            <div className="card-sm" style={{ background: 'rgba(59,130,246,.1)', border: '1px solid rgba(59,130,246,.3)', display: 'flex', justifyContent: 'space-between', padding: '10px 14px' }}>
-                                                <span style={{ fontWeight: 600, fontSize: '13.5px', color: 'var(--blue-soft)' }}>1. {activeLocationName} (You)</span>
-                                                <span style={{ fontSize: '12px' }}>★ {activeLocObj?.rating || 0}</span>
-                                            </div>
-                                            {competitors.length > 0 ? competitors.map((comp, idx) => (
-                                                <div key={idx} className="card-sm" style={{ background: 'rgba(255,255,255,.02)', padding: '10px 14px' }}>
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                                                        <span style={{ fontSize: '13.5px' }}>{idx + 2}. {comp.name}</span>
-                                                        <span style={{ fontSize: '12px' }}>★ {comp.rating} ({comp.user_ratings_total})</span>
-                                                    </div>
-                                                    {comp.top_review && (
-                                                        <p style={{ fontSize: '11px', color: 'rgba(255,255,255,.5)', margin: 0, fontStyle: 'italic' }}>"{comp.top_review}"</p>
-                                                    )}
-                                                </div>
-                                            )) : (
-                                                <p style={{ fontSize: '12.5px', color: 'rgba(255,255,255,.5)' }}>Click 'Scan Area' to find top competitors nearby.</p>
-                                            )}
+                                        <div className="card-sm" style={{ background: 'rgba(255,255,255,.03)', border: '1px dashed rgba(255,255,255,.2)', textAlign: 'center', padding: '32px 20px' }}>
+                                            <p style={{ fontWeight: 600, fontSize: '14px', margin: '0 0 6px' }}>Competitor Tracker will be starting soon</p>
+                                            <p style={{ fontSize: '13px', color: 'rgba(255,255,255,.5)', margin: 0 }}>Awaiting Google API Approval.</p>
                                         </div>
                                     </div>
 
