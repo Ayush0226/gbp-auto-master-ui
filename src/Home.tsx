@@ -1,5 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { supabase } from './lib/supabase';
+import Scene3D from './Scene3D';
+import ScrollGuide from './ScrollGuide';
 import './Home.css';
 
 export default function Home() {
@@ -12,6 +14,25 @@ export default function Home() {
                 window.location.href = '/dashboard';
             }
         });
+    }, []);
+
+    // IntersectionObserver for scroll-reveal sections
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            (entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('revealed');
+                    }
+                });
+            },
+            { threshold: 0.15, rootMargin: '0px 0px -50px 0px' }
+        );
+
+        const sections = document.querySelectorAll('.scroll-reveal');
+        sections.forEach((el) => observer.observe(el));
+
+        return () => observer.disconnect();
     }, []);
 
     const handleLogin = async (e: React.MouseEvent) => {
@@ -29,6 +50,9 @@ export default function Home() {
 
     return (
         <div className="home-wrapper">
+            <Scene3D />
+            <div className="home-canvas-overlay"></div>
+            <ScrollGuide />
             <div className="home-noise"></div>
 
             <header className="home-header">
@@ -93,7 +117,7 @@ export default function Home() {
                 </div>
             </section>
 
-            <section className="home-promo-section" style={{ padding: '0 20px 16px' }}>
+            <section className="home-promo-section scroll-reveal" style={{ padding: '0 20px 16px' }}>
                 <div className="home-wrap" style={{ maxWidth: '900px' }}>
                     <div className="home-promo-strip home-glass home-glass-hover">
                         <div className="home-promo-left">
@@ -108,7 +132,7 @@ export default function Home() {
                 </div>
             </section>
 
-            <section id="what-we-give" className="home-section">
+            <section id="what-we-give" className="home-section scroll-reveal">
                 <div className="home-wrap">
                     <div className="home-center"><h2 className="home-grad-metal" style={{ fontSize: '32px' }}>What We Give You.</h2></div>
                     <div className="home-grid3">
@@ -128,7 +152,7 @@ export default function Home() {
                 </div>
             </section>
 
-            <section id="features" className="home-section">
+            <section id="features" className="home-section scroll-reveal">
                 <div className="home-glow" style={{ width: '420px', height: '420px', top: '40px', left: '25%', background: 'radial-gradient(circle,rgba(52,168,83,.2) 0%,transparent 70%)' }}></div>
                 <div className="home-wrap">
                     <div className="home-center"><h2 className="home-grad-metal" style={{ fontSize: '32px' }}>Everything you need to outrank your competitors.</h2></div>
@@ -152,7 +176,7 @@ export default function Home() {
                 </div>
             </section>
 
-            <section id="how" className="home-section">
+            <section id="how" className="home-section scroll-reveal">
                 <div className="home-wrap">
                     <div className="home-center"><h2 className="home-grad-metal" style={{ fontSize: '32px' }}>Three steps. Zero effort.</h2></div>
                     <div className="home-grid3">
@@ -178,7 +202,7 @@ export default function Home() {
                 </div>
             </section>
 
-            <section id="pricing" className="home-section">
+            <section id="pricing" className="home-section scroll-reveal">
                 <div className="home-glow" style={{ width: '560px', height: '560px', top: '0', left: '50%', transform: 'translateX(-50%)', background: 'radial-gradient(circle,rgba(59,130,246,.32) 0%,transparent 70%)' }}></div>
                 <div className="home-wrap">
                     <div className="home-center"><h2 className="home-grad-metal" style={{ fontSize: '32px' }}>Cheaper than a newspaper ad.<br/>Better than an SEO agency.</h2></div>
@@ -247,7 +271,7 @@ export default function Home() {
                 </div>
             </section>
 
-            <section id="contact" className="home-section">
+            <section id="contact" className="home-section scroll-reveal">
                 <div className="home-wrap">
                     <div className="home-card home-glass" style={{ textAlign: 'center', padding: '60px 20px' }}>
                         <h2 className="home-grad-metal" style={{ fontSize: '32px', marginBottom: '8px' }}>Contact Details</h2>

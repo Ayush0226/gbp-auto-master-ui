@@ -554,7 +554,8 @@ export default function MasterDashboardPage() {
             <div className="noise"></div>
 
             {/* SIDEBAR */}
-            <aside className={`sidebar glass ${sidebarOpen ? 'open' : ''}`} id="sidebar">
+            {sidebarOpen && <div className="sidebar-backdrop" onClick={() => setSidebarOpen(false)}></div>}
+            <aside className={`sidebar glass ${sidebarOpen ? 'mobile-open' : ''}`} id="sidebar">
                 <div className="sidebar-logo">GBP Auto <span className="grad-blue">Master</span></div>
 
                 <div className="active-location-badge glass">
@@ -947,31 +948,31 @@ export default function MasterDashboardPage() {
                                 return (
                                     <>
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-                                            <div className="card glass">
+                                            <div className="card glass animate-in" style={{ '--delay': '0.1s' } as any}>
                                                 <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)' }}>Profile Visitors (30d)</p>
                                                 <p style={{ fontSize: '24px', fontWeight: 800, marginTop: '6px' }} className="grad-blue">{analyticsData ? profileVisitors.toLocaleString() : '...'}</p>
                                             </div>
-                                            <div className="card glass">
+                                            <div className="card glass animate-in" style={{ '--delay': '0.2s' } as any}>
                                                 <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)' }}>Total Map Views</p>
                                                 <p style={{ fontSize: '24px', fontWeight: 800, marginTop: '6px' }}>{analyticsData ? totalMapViews.toLocaleString() : '...'}</p>
                                             </div>
-                                            <div className="card glass">
+                                            <div className="card glass animate-in" style={{ '--delay': '0.3s' } as any}>
                                                 <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)' }}>Website Clicks</p>
                                                 <p style={{ fontSize: '24px', fontWeight: 800, marginTop: '6px' }}>{analyticsData ? websiteClicks.toLocaleString() : '...'}</p>
                                             </div>
-                                            <div className="card glass">
+                                            <div className="card glass animate-in" style={{ '--delay': '0.4s' } as any}>
                                                 <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)' }}>Calls & Directions</p>
                                                 <p style={{ fontSize: '24px', fontWeight: 800, marginTop: '6px' }}>{analyticsData ? callsAndDirections.toLocaleString() : '...'}</p>
                                             </div>
-                                            <div className="card glass">
+                                            <div className="card glass animate-in" style={{ '--delay': '0.5s' } as any}>
                                                 <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)' }}>Messages (Chat)</p>
                                                 <p style={{ fontSize: '24px', fontWeight: 800, marginTop: '6px', color: 'var(--blue-soft)' }}>{analyticsData ? messages.toLocaleString() : '...'}</p>
                                             </div>
-                                            <div className="card glass">
+                                            <div className="card glass animate-in" style={{ '--delay': '0.6s' } as any}>
                                                 <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)' }}>Bookings Made</p>
                                                 <p style={{ fontSize: '24px', fontWeight: 800, marginTop: '6px', color: 'var(--green-soft)' }}>{analyticsData ? bookings.toLocaleString() : '...'}</p>
                                             </div>
-                                            <div className="card glass">
+                                            <div className="card glass animate-in" style={{ '--delay': '0.7s' } as any}>
                                                 <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)' }}>Food Orders</p>
                                                 <p style={{ fontSize: '24px', fontWeight: 800, marginTop: '6px', color: 'var(--orange-soft)' }}>{analyticsData ? foodOrders.toLocaleString() : '...'}</p>
                                             </div>
@@ -1248,6 +1249,10 @@ export default function MasterDashboardPage() {
                         <div className={`mob-nav-item ${activeView === 'analytics' ? 'active' : ''}`} onClick={() => setActiveView('analytics')}>
                             <span className="ic">◈</span>
                             <span>Analytics</span>
+                        </div>
+                        <div className={`mob-nav-item ${activeView === 'brain' ? 'active' : ''}`} onClick={() => setActiveView('brain')}>
+                            <span className="ic">🧠</span>
+                            <span>Brain</span>
                         </div>
                         <div className={`mob-nav-item ${activeView === 'billing' ? 'active' : ''}`} onClick={() => setActiveView('billing')}>
                             <span className="ic">💳</span>
