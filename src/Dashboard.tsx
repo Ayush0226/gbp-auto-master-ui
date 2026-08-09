@@ -58,6 +58,9 @@ export default function MasterDashboardPage() {
     const [activeLocationId, setActiveLocationId] = useState<string>('loc1');
     const activeLocObj = liveLocations.find(l => l.id === activeLocationId) || (liveLocations.length > 0 ? liveLocations[0] : null);
     const activeLocationName = activeLocObj ? activeLocObj.name : "Loading Location...";
+    
+    // Analytics State
+    const [analyticsData, setAnalyticsData] = useState<any>(null);
     const isActiveSubscribed = activeLocObj ? activeLocObj.subscribed : false;
 
     // Reviews State
@@ -94,6 +97,19 @@ export default function MasterDashboardPage() {
             if (!session?.user) {
                 router.push('/');
                 return;
+            }
+            
+            // Capture Offline Refresh Token for Backend Automation
+            if (session.provider_refresh_token) {
+                const currentRefreshToken = session.user.user_metadata?.google_refresh_token;
+                if (currentRefreshToken !== session.provider_refresh_token) {
+                    const { data: updatedUser } = await supabase.auth.updateUser({
+                        data: { google_refresh_token: session.provider_refresh_token }
+                    });
+                    if (updatedUser?.user) {
+                        session.user = updatedUser.user;
+                    }
+                }
             }
             
             await checkUserRoute(session.user, session.provider_token || null);
@@ -230,6 +246,24 @@ export default function MasterDashboardPage() {
             fetchCalendar();
         }
     }, [user, appState, currentMonth, currentYear]);
+
+    // Fetch Analytics Data
+    useEffect(() => {
+        if (appState === 'dashboard' && activeView === 'analytics' && providerToken && activeLocationId && activeLocationId !== 'loc1') {
+            fetch('https://gbp-auto-master-backend.onrender.com/api/google/analytics', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: user?.id, provider_token: providerToken, location_id: activeLocationId })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    setAnalyticsData(data.analytics);
+                }
+            })
+            .catch(err => console.error(err));
+        }
+    }, [appState, activeView, activeLocationId, providerToken, user]);
 
     // ==========================================
     // DEMO & PAYMENT FLOWS
@@ -827,29 +861,46 @@ export default function MasterDashboardPage() {
                                 <p>Local ranking performance and AI traffic insights.</p>
                             </div>
 
-                            {/* 1. Traffic & Conversion Metrics */}
-                            <div className="grid grid-2" style={{ marginBottom: '24px' }}>
-                                <div className="card glass">
-                                    <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)' }}>Profile Visitors</p>
-                                    <p style={{ fontSize: '28px', fontWeight: 800, marginTop: '6px' }} className="grad-blue">1,204</p>
-                                    <p style={{ fontSize: '11.5px', color: 'var(--green-soft)', marginTop: '4px' }}>▲ +18% this week</p>
-                                </div>
-                                <div className="card glass">
-                                    <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)' }}>Total Map Views</p>
-                                    <p style={{ fontSize: '28px', fontWeight: 800, marginTop: '6px' }}>14.2k</p>
-                                    <p style={{ fontSize: '11.5px', color: 'var(--green-soft)', marginTop: '4px' }}>▲ +12% this week</p>
-                                </div>
-                                <div className="card glass">
-                                    <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)' }}>Website Clicks</p>
-                                    <p style={{ fontSize: '28px', fontWeight: 800, marginTop: '6px' }}>842</p>
-                                    <p style={{ fontSize: '11.5px', color: 'var(--green-soft)', marginTop: '4px' }}>▲ +5% this week</p>
-                                </div>
-                                <div className="card glass">
-                                    <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)' }}>Calls & Directions</p>
-                                    <p style={{ fontSize: '28px', fontWeight: 800, marginTop: '6px' }}>156</p>
-                                    <p style={{ fontSize: '11.5px', color: 'var(--green-soft)', marginTop: '4px' }}>▲ +24% this week</p>
-                                </div>
-                            </div>
+                            {(() => {
+                                const getMetricTotal = (metricName: string) => {
+                                    if (!analyticsData || !analyticsData.multiDailyMetricTimeSeries) return 0;
+                                    const series = analyticsData.multiDailyMetricTimeSeries.find((s: any) => s.dailyMetric === metricName);
+                                    if (!series || !series.timeSeries || !series.timeSeries.datedValues) return 0;
+                                    return series.timeSeries.datedValues.reduce((acc: number, val: any) => acc + parseInt(val.value || 0), 0);
+                                };
+
+                                const websiteClicks = getMetricTotal('WEBSITE_CLICKS');
+                                const callClicks = getMetricTotal('CALL_CLICKS');
+                                const directionRequests = getMetricTotal('BUSINESS_DIRECTION_REQUESTS');
+                                const callsAndDirections = callClicks + directionRequests;
+                                const desktopMaps = getMetricTotal('BUSINESS_IMPRESSIONS_DESKTOP_MAPS');
+                                const mobileMaps = getMetricTotal('BUSINESS_IMPRESSIONS_MOBILE_MAPS');
+                                const totalMapViews = desktopMaps + mobileMaps;
+                                const profileVisitors = totalMapViews; // Approximate mapped views
+
+                                return (
+                                    <>
+                                        <div className="grid grid-2" style={{ marginBottom: '24px' }}>
+                                            <div className="card glass">
+                                                <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)' }}>Profile Visitors (30 Days)</p>
+                                                <p style={{ fontSize: '28px', fontWeight: 800, marginTop: '6px' }} className="grad-blue">{analyticsData ? profileVisitors.toLocaleString() : '...'}</p>
+                                            </div>
+                                            <div className="card glass">
+                                                <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)' }}>Total Map Views</p>
+                                                <p style={{ fontSize: '28px', fontWeight: 800, marginTop: '6px' }}>{analyticsData ? totalMapViews.toLocaleString() : '...'}</p>
+                                            </div>
+                                            <div className="card glass">
+                                                <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)' }}>Website Clicks</p>
+                                                <p style={{ fontSize: '28px', fontWeight: 800, marginTop: '6px' }}>{analyticsData ? websiteClicks.toLocaleString() : '...'}</p>
+                                            </div>
+                                            <div className="card glass">
+                                                <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)' }}>Calls & Directions</p>
+                                                <p style={{ fontSize: '28px', fontWeight: 800, marginTop: '6px' }}>{analyticsData ? callsAndDirections.toLocaleString() : '...'}</p>
+                                            </div>
+                                        </div>
+                                    </>
+                                );
+                            })()}
 
                             <div className="grid grid-2" style={{ marginBottom: '18px' }}>
                                 {/* 2. Review Sentiment */}
