@@ -149,7 +149,7 @@ export default function MasterDashboardPage() {
     // Fetch Live Locations from Python Backend
     useEffect(() => {
         if (appState !== 'loading' && providerToken && user) {
-            fetch('https://gbp-auto-master-backend.onrender.com/api/google/locations', {
+            fetch('https://gbp-auto-master-backend-us.onrender.com/api/google/locations', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ user_id: user.id, provider_token: providerToken })
@@ -173,7 +173,7 @@ export default function MasterDashboardPage() {
     useEffect(() => {
         if (appState === 'dashboard' && providerToken && user && activeLocationId && activeLocationId !== 'loc1') {
             setLoadingReviews(true);
-            fetch('https://gbp-auto-master-backend.onrender.com/api/google/get-reviews', {
+            fetch('https://gbp-auto-master-backend-us.onrender.com/api/google/get-reviews', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ user_id: user.id, provider_token: providerToken, location_id: activeLocationId })
@@ -193,7 +193,7 @@ export default function MasterDashboardPage() {
         if (!providerToken || !user || !activeLocationId) return;
         setSyncingReviews(true);
         try {
-            const res = await fetch('https://gbp-auto-master-backend.onrender.com/api/google/sync-reviews', {
+            const res = await fetch('https://gbp-auto-master-backend-us.onrender.com/api/google/sync-reviews', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ user_id: user.id, provider_token: providerToken, location_id: activeLocationId })
@@ -202,7 +202,7 @@ export default function MasterDashboardPage() {
             alert(data.message || "Sync Complete!");
             
             // Refetch reviews after sync
-            const freshRes = await fetch('https://gbp-auto-master-backend.onrender.com/api/google/get-reviews', {
+            const freshRes = await fetch('https://gbp-auto-master-backend-us.onrender.com/api/google/get-reviews', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ user_id: user.id, provider_token: providerToken, location_id: activeLocationId })
@@ -250,7 +250,7 @@ export default function MasterDashboardPage() {
     // Fetch Analytics Data
     useEffect(() => {
         if (appState === 'dashboard' && activeView === 'analytics' && providerToken && activeLocationId && activeLocationId !== 'loc1') {
-            fetch('https://gbp-auto-master-backend.onrender.com/api/google/analytics', {
+            fetch('https://gbp-auto-master-backend-us.onrender.com/api/google/analytics', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ user_id: user?.id, provider_token: providerToken, location_id: activeLocationId })
@@ -287,7 +287,7 @@ export default function MasterDashboardPage() {
 
     const handleCheckout = async () => {
         try {
-            const res = await fetch("https://gbp-auto-master-backend.onrender.com/api/payment/create-order", {
+            const res = await fetch("https://gbp-auto-master-backend-us.onrender.com/api/payment/create-order", {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -312,7 +312,7 @@ export default function MasterDashboardPage() {
                 return;
             }
 
-            const keyRes = await fetch("https://gbp-auto-master-backend.onrender.com/api/payment/key");
+            const keyRes = await fetch("https://gbp-auto-master-backend-us.onrender.com/api/payment/key");
             const keyData = await keyRes.json();
 
             const options = {
@@ -324,7 +324,7 @@ export default function MasterDashboardPage() {
                 order_id: data.order_id,
                 handler: async function (response: any) {
                     // Securely verify signature on backend
-                    const verifyRes = await fetch("https://gbp-auto-master-backend.onrender.com/api/payment/verify", {
+                    const verifyRes = await fetch("https://gbp-auto-master-backend-us.onrender.com/api/payment/verify", {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -449,7 +449,7 @@ export default function MasterDashboardPage() {
     const publishNow = async (post: any) => {
         try {
             setLoadingAction(true);
-            const res = await fetch("https://gbp-auto-master-backend.onrender.com/api/google/publish-post", {
+            const res = await fetch("https://gbp-auto-master-backend-us.onrender.com/api/google/publish-post", {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -476,7 +476,7 @@ export default function MasterDashboardPage() {
         if (!user || !providerToken) return;
         setLoadingCompetitors(true);
         try {
-            const res = await fetch('https://gbp-auto-master-backend.onrender.com/api/google/competitors', {
+            const res = await fetch('https://gbp-auto-master-backend-us.onrender.com/api/google/competitors', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ user_id: user.id, location_name: activeLocationName, keyword: competitorKeyword })
