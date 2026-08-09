@@ -109,16 +109,26 @@ export default function MasterDashboardPage() {
 
         const metadata = currentUser.user_metadata || {};
         const demoUsed = metadata.demo_used === true;
-        const subStatus = metadata.subscription_status || 'none';
         
         if (!demoUsed) {
             setAppState('demo-select');
-        } else if (subStatus === 'none') {
-            setAppState('payment');
         } else {
             setAppState('dashboard');
         }
     };
+
+    // Location Billing Guard
+    useEffect(() => {
+        if (appState === 'dashboard' || appState === 'payment') {
+            if (activeLocObj) {
+                if (activeLocObj.subscribed && appState === 'payment') {
+                    setAppState('dashboard');
+                } else if (!activeLocObj.subscribed && appState === 'dashboard') {
+                    setAppState('payment');
+                }
+            }
+        }
+    }, [activeLocObj, appState]);
 
     // Fetch Live Locations from Python Backend
     useEffect(() => {
@@ -249,7 +259,8 @@ export default function MasterDashboardPage() {
                 body: JSON.stringify({
                     plan_id: selectedPlan,
                     promo_code: discountApplied === 'none' ? '' : discountApplied,
-                    user_id: user?.id || 'test_user_id'
+                    user_id: user?.id || 'test_user_id',
+                    location_id: activeLocationId
                 })
             });
             const data = await res.json();
@@ -263,7 +274,7 @@ export default function MasterDashboardPage() {
             if (data.free_trial) {
                 // Backend bypassed Razorpay for ATYAUNSUHJ and activated subscription
                 alert('100% Free Trial Activated successfully!');
-                setAppState('dashboard');
+                setLiveLocations(prev => prev.map(l => l.id === activeLocationId ? { ...l, subscribed: true } : l));
                 return;
             }
 
@@ -286,13 +297,14 @@ export default function MasterDashboardPage() {
                             razorpay_payment_id: response.razorpay_payment_id,
                             razorpay_order_id: response.razorpay_order_id,
                             razorpay_signature: response.razorpay_signature,
-                            user_id: user?.id || 'test_user_id'
+                            user_id: user?.id || 'test_user_id',
+                            location_id: activeLocationId
                         })
                     });
                     const verifyData = await verifyRes.json();
                     
                     if (verifyData.status === 'success') {
-                        setAppState('dashboard');
+                        setLiveLocations(prev => prev.map(l => l.id === activeLocationId ? { ...l, subscribed: true } : l));
                     } else {
                         alert("Payment verification failed! Server said: " + (verifyData.detail || JSON.stringify(verifyData)));
                     }
@@ -549,7 +561,8 @@ export default function MasterDashboardPage() {
 
                             {appState === 'payment' && (
                                 <div className="card glass">
-                                    <h3 style={{ fontSize: '16px', marginBottom: '16px' }}>Choose your plan</h3>
+                                    <h3 style={{ fontSize: '16px', marginBottom: '4px' }}>Subscribe for {activeLocationName}</h3>
+                                    <p style={{ fontSize: '13px', color: 'rgba(255,255,255,.6)', marginBottom: '16px' }}>This AI Engine subscription will apply exclusively to this Google Business Profile.</p>
 
                                     <div className="grid grid-3">
                                         {(Object.keys(PRICING_PLANS) as Array<keyof typeof PRICING_PLANS>).map((key) => (
