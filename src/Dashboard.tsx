@@ -60,6 +60,11 @@ export default function MasterDashboardPage() {
     const activeLocationName = activeLocObj ? activeLocObj.name : "Loading Location...";
     const isActiveSubscribed = activeLocObj ? activeLocObj.subscribed : false;
 
+    // Reviews State
+    const [liveReviews, setLiveReviews] = useState<any[]>([]);
+    const [loadingReviews, setLoadingReviews] = useState(false);
+    const [syncingReviews, setSyncingReviews] = useState(false);
+
     // Analytics State
     const [newKeyword, setNewKeyword] = useState('');
     const [targetKeywords, setTargetKeywords] = useState(['cheap plumber rohini', 'best ac repair', 'local geyser fix']);
@@ -127,7 +132,9 @@ export default function MasterDashboardPage() {
             .then(data => {
                 if (data.status === 'success' && data.locations.length > 0) {
                     setLiveLocations(data.locations);
-                    setActiveLocationId(data.locations[0].id);
+                    if (!activeLocationId || activeLocationId === 'loc1') {
+                        setActiveLocationId(data.locations[0].id);
+                    }
                 } else if (data.status === 'error') {
                     console.error("Google API Error:", data.message);
                 }
@@ -135,6 +142,55 @@ export default function MasterDashboardPage() {
             .catch(err => console.error("Error fetching locations:", err));
         }
     }, [appState, providerToken, user]);
+
+    // Fetch Live Reviews from Backend
+    useEffect(() => {
+        if (appState === 'dashboard' && providerToken && user && activeLocationId && activeLocationId !== 'loc1') {
+            setLoadingReviews(true);
+            fetch('https://gbp-auto-master-backend.onrender.com/api/google/get-reviews', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: user.id, provider_token: providerToken, location_id: activeLocationId })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    setLiveReviews(data.reviews || []);
+                }
+            })
+            .catch(err => console.error(err))
+            .finally(() => setLoadingReviews(false));
+        }
+    }, [appState, activeLocationId, providerToken, user]);
+
+    const handleSyncReviews = async () => {
+        if (!providerToken || !user || !activeLocationId) return;
+        setSyncingReviews(true);
+        try {
+            const res = await fetch('https://gbp-auto-master-backend.onrender.com/api/google/sync-reviews', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: user.id, provider_token: providerToken, location_id: activeLocationId })
+            });
+            const data = await res.json();
+            alert(data.message || "Sync Complete!");
+            
+            // Refetch reviews after sync
+            const freshRes = await fetch('https://gbp-auto-master-backend.onrender.com/api/google/get-reviews', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: user.id, provider_token: providerToken, location_id: activeLocationId })
+            });
+            const freshData = await freshRes.json();
+            if (freshData.status === 'success') {
+                setLiveReviews(freshData.reviews || []);
+            }
+        } catch (e) {
+            console.error(e);
+            alert("Error syncing reviews");
+        }
+        setSyncingReviews(false);
+    };
 
     // Fetch Calendar Posts from Supabase
     useEffect(() => {
@@ -564,13 +620,55 @@ export default function MasterDashboardPage() {
                             </div>
 
                             <div className="card glass">
-                                <h3 style={{ fontSize: '15px', marginBottom: '14px' }}>Live Review Feed</h3>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                                    <h3 style={{ fontSize: '15px', margin: 0 }}>Live Review Feed</h3>
+                                    <button 
+                                        className="btn btn-ghost btn-sm" 
+                                        onClick={handleSyncReviews}
+                                        disabled={syncingReviews || loadingReviews}
+                                    >
+                                        {syncingReviews ? 'Syncing...' : 'Force AI Sync'}
+                                    </button>
+                                </div>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                     
-                                    <div className="card-sm" style={{ background: 'rgba(255,255,255,.03)', border: '1px dashed rgba(255,255,255,.2)', textAlign: 'center', padding: '32px 20px' }}>
-                                        <p style={{ fontWeight: 600, fontSize: '14px', margin: '0 0 6px' }}>Live Review Sync will be starting soon</p>
-                                        <p style={{ fontSize: '13px', color: 'rgba(255,255,255,.5)', margin: 0 }}>Awaiting Google API Approval.</p>
-                                    </div>
+                                    {loadingReviews ? (
+                                        <p style={{ fontSize: '13px', color: 'rgba(255,255,255,.5)' }}>Loading your real Google Reviews...</p>
+                                    ) : liveReviews.length === 0 ? (
+                                        <div className="card-sm" style={{ background: 'rgba(255,255,255,.03)', border: '1px dashed rgba(255,255,255,.2)', textAlign: 'center', padding: '32px 20px' }}>
+                                            <p style={{ fontWeight: 600, fontSize: '14px', margin: '0 0 6px' }}>No reviews found for this location.</p>
+                                            <p style={{ fontSize: '13px', color: 'rgba(255,255,255,.5)', margin: 0 }}>Once customers leave reviews, they will appear here.</p>
+                                        </div>
+                                    ) : (
+                                        liveReviews.map((rev, i) => (
+                                            <div key={i} className="card-sm" style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.08)' }}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                        <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'var(--blue)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 'bold' }}>
+                                                            {rev.reviewer.charAt(0)}
+                                                        </div>
+                                                        <p style={{ fontWeight: 600, fontSize: '13px', margin: 0 }}>{rev.reviewer}</p>
+                                                    </div>
+                                                    <div style={{ display: 'flex', gap: '2px', color: '#fbbf24', fontSize: '12px' }}>
+                                                        {rev.rating === 'FIVE' ? '★★★★★' : rev.rating === 'FOUR' ? '★★★★☆' : rev.rating === 'THREE' ? '★★★☆☆' : rev.rating === 'TWO' ? '★★☆☆☆' : '★☆☆☆☆'}
+                                                    </div>
+                                                </div>
+                                                <p style={{ fontSize: '13px', color: 'rgba(255,255,255,.8)', margin: '8px 0', lineHeight: 1.5 }}>
+                                                    "{rev.comment || 'No comment provided'}"
+                                                </p>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px' }}>
+                                                    <p style={{ fontSize: '11px', color: 'rgba(255,255,255,.4)', margin: 0 }}>
+                                                        {new Date(rev.createTime).toLocaleDateString()}
+                                                    </p>
+                                                    {rev.has_reply ? (
+                                                        <span className="badge-pill b-green" style={{ padding: '2px 8px', fontSize: '10px' }}>✓ Replied</span>
+                                                    ) : (
+                                                        <span className="badge-pill" style={{ padding: '2px 8px', fontSize: '10px', background: 'rgba(255,255,255,.1)' }}>Unreplied</span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
 
                                 </div>
                             </div>
