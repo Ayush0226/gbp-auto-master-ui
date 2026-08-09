@@ -45,7 +45,6 @@ function getWaypointPosition(scrollProgress: number) {
 
 export default function ScrollGuide() {
     const [scrollProgress, setScrollProgress] = useState(0);
-    const [isVisible, setIsVisible] = useState(true);
     const [bobOffset, setBobOffset] = useState(0);
     const frameRef = useRef(0);
 
@@ -73,11 +72,6 @@ export default function ScrollGuide() {
         animId = requestAnimationFrame(animate);
         return () => cancelAnimationFrame(animId);
     }, []);
-
-    // Remove the mobile hide restriction
-    const isVisible = true;
-
-    if (!isVisible) return null;
 
     const pos = getWaypointPosition(scrollProgress);
     const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
