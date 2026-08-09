@@ -220,7 +220,7 @@ export default function MasterDashboardPage() {
                     if (postDate.getMonth() === currentMonth && postDate.getFullYear() === currentYear) {
                         const day = postDate.getDate();
                         if (!postsByDay[day]) postsByDay[day] = [];
-                        postsByDay[day].push({ id: post.id, caption: post.caption, img: !!post.image_url });
+                        postsByDay[day].push({ id: post.id, caption: post.caption, image_url: post.image_url, img: !!post.image_url });
                     }
                 });
                 setScheduledPosts(postsByDay);
@@ -298,7 +298,8 @@ export default function MasterDashboardPage() {
                             razorpay_order_id: response.razorpay_order_id,
                             razorpay_signature: response.razorpay_signature,
                             user_id: user?.id || 'test_user_id',
-                            location_id: activeLocationId
+                            location_id: activeLocationId,
+                            plan_id: selectedPlan
                         })
                     });
                     const verifyData = await verifyRes.json();
@@ -385,7 +386,7 @@ export default function MasterDashboardPage() {
 
             setScheduledPosts((prev: any) => ({
                 ...prev,
-                [selectedDate]: [...(prev[selectedDate] || []), { id: insertData[0].id, caption: postText, img: !!image_url }]
+                [selectedDate]: [...(prev[selectedDate] || []), { id: insertData[0].id, caption: postText, image_url: image_url, img: !!image_url }]
             }));
             
             setIsSchedulingNew(false);
@@ -409,6 +410,32 @@ export default function MasterDashboardPage() {
             newPosts.splice(idx, 1);
             return { ...prev, [day]: newPosts };
         });
+    };
+
+    const publishNow = async (post: any) => {
+        try {
+            setLoadingAction(true);
+            const res = await fetch("https://gbp-auto-master-backend.onrender.com/api/google/publish-post", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    provider_token: providerToken,
+                    location_id: activeLocationId,
+                    summary: post.caption,
+                    image_url: post.image_url
+                })
+            });
+            const data = await res.json();
+            if (data.status === 'success') {
+                alert('Successfully published to Google Business Profile!');
+            } else {
+                alert('Error publishing to Google: ' + data.message);
+            }
+        } catch (e) {
+            alert('Server error while publishing');
+        } finally {
+            setLoadingAction(false);
+        }
     };
 
     const fetchCompetitors = async () => {
@@ -750,7 +777,10 @@ export default function MasterDashboardPage() {
                                                     <span style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(59,130,246,.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>📷</span>
                                                     <span style={{ fontSize: '13px' }}>{post.caption}</span>
                                                 </div>
-                                                <button className="btn-red-ghost btn" onClick={() => cancelPost(selectedDate, idx)}>Cancel</button>
+                                                <div style={{ display: 'flex', gap: '8px' }}>
+                                                    <button className="btn-ghost btn btn-sm" onClick={() => publishNow(post)}>Publish Now</button>
+                                                    <button className="btn-red-ghost btn btn-sm" onClick={() => cancelPost(selectedDate, idx)}>Cancel</button>
+                                                </div>
                                             </div>
                                         ))}
                                         {(!scheduledPosts[selectedDate] || scheduledPosts[selectedDate].length === 0) && (
@@ -1012,20 +1042,27 @@ export default function MasterDashboardPage() {
                                 <p>Manage your plans for <b>{activeLocationName}</b>.</p>
                             </div>
 
-                            {isActiveSubscribed ? (
+                            {isActiveSubscribed && activeLocObj?.plan_details ? (
                                 <div className="grid grid-2">
                                     <div className="card glass">
-                                        <h3 style={{ fontSize: '15px', marginBottom: '16px' }}>Current Plan: Half-Yearly</h3>
+                                        <h3 style={{ fontSize: '15px', marginBottom: '16px', textTransform: 'capitalize' }}>Current Plan: {activeLocObj.plan_details.plan_id.replace('_', ' ')}</h3>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '10px' }}>
-                                            <p style={{ fontSize: '32px', fontWeight: 800, margin: 0 }} className="grad-blue">₹1,649</p>
-                                            <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)', margin: 0, paddingBottom: '4px' }}>/ 6 months</p>
+                                            <p style={{ fontSize: '32px', fontWeight: 800, margin: 0 }} className="grad-blue">
+                                                ₹{PRICING_PLANS[activeLocObj.plan_details.plan_id]?.original || '0'}
+                                            </p>
+                                            <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)', margin: 0, paddingBottom: '4px' }}>
+                                                / {activeLocObj.plan_details.plan_id === 'monthly' ? '1 month' : (activeLocObj.plan_details.plan_id === 'yearly' ? '12 months' : '6 months')}
+                                            </p>
                                         </div>
                                         <p style={{ fontSize: '12px', color: 'var(--green-soft)', marginBottom: '16px', fontWeight: 600 }}>Active</p>
                                         
                                         <div style={{ height: '6px', background: 'rgba(255,255,255,.1)', borderRadius: '4px', overflow: 'hidden', marginBottom: '8px' }}>
                                             <div style={{ height: '100%', width: '40%', background: 'var(--blue)' }}></div>
                                         </div>
-                                        <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)' }}>Renews on January 15, 2027 (112 days left)</p>
+                                        <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)' }}>
+                                            Renews on {new Date(activeLocObj.plan_details.expires_at).toLocaleDateString()} 
+                                            ({Math.ceil((new Date(activeLocObj.plan_details.expires_at).getTime() - new Date().getTime()) / (1000 * 3600 * 24))} days left)
+                                        </p>
                                         
                                         <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
                                             <button className="btn btn-primary btn-sm">Manage Billing / Update Card</button>
