@@ -83,9 +83,9 @@ export default function ScrollGuide() {
                 <path
                     d={`M 85,95 C 85,80 15,70 15,55 C 15,40 85,35 85,25 C 85,15 50,10 50,5`}
                     fill="none"
-                    stroke="rgba(59,130,246,0.15)"
-                    strokeWidth="0.3"
-                    strokeDasharray="1,1.5"
+                    stroke="rgba(59,130,246,0.3)"
+                    strokeWidth="1.2"
+                    strokeDasharray="2,3"
                 />
             </svg>
 
@@ -100,7 +100,7 @@ export default function ScrollGuide() {
             >
                 {/* Robot SVG */}
                 <div className="robot-body">
-                    <svg width="48" height="48" viewBox="0 0 64 64" fill="none">
+                    <svg width="72" height="72" viewBox="0 0 64 64" fill="none">
                         {/* Antenna */}
                         <line x1="32" y1="8" x2="32" y2="2" stroke="#60A5FA" strokeWidth="2" strokeLinecap="round" />
                         <circle cx="32" cy="2" r="2.5" fill="#60A5FA">
@@ -152,11 +152,11 @@ export default function ScrollGuide() {
                     </svg>
                     
                     {/* Glow under robot */}
-                    <div className="robot-glow"></div>
+                    <div className="robot-glow" style={{ width: '54px', height: '14px', bottom: '-12px' }}></div>
                 </div>
 
                 {/* Speech Bubble */}
-                <div className={`robot-speech ${pos.side === 'right' ? 'speech-left' : 'speech-right'}`} style={{ transform: pos.side === 'right' ? 'scaleX(-1)' : 'scaleX(1)' }}>
+                <div className={`robot-speech ${pos.side === 'right' ? 'speech-left' : 'speech-right'}`} style={{ transform: pos.side === 'right' ? 'scaleX(-1)' : 'scaleX(1)', top: '-16px' }}>
                     <span>{pos.message}</span>
                 </div>
             </div>

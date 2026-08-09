@@ -257,7 +257,7 @@
 /* Mobile adjustments for robot */
 @media(max-width: 768px) {
   .scroll-guide-robot {
-    zoom: 0.75;
+    zoom: 0.9;
   }
   .robot-speech {
     font-size: 10.5px;
@@ -271,7 +271,7 @@
 }
 @media(max-width: 480px) {
   .scroll-guide-robot {
-    zoom: 0.65;
+    zoom: 0.85;
   }
   .robot-speech {
     max-width: 120px;
