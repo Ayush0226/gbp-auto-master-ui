@@ -96,10 +96,10 @@ export default function MasterDashboardPage() {
             if (!session) throw new Error("Not logged in");
 
             const contextDump = `
-Live Reviews: ${JSON.stringify(liveReviews)}
-Search Keywords: ${JSON.stringify(searchKeywords)}
-Target SEO Keywords: ${JSON.stringify(targetKeywords)}
-Analytics: ${JSON.stringify(analyticsData)}
+Live Reviews (Recent 15): ${JSON.stringify((liveReviews || []).slice(0, 15))}
+Search Keywords (Top 20): ${JSON.stringify((searchKeywords || []).slice(0, 20))}
+Target SEO Keywords: ${JSON.stringify(targetKeywords || [])}
+Analytics: ${JSON.stringify(analyticsData || {})}
             `;
 
             const resp = await fetch('https://gbp-auto-master-backend-us.onrender.com/api/ai/chat', {
@@ -117,9 +117,11 @@ Analytics: ${JSON.stringify(analyticsData)}
             if (data.status === 'success') {
                 setChatHistory(prev => [...prev, { role: 'ai', content: data.reply }]);
             } else {
+                console.error("AI Chat API Error:", data);
                 setChatHistory(prev => [...prev, { role: 'ai', content: 'Oops! I encountered an error checking your data.' }]);
             }
         } catch (e) {
+            console.error("AI Chat Fetch Error:", e);
             setChatHistory(prev => [...prev, { role: 'ai', content: 'Failed to connect to the AI engine.' }]);
         }
         setChatLoading(false);
