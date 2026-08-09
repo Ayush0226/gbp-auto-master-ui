@@ -2,12 +2,12 @@ import { useEffect, useState, useRef } from 'react';
 
 // Waypoints for the robot's journey (percentage of scroll → position)
 const WAYPOINTS = [
-    { scroll: 0,    x: 85, y: 180, message: "Hey! Let me show you around 👋", side: 'right' },
-    { scroll: 0.12, x: 15, y: 60,  message: "Here's what we give you ✨", side: 'left' },
-    { scroll: 0.28, x: 85, y: 60,  message: "These features are 🔥", side: 'right' },
-    { scroll: 0.48, x: 15, y: 60,  message: "It's this easy, really! 🚀", side: 'left' },
-    { scroll: 0.68, x: 85, y: 60,  message: "Pick your perfect plan 💰", side: 'right' },
-    { scroll: 0.88, x: 50, y: 60,  message: "Let's get started! 🎯", side: 'center' },
+    { scroll: 0,    x: 85, message: "Hey! Let me show you around 👋", side: 'right' },
+    { scroll: 0.12, x: 15, message: "Here's what we give you ✨", side: 'left' },
+    { scroll: 0.28, x: 85, message: "These features are 🔥", side: 'right' },
+    { scroll: 0.48, x: 15, message: "It's this easy, really! 🚀", side: 'left' },
+    { scroll: 0.68, x: 85, message: "Pick your perfect plan 💰", side: 'right' },
+    { scroll: 0.88, x: 50, message: "Let's get started! 🎯", side: 'center' },
 ];
 
 function lerp(a: number, b: number, t: number) {
@@ -37,7 +37,6 @@ function getWaypointPosition(scrollProgress: number) {
 
     return {
         x: lerp(wp1.x, wp2.x, eased),
-        y: lerp(wp1.y, wp2.y, eased),
         message: localT < 0.5 ? wp1.message : wp2.message,
         side: localT < 0.5 ? wp1.side : wp2.side,
         waypointIndex: localT < 0.5 ? i : Math.min(i + 1, WAYPOINTS.length - 1),
@@ -75,13 +74,8 @@ export default function ScrollGuide() {
         return () => cancelAnimationFrame(animId);
     }, []);
 
-    // Hide on very small screens (will show a simplified version)
-    useEffect(() => {
-        const check = () => setIsVisible(window.innerWidth > 480);
-        check();
-        window.addEventListener('resize', check);
-        return () => window.removeEventListener('resize', check);
-    }, []);
+    // Remove the mobile hide restriction
+    const isVisible = true;
 
     if (!isVisible) return null;
 
@@ -106,8 +100,8 @@ export default function ScrollGuide() {
                 className="scroll-guide-robot"
                 style={{
                     left: `${isMobile ? Math.min(85, Math.max(15, pos.x)) : pos.x}%`,
-                    top: `${pos.y}px`,
-                    transform: `translate(-50%, ${bobOffset}px) ${pos.side === 'left' ? 'scaleX(1)' : pos.side === 'right' ? 'scaleX(-1)' : 'scaleX(1)'}`,
+                    top: '50%',
+                    transform: `translate(-50%, calc(-50% + ${bobOffset}px)) ${pos.side === 'left' ? 'scaleX(1)' : pos.side === 'right' ? 'scaleX(-1)' : 'scaleX(1)'}`,
                 }}
             >
                 {/* Robot SVG */}

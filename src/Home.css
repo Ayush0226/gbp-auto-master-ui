@@ -257,12 +257,12 @@
 /* Mobile adjustments for robot */
 @media(max-width: 768px) {
   .scroll-guide-robot {
-    transform: scale(0.75) !important;
+    zoom: 0.75;
   }
   .robot-speech {
-    font-size: 10px;
+    font-size: 10.5px;
     padding: 6px 10px;
-    max-width: 160px;
+    max-width: 150px;
     white-space: normal;
   }
   .scroll-guide-trail {
@@ -270,8 +270,11 @@
   }
 }
 @media(max-width: 480px) {
-  .scroll-guide {
-    display: none;
+  .scroll-guide-robot {
+    zoom: 0.65;
+  }
+  .robot-speech {
+    max-width: 120px;
   }
 }
 
