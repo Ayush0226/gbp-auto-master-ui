@@ -75,6 +75,7 @@ export default function MasterDashboardPage() {
     const [competitorKeyword, setCompetitorKeyword] = useState('AC repair near me');
     const [competitors, setCompetitors] = useState<any[]>([]);
     const [loadingCompetitors, setLoadingCompetitors] = useState(false);
+    const [searchKeywords, setSearchKeywords] = useState<any[]>([]);
 
     useEffect(() => {
         const initializeDashboard = async () => {
@@ -183,6 +184,18 @@ export default function MasterDashboardPage() {
             .then(data => {
                 if (data.status === 'success') {
                     setLiveReviews(data.reviews || []);
+                    setLiveLocations(prev => prev.map(loc => {
+                        if (loc.id === activeLocationId) {
+                            return { 
+                                ...loc, 
+                                reviews: data.totalReviewCount || loc.reviews,
+                                rating: data.averageRating || loc.rating,
+                                recentAnswered: data.recentAnswered || 0,
+                                totalFetched: data.totalFetched || 0
+                            };
+                        }
+                        return loc;
+                    }));
                 }
             })
             .catch(err => console.error(err))
@@ -211,6 +224,18 @@ export default function MasterDashboardPage() {
             const freshData = await freshRes.json();
             if (freshData.status === 'success') {
                 setLiveReviews(freshData.reviews || []);
+                setLiveLocations(prev => prev.map(loc => {
+                    if (loc.id === activeLocationId) {
+                        return { 
+                            ...loc, 
+                            reviews: freshData.totalReviewCount || loc.reviews,
+                            rating: freshData.averageRating || loc.rating,
+                            recentAnswered: freshData.recentAnswered || 0,
+                            totalFetched: freshData.totalFetched || 0
+                        };
+                    }
+                    return loc;
+                }));
             }
         } catch (e) {
             console.error(e);
@@ -260,6 +285,19 @@ export default function MasterDashboardPage() {
             .then(data => {
                 if (data.status === 'success') {
                     setAnalyticsData(data.analytics);
+                }
+            })
+            .catch(err => console.error(err));
+            
+            fetch('https://gbp-auto-master-backend-us.onrender.com/api/google/search-keywords', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: user?.id, provider_token: providerToken, location_id: activeLocationId })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    setSearchKeywords(data.keywords || []);
                 }
             })
             .catch(err => console.error(err));
@@ -551,8 +589,11 @@ export default function MasterDashboardPage() {
             </aside>
 
             <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-                <div className="mobile-topbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div className="sidebar-logo" style={{ padding: 0 }}>GBP Auto <span className="grad-blue">Master</span></div>
+                <div className="mobile-topbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px' }}>
+                    <button className="btn btn-ghost btn-sm" onClick={() => setSidebarOpen(!sidebarOpen)} style={{ padding: '4px 8px', fontSize: '16px', marginRight: '10px', display: 'flex' }}>
+                        ☰
+                    </button>
+                    <div className="sidebar-logo" style={{ padding: 0, margin: 0 }}>GBP Auto <span className="grad-blue">Master</span></div>
                     
                     {appState === 'dashboard' && liveLocations.length > 0 && (
                         <select 
@@ -692,8 +733,10 @@ export default function MasterDashboardPage() {
                                     <p style={{ fontSize: '28px', fontWeight: 800, marginTop: '6px' }} className="grad-blue">{activeLocObj?.reviews || 0}</p>
                                 </div>
                                 <div className="card glass glass-hover">
-                                    <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)' }}>Replied Reviews</p>
-                                    <p style={{ fontSize: '28px', fontWeight: 800, marginTop: '6px', color: 'var(--green-soft)' }}>{Math.floor((activeLocObj?.reviews || 0) * 0.85)}</p>
+                                    <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)' }}>Replied Reviews (Recent)</p>
+                                    <p style={{ fontSize: '24px', fontWeight: 800, marginTop: '6px', color: 'var(--green-soft)' }}>
+                                        {activeLocObj?.recentAnswered !== undefined ? `${activeLocObj.recentAnswered}/${activeLocObj.totalFetched}` : '...'}
+                                    </p>
                                 </div>
                             </div>
 
@@ -892,27 +935,45 @@ export default function MasterDashboardPage() {
                                 const callsAndDirections = callClicks + directionRequests;
                                 const desktopMaps = getMetricTotal('BUSINESS_IMPRESSIONS_DESKTOP_MAPS');
                                 const mobileMaps = getMetricTotal('BUSINESS_IMPRESSIONS_MOBILE_MAPS');
+                                const desktopSearch = getMetricTotal('BUSINESS_IMPRESSIONS_DESKTOP_SEARCH');
+                                const mobileSearch = getMetricTotal('BUSINESS_IMPRESSIONS_MOBILE_SEARCH');
+                                const messages = getMetricTotal('BUSINESS_CONVERSATIONS');
+                                const bookings = getMetricTotal('BUSINESS_BOOKINGS');
+                                const foodOrders = getMetricTotal('FOOD_ORDERS');
+                                
                                 const totalMapViews = desktopMaps + mobileMaps;
-                                const profileVisitors = totalMapViews; // Approximate mapped views
+                                const profileVisitors = totalMapViews + desktopSearch + mobileSearch;
 
                                 return (
                                     <>
-                                        <div className="grid grid-2" style={{ marginBottom: '24px' }}>
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '24px' }}>
                                             <div className="card glass">
-                                                <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)' }}>Profile Visitors (30 Days)</p>
-                                                <p style={{ fontSize: '28px', fontWeight: 800, marginTop: '6px' }} className="grad-blue">{analyticsData ? profileVisitors.toLocaleString() : '...'}</p>
+                                                <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)' }}>Profile Visitors (30d)</p>
+                                                <p style={{ fontSize: '24px', fontWeight: 800, marginTop: '6px' }} className="grad-blue">{analyticsData ? profileVisitors.toLocaleString() : '...'}</p>
                                             </div>
                                             <div className="card glass">
                                                 <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)' }}>Total Map Views</p>
-                                                <p style={{ fontSize: '28px', fontWeight: 800, marginTop: '6px' }}>{analyticsData ? totalMapViews.toLocaleString() : '...'}</p>
+                                                <p style={{ fontSize: '24px', fontWeight: 800, marginTop: '6px' }}>{analyticsData ? totalMapViews.toLocaleString() : '...'}</p>
                                             </div>
                                             <div className="card glass">
                                                 <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)' }}>Website Clicks</p>
-                                                <p style={{ fontSize: '28px', fontWeight: 800, marginTop: '6px' }}>{analyticsData ? websiteClicks.toLocaleString() : '...'}</p>
+                                                <p style={{ fontSize: '24px', fontWeight: 800, marginTop: '6px' }}>{analyticsData ? websiteClicks.toLocaleString() : '...'}</p>
                                             </div>
                                             <div className="card glass">
                                                 <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)' }}>Calls & Directions</p>
-                                                <p style={{ fontSize: '28px', fontWeight: 800, marginTop: '6px' }}>{analyticsData ? callsAndDirections.toLocaleString() : '...'}</p>
+                                                <p style={{ fontSize: '24px', fontWeight: 800, marginTop: '6px' }}>{analyticsData ? callsAndDirections.toLocaleString() : '...'}</p>
+                                            </div>
+                                            <div className="card glass">
+                                                <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)' }}>Messages (Chat)</p>
+                                                <p style={{ fontSize: '24px', fontWeight: 800, marginTop: '6px', color: 'var(--blue-soft)' }}>{analyticsData ? messages.toLocaleString() : '...'}</p>
+                                            </div>
+                                            <div className="card glass">
+                                                <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)' }}>Bookings Made</p>
+                                                <p style={{ fontSize: '24px', fontWeight: 800, marginTop: '6px', color: 'var(--green-soft)' }}>{analyticsData ? bookings.toLocaleString() : '...'}</p>
+                                            </div>
+                                            <div className="card glass">
+                                                <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)' }}>Food Orders</p>
+                                                <p style={{ fontSize: '24px', fontWeight: 800, marginTop: '6px', color: 'var(--orange-soft)' }}>{analyticsData ? foodOrders.toLocaleString() : '...'}</p>
                                             </div>
                                         </div>
                                     </>
@@ -965,33 +1026,35 @@ export default function MasterDashboardPage() {
                             {/* 4. Search Queries AI Widget */}
                             <div className="card glass">
                                 <h3 style={{ fontSize: '15px', marginBottom: '6px' }}>Search Query Insights</h3>
-                                <p style={{ fontSize: '12.5px', color: 'rgba(255,255,255,.5)', marginBottom: '20px' }}>The exact words people typed into Google to find your profile this week.</p>
+                                <p style={{ fontSize: '12.5px', color: 'rgba(255,255,255,.5)', marginBottom: '20px' }}>The exact words people typed into Google to find your profile this month.</p>
                                 
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13.5px', paddingBottom: '8px', borderBottom: '1px solid rgba(255,255,255,.08)' }}>
-                                        <span>"plumber near me"</span>
-                                        <span style={{ color: 'var(--blue-soft)' }}>42% of traffic</span>
-                                    </div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13.5px', paddingBottom: '8px', borderBottom: '1px solid rgba(255,255,255,.08)' }}>
-                                        <span>"ac repair rohini"</span>
-                                        <span style={{ color: 'var(--blue-soft)' }}>28% of traffic</span>
-                                    </div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13.5px', paddingBottom: '8px', borderBottom: '1px solid rgba(255,255,255,.08)' }}>
-                                        <span>"emergency water leak fix"</span>
-                                        <span style={{ color: 'var(--blue-soft)' }}>15% of traffic</span>
-                                    </div>
+                                    {searchKeywords.length > 0 ? searchKeywords.map((kw, i) => (
+                                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13.5px', paddingBottom: '8px', borderBottom: '1px solid rgba(255,255,255,.08)' }}>
+                                            <span>"{kw.searchKeyword}"</span>
+                                            <span style={{ color: 'var(--blue-soft)' }}>{kw.monthlyImpressionsValue || kw.monthlyImpressionValue?.value || kw.monthlyImpressionValue || 'N/A'} impressions</span>
+                                        </div>
+                                    )) : (
+                                        <p style={{ fontSize: '13px', color: 'rgba(255,255,255,.5)' }}>No search keywords found or API not enabled yet.</p>
+                                    )}
                                 </div>
 
-                                <div className="card-sm" style={{ background: 'rgba(52,168,83,.05)', border: '1px solid rgba(52,168,83,.2)', marginTop: '20px' }}>
-                                    <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-                                        <span style={{ fontSize: '20px' }}>✨</span>
-                                        <div>
-                                            <p style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--green-soft)', margin: '0 0 4px' }}>AI Suggestion: High Value Keyword Detected</p>
-                                            <p style={{ fontSize: '12.5px', color: 'rgba(255,255,255,.7)', margin: '0 0 12px', lineHeight: 1.5 }}>15% of your traffic is searching for <b>"emergency water leak fix"</b>. Should the AI start organically injecting this into your future 5-star replies?</p>
-                                            <button className="btn btn-green btn-sm" onClick={() => alert('Keyword added to SEO Tracker!')}>Yes, Target Keyword</button>
+                                {searchKeywords.length > 0 && (
+                                    <div className="card-sm" style={{ background: 'rgba(52,168,83,.05)', border: '1px solid rgba(52,168,83,.2)', marginTop: '20px' }}>
+                                        <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                                            <span style={{ fontSize: '20px' }}>✨</span>
+                                            <div>
+                                                <p style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--green-soft)', margin: '0 0 4px' }}>AI Suggestion: High Value Keyword Detected</p>
+                                                <p style={{ fontSize: '12.5px', color: 'rgba(255,255,255,.7)', margin: '0 0 12px', lineHeight: 1.5 }}>Your top keyword is <b>"{searchKeywords[0].searchKeyword}"</b>. Should the AI start organically injecting this into your future 5-star replies?</p>
+                                                <button className="btn btn-green btn-sm" onClick={() => {
+                                                    if (!targetKeywords.includes(searchKeywords[0].searchKeyword)) {
+                                                        setTargetKeywords([...targetKeywords, searchKeywords[0].searchKeyword]);
+                                                    }
+                                                }}>Yes, Target Keyword</button>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
+                                )}
                             </div>
 
                             {/* 5. SEO Target Keywords Tracker */}
@@ -1015,9 +1078,9 @@ export default function MasterDashboardPage() {
                                     <div className="card-sm" style={{ background: 'rgba(52,168,83,.05)', border: '1px solid rgba(52,168,83,.2)' }}>
                                         <p style={{ fontSize: '12px', color: 'var(--green-soft)', marginBottom: '8px', fontWeight: 600 }}>Keywords AI is Actively Injecting</p>
                                         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                                            <span className="badge-pill b-green">{targetKeywords[0]}</span>
-                                            <span className="badge-pill b-green">emergency water leak fix</span>
-                                            <span className="badge-pill b-gray" style={{ opacity: 0.5 }}>pending sync...</span>
+                                            {targetKeywords.map((kw, i) => (
+                                                <span key={i} className="badge-pill b-green">{kw}</span>
+                                            ))}
                                         </div>
                                     </div>
                                 </div>
