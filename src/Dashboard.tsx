@@ -421,14 +421,14 @@ export default function MasterDashboardPage() {
                 <div className="mobile-topbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div className="sidebar-logo" style={{ padding: 0 }}>GBP Auto <span className="grad-blue">Master</span></div>
                     
-                    {appState === 'dashboard' && gbpNames.length > 0 && (
+                    {appState === 'dashboard' && liveLocations.length > 0 && (
                         <select 
                             className="input" 
                             style={{ margin: '0 10px', padding: '4px 8px', fontSize: '12px', flex: 1, minWidth: 0, height: '32px' }}
-                            value={activeLocationName}
-                            onChange={(e) => setActiveLocationName(e.target.value)}
+                            value={activeLocationId}
+                            onChange={(e) => setActiveLocationId(e.target.value)}
                         >
-                            {gbpNames.map((name, i) => <option key={i} value={name}>{name}</option>)}
+                            {liveLocations.map((loc, i) => <option key={i} value={loc.id}>{loc.name}</option>)}
                         </select>
                     )}
 
