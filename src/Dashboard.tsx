@@ -1312,21 +1312,41 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                 )}
             </div>
 
-            {/* FLOATING AI ASSISTANT WIDGET */}
+            {/* FLOATING TAAY!! AI ASSISTANT WIDGET */}
             {appState === 'dashboard' && (
                 <>
                     {/* The Chat Window */}
                     <div className={`chat-widget-window glass ${isChatOpen ? 'open' : ''}`}>
-                        <div style={{ padding: '16px', borderBottom: '1px solid rgba(255,255,255,.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: 'var(--green-soft)' }}></div>
-                                <h3 style={{ fontSize: '15px', margin: 0 }}>AI Consultant</h3>
+                        <div className="taay-header">
+                            <div className="taay-header-left">
+                                <div className="taay-avatar-sm">
+                                    <img src="/taay-avatar.jpg" alt="TAAY!!" />
+                                    <div className="taay-avatar-status"></div>
+                                </div>
+                                <div>
+                                    <h3 className="taay-name">TAAY!! <span className="taay-badge">AI</span></h3>
+                                    <p className="taay-status-text">{chatLoading ? '🔊 Speaking...' : '● Online'}</p>
+                                </div>
                             </div>
                             <button className="btn btn-ghost btn-sm" onClick={() => setIsChatOpen(false)} style={{ padding: '4px', fontSize: '16px' }}>✕</button>
                         </div>
                         <div style={{ flex: 1, overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }} className="custom-scroll">
+                            {chatHistory.length === 0 && (
+                                <div className="taay-welcome">
+                                    <div className="taay-welcome-avatar">
+                                        <img src="/taay-avatar.jpg" alt="TAAY!!" />
+                                    </div>
+                                    <h3 style={{ fontSize: '16px', marginBottom: '4px' }}>Hey! I'm <span className="grad-blue">TAAY!!</span></h3>
+                                    <p style={{ fontSize: '12.5px', color: 'rgba(255,255,255,.5)', margin: 0 }}>Your AI business consultant. Ask me anything about your reviews, SEO, or business strategy!</p>
+                                </div>
+                            )}
                             {chatHistory.map((msg, i) => (
-                                <div key={i} style={{ display: 'flex', justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start' }}>
+                                <div key={i} style={{ display: 'flex', justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start', gap: '8px', alignItems: 'flex-end' }}>
+                                    {msg.role === 'ai' && (
+                                        <div className="taay-msg-avatar">
+                                            <img src="/taay-avatar.jpg" alt="T" />
+                                        </div>
+                                    )}
                                     <div style={{
                                         background: msg.role === 'user' ? 'var(--blue)' : 'rgba(255,255,255,.05)',
                                         border: msg.role === 'user' ? 'none' : '1px solid rgba(255,255,255,.1)',
@@ -1334,7 +1354,7 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                                         borderRadius: '12px',
                                         borderBottomRightRadius: msg.role === 'user' ? '4px' : '12px',
                                         borderBottomLeftRadius: msg.role === 'ai' ? '4px' : '12px',
-                                        maxWidth: '85%',
+                                        maxWidth: '80%',
                                         fontSize: '13px',
                                         lineHeight: '1.5',
                                         whiteSpace: 'pre-wrap'
@@ -1344,9 +1364,12 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                                 </div>
                             ))}
                             {chatLoading && (
-                                <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
-                                    <div style={{ background: 'rgba(255,255,255,.05)', padding: '10px 14px', borderRadius: '12px', fontSize: '13px' }}>
-                                        <span style={{ opacity: 0.5 }}>Thinking...</span>
+                                <div style={{ display: 'flex', justifyContent: 'flex-start', gap: '8px', alignItems: 'flex-end' }}>
+                                    <div className="taay-msg-avatar speaking">
+                                        <img src="/taay-avatar.jpg" alt="T" />
+                                    </div>
+                                    <div className="taay-typing-indicator">
+                                        <span></span><span></span><span></span>
                                     </div>
                                 </div>
                             )}
@@ -1355,7 +1378,7 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                             <input 
                                 type="text" 
                                 className="input" 
-                                placeholder="Ask about reviews, SEO..." 
+                                placeholder="Ask TAAY!! anything..." 
                                 style={{ flex: 1, padding: '10px' }}
                                 value={chatInput}
                                 onChange={e => setChatInput(e.target.value)}
@@ -1367,12 +1390,14 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                         </div>
                     </div>
 
-                    {/* The Floating Button */}
+                    {/* The Floating TAAY!! Avatar Button */}
                     <button 
                         className={`chat-widget-fab ${isChatOpen ? 'hide' : ''}`}
                         onClick={() => setIsChatOpen(true)}
                     >
-                        <span style={{ fontSize: '24px' }}>✨</span>
+                        <div className="taay-fab-ring"></div>
+                        <div className="taay-fab-ring ring-2"></div>
+                        <img src="/taay-avatar.jpg" alt="TAAY!!" className="taay-fab-img" />
                     </button>
                 </>
             )}
@@ -1380,3 +1405,4 @@ Analytics: ${JSON.stringify(analyticsData || {})}
         </div>
     );
 }
+

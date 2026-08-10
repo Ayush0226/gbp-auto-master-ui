@@ -1,0 +1,2 @@
+/* This file just copies the TAAY avatar. The actual image needs to be manually 
+   copied to public/taay-avatar.jpg */
