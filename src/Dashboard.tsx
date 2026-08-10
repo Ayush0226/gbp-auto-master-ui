@@ -995,84 +995,141 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                                 const totalMapViews = desktopMaps + mobileMaps;
                                 const profileVisitors = totalMapViews + desktopSearch + mobileSearch;
 
+                                // Real Sentiment Calculation
+                                let positive = 0;
+                                let neutral = 0;
+                                let negative = 0;
+                                if (liveReviews && liveReviews.length > 0) {
+                                    liveReviews.forEach(rev => {
+                                        if (rev.rating === 'FIVE' || rev.rating === 'FOUR') positive++;
+                                        else if (rev.rating === 'THREE') neutral++;
+                                        else negative++;
+                                    });
+                                }
+                                const totalRevs = positive + neutral + negative;
+                                const posPct = totalRevs > 0 ? Math.round((positive / totalRevs) * 100) : 0;
+                                const neuPct = totalRevs > 0 ? Math.round((neutral / totalRevs) * 100) : 0;
+                                const negPct = totalRevs > 0 ? 100 - posPct - neuPct : 0;
+
                                 return (
                                     <>
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-                                            <div className="card glass animate-in" style={{ '--delay': '0.1s' } as any}>
+                                            <div className="card glass glass-hover animate-in" style={{ '--delay': '0.1s' } as any}>
                                                 <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)' }}>Profile Visitors (30d)</p>
                                                 <p style={{ fontSize: '24px', fontWeight: 800, marginTop: '6px' }} className="grad-blue">{analyticsData ? profileVisitors.toLocaleString() : '...'}</p>
                                             </div>
-                                            <div className="card glass animate-in" style={{ '--delay': '0.2s' } as any}>
+                                            <div className="card glass glass-hover animate-in" style={{ '--delay': '0.2s' } as any}>
                                                 <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)' }}>Total Map Views</p>
                                                 <p style={{ fontSize: '24px', fontWeight: 800, marginTop: '6px' }}>{analyticsData ? totalMapViews.toLocaleString() : '...'}</p>
                                             </div>
-                                            <div className="card glass animate-in" style={{ '--delay': '0.3s' } as any}>
+                                            <div className="card glass glass-hover animate-in" style={{ '--delay': '0.3s' } as any}>
                                                 <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)' }}>Website Clicks</p>
                                                 <p style={{ fontSize: '24px', fontWeight: 800, marginTop: '6px' }}>{analyticsData ? websiteClicks.toLocaleString() : '...'}</p>
                                             </div>
-                                            <div className="card glass animate-in" style={{ '--delay': '0.4s' } as any}>
+                                            <div className="card glass glass-hover animate-in" style={{ '--delay': '0.4s' } as any}>
                                                 <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)' }}>Calls & Directions</p>
                                                 <p style={{ fontSize: '24px', fontWeight: 800, marginTop: '6px' }}>{analyticsData ? callsAndDirections.toLocaleString() : '...'}</p>
                                             </div>
-                                            <div className="card glass animate-in" style={{ '--delay': '0.5s' } as any}>
-                                                <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)' }}>Messages (Chat)</p>
-                                                <p style={{ fontSize: '24px', fontWeight: 800, marginTop: '6px', color: 'var(--blue-soft)' }}>{analyticsData ? messages.toLocaleString() : '...'}</p>
+                                            {messages > 0 && (
+                                                <div className="card glass glass-hover animate-in" style={{ '--delay': '0.5s' } as any}>
+                                                    <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)' }}>Messages (Chat)</p>
+                                                    <p style={{ fontSize: '24px', fontWeight: 800, marginTop: '6px', color: 'var(--blue-soft)' }}>{messages.toLocaleString()}</p>
+                                                </div>
+                                            )}
+                                            {bookings > 0 && (
+                                                <div className="card glass glass-hover animate-in" style={{ '--delay': '0.6s' } as any}>
+                                                    <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)' }}>Bookings Made</p>
+                                                    <p style={{ fontSize: '24px', fontWeight: 800, marginTop: '6px', color: 'var(--green-soft)' }}>{bookings.toLocaleString()}</p>
+                                                </div>
+                                            )}
+                                            {foodOrders > 0 && (
+                                                <div className="card glass glass-hover animate-in" style={{ '--delay': '0.7s' } as any}>
+                                                    <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)' }}>Food Orders</p>
+                                                    <p style={{ fontSize: '24px', fontWeight: 800, marginTop: '6px', color: 'var(--orange-soft)' }}>{foodOrders.toLocaleString()}</p>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="grid grid-2" style={{ marginBottom: '18px' }}>
+                                            {/* Review Sentiment */}
+                                            <div className="card glass glass-hover">
+                                                <h3 style={{ fontSize: '15px', marginBottom: '16px' }}>Review Sentiment (Based on {totalRevs} tracked reviews)</h3>
+                                                <div style={{ display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap' }}>
+                                                    {totalRevs > 0 ? (
+                                                        <>
+                                                            <div style={{ width: '100px', height: '100px', borderRadius: '50%', background: `conic-gradient(var(--green) 0% ${posPct}%, var(--orange) ${posPct}% ${posPct + neuPct}%, var(--red) ${posPct + neuPct}% 100%)`, flexShrink: 0 }}></div>
+                                                            <div style={{ flex: 1, minWidth: '150px' }}>
+                                                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '8px' }}><span style={{color: 'var(--green-soft)'}}>■ Positive (4-5★)</span><span>{posPct}%</span></div>
+                                                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '8px' }}><span style={{color: 'var(--orange-soft)'}}>■ Neutral (3★)</span><span>{neuPct}%</span></div>
+                                                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}><span style={{color: 'var(--red-soft)'}}>■ Negative (1-2★)</span><span>{negPct}%</span></div>
+                                                            </div>
+                                                        </>
+                                                    ) : (
+                                                        <p style={{ fontSize: '13px', color: 'rgba(255,255,255,.5)' }}>Not enough reviews to calculate sentiment yet.</p>
+                                                    )}
+                                                </div>
                                             </div>
-                                            <div className="card glass animate-in" style={{ '--delay': '0.6s' } as any}>
-                                                <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)' }}>Bookings Made</p>
-                                                <p style={{ fontSize: '24px', fontWeight: 800, marginTop: '6px', color: 'var(--green-soft)' }}>{analyticsData ? bookings.toLocaleString() : '...'}</p>
-                                            </div>
-                                            <div className="card glass animate-in" style={{ '--delay': '0.7s' } as any}>
-                                                <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)' }}>Food Orders</p>
-                                                <p style={{ fontSize: '24px', fontWeight: 800, marginTop: '6px', color: 'var(--orange-soft)' }}>{analyticsData ? foodOrders.toLocaleString() : '...'}</p>
+
+                                            {/* Response Stats & Competitors */}
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+                                                <div className="card glass glass-hover">
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                                                        <h3 style={{ fontSize: '15px' }}>Competitor Leaderboard</h3>
+                                                    </div>
+                                                    <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+                                                        <input 
+                                                            type="text" 
+                                                            className="input"
+                                                            placeholder="e.g. Preschool near me" 
+                                                            value={competitorKeyword} 
+                                                            onChange={(e) => setCompetitorKeyword(e.target.value)}
+                                                            onKeyDown={(e) => { if(e.key === 'Enter') fetchCompetitors(); }}
+                                                            style={{ padding: '8px 12px', flex: 1, border: '1px solid rgba(255,255,255,.1)', background: 'rgba(0,0,0,.2)', color: 'white', borderRadius: '8px' }} 
+                                                        />
+                                                        <button 
+                                                            className="btn btn-primary" 
+                                                            onClick={fetchCompetitors}
+                                                            disabled={loadingCompetitors || !competitorKeyword}
+                                                        >
+                                                            {loadingCompetitors ? 'Searching...' : 'Search'}
+                                                        </button>
+                                                    </div>
+
+                                                    {competitors.length > 0 ? (
+                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                                            {competitors.map((comp, idx) => (
+                                                                <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,.03)', padding: '10px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,.05)' }}>
+                                                                    <div>
+                                                                        <p style={{ fontWeight: 600, fontSize: '13px', margin: '0 0 2px' }}>{comp.name || comp.title}</p>
+                                                                        <p style={{ fontSize: '11px', color: 'rgba(255,255,255,.5)', margin: 0 }}>★ {comp.rating || 'N/A'} ({comp.reviews || 0} reviews)</p>
+                                                                    </div>
+                                                                    <span style={{ fontSize: '14px', fontWeight: 700, color: idx === 0 ? 'var(--orange-soft)' : 'rgba(255,255,255,.6)' }}>#{idx + 1}</span>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    ) : (
+                                                        <div className="card-sm" style={{ background: 'rgba(255,255,255,.03)', border: '1px dashed rgba(255,255,255,.2)', textAlign: 'center', padding: '24px 16px' }}>
+                                                            <p style={{ fontSize: '13px', color: 'rgba(255,255,255,.5)', margin: 0 }}>Search a local keyword to see who ranks #1.</p>
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                <div className="card glass glass-hover" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                    <div>
+                                                        <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)' }}>AI Avg Response Time</p>
+                                                        <p style={{ fontSize: '24px', fontWeight: 800, marginTop: '8px' }}>1.2 mins</p>
+                                                    </div>
+                                                    <div style={{ textAlign: 'right' }}>
+                                                        <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)' }}>Response Rate</p>
+                                                        <p style={{ fontSize: '24px', fontWeight: 800, marginTop: '8px', color: 'var(--green-soft)' }}>100%</p>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </>
                                 );
                             })()}
 
-                            <div className="grid grid-2" style={{ marginBottom: '18px' }}>
-                                {/* 2. Review Sentiment */}
-                                <div className="card glass">
-                                    <h3 style={{ fontSize: '15px', marginBottom: '16px' }}>Review Sentiment (Last 30 Days)</h3>
-                                    <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-                                        <div style={{ width: '100px', height: '100px', borderRadius: '50%', background: 'conic-gradient(var(--green) 0% 80%, var(--orange) 80% 90%, var(--red) 90% 100%)', flexShrink: 0 }}></div>
-                                        <div style={{ flex: 1 }}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '8px' }}><span style={{color: 'var(--green-soft)'}}>■ Positive</span><span>80%</span></div>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '8px' }}><span style={{color: 'var(--orange-soft)'}}>■ Neutral</span><span>10%</span></div>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}><span style={{color: 'var(--red-soft)'}}>■ Negative</span><span>10%</span></div>
-                                        </div>
-                                    </div>
-                                    <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,.08)' }}>
-                                        <p style={{ fontSize: '11px', color: 'var(--blue-soft)', fontWeight: 600, marginBottom: '4px' }}>AI Extracted Insights:</p>
-                                        <p style={{ fontSize: '12.5px', color: 'rgba(255,255,255,.6)', margin: 0 }}>The most common negative feedback is regarding "wait times during weekends".</p>
-                                    </div>
-                                </div>
-
-                                {/* 3. Competitor Benchmarking & Speed */}
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-                                    <div className="card glass">
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                                            <h3 style={{ fontSize: '15px' }}>Local Competitor Leaderboard</h3>
-                                        </div>
-                                        <div className="card-sm" style={{ background: 'rgba(255,255,255,.03)', border: '1px dashed rgba(255,255,255,.2)', textAlign: 'center', padding: '32px 20px' }}>
-                                            <p style={{ fontWeight: 600, fontSize: '14px', margin: '0 0 6px' }}>Competitor Tracker will be starting soon</p>
-                                            <p style={{ fontSize: '13px', color: 'rgba(255,255,255,.5)', margin: 0 }}>Awaiting Google API Approval.</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="card glass" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <div>
-                                            <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)' }}>AI Avg Response Time</p>
-                                            <p style={{ fontSize: '20px', fontWeight: 800, marginTop: '4px' }}>1.2 mins</p>
-                                        </div>
-                                        <div style={{ textAlign: 'right' }}>
-                                            <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)' }}>Response Rate</p>
-                                            <p style={{ fontSize: '20px', fontWeight: 800, marginTop: '4px', color: 'var(--green-soft)' }}>100%</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
 
                             {/* 4. Search Queries AI Widget */}
                             <div className="card glass">

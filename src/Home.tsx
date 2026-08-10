@@ -6,6 +6,11 @@ import './Home.css';
 
 export default function Home() {
     const [loading, setLoading] = useState(false);
+    const [rankStep, setRankStep] = useState(0);
+    const [countersVisible, setCountersVisible] = useState(false);
+    const [counterValues, setCounterValues] = useState({ businesses: 0, reviews: 0, keywords: 0 });
+    const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+    const counterRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         // Automatically check if user is already logged in
@@ -35,6 +40,46 @@ export default function Home() {
         return () => observer.disconnect();
     }, []);
 
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setRankStep(prev => prev >= 6 ? 0 : prev + 1);
+        }, 2000);
+        return () => clearInterval(interval);
+    }, []);
+
+    useEffect(() => {
+        const observer = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting && !countersVisible) {
+                setCountersVisible(true);
+                const targets = { businesses: 500, reviews: 50000, keywords: 24000 };
+                const duration = 2000;
+                const startTime = Date.now();
+                const tick = () => {
+                    const elapsed = Date.now() - startTime;
+                    const progress = Math.min(elapsed / duration, 1);
+                    const eased = 1 - Math.pow(1 - progress, 3);
+                    setCounterValues({
+                        businesses: Math.floor(eased * targets.businesses),
+                        reviews: Math.floor(eased * targets.reviews),
+                        keywords: Math.floor(eased * targets.keywords),
+                    });
+                    if (progress < 1) requestAnimationFrame(tick);
+                };
+                requestAnimationFrame(tick);
+            }
+        }, { threshold: 0.3 });
+        if (counterRef.current) observer.observe(counterRef.current);
+        return () => observer.disconnect();
+    }, [countersVisible]);
+
+    const handleRankMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const x = (e.clientX - rect.left) / rect.width - 0.5;
+        const y = (e.clientY - rect.top) / rect.height - 0.5;
+        setMousePos({ x: x * 10, y: -y * 10 });
+    };
+    const handleRankMouseLeave = () => setMousePos({ x: 0, y: 0 });
+
     const handleLogin = async (e: React.MouseEvent) => {
         e.preventDefault();
         setLoading(true);
@@ -46,6 +91,25 @@ export default function Home() {
                 redirectTo: `${window.location.origin}/dashboard`
             }
         });
+    };
+
+    const businesses = [
+        { name: 'Rohini AC & Plumbing Services', rating: '4.9', reviews: 214, isYou: true },
+        { name: 'Sharma Plumbing Co.', rating: '4.3', reviews: 82, isYou: false },
+        { name: 'Delhi Quick Fix', rating: '4.1', reviews: 64, isYou: false },
+        { name: 'City Pipe Experts', rating: '4.0', reviews: 51, isYou: false },
+    ];
+    const getRankedBusinesses = () => {
+        const competitors = businesses.filter(b => !b.isYou);
+        const you = businesses.find(b => b.isYou)!;
+        let yourPosition: number;
+        if (rankStep <= 0) yourPosition = 3;
+        else if (rankStep === 1) yourPosition = 2;
+        else if (rankStep === 2) yourPosition = 1;
+        else yourPosition = 0;
+        const result = [...competitors];
+        result.splice(yourPosition, 0, you);
+        return result;
     };
 
     return (
@@ -88,31 +152,34 @@ export default function Home() {
                         <a className="home-btn-secondary home-glass home-glass-hover" href="#how"><span className="home-play-circle">▶</span> See How It Works</a>
                     </div>
 
-                    <div className="home-mockup-wrap">
-                        <div className="home-glass" style={{ borderRadius: '24px', padding: '20px' }}>
-                            <div className="home-searchbar">📍 plumber near me — Rohini, Delhi</div>
-                            <div className="home-rank-item top">
-                                <div className="home-rank-num">1</div>
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                    <div className="home-rank-name">Rohini AC &amp; Plumbing Services</div>
-                                    <div className="home-rank-meta">★ 4.9 · 214 reviews</div>
+                    <div className="rank-card" onMouseMove={handleRankMouseMove} onMouseLeave={handleRankMouseLeave}>
+                        <div className="rank-card-inner home-glass" style={{ transform: `perspective(1000px) rotateY(${mousePos.x}deg) rotateX(${mousePos.y}deg)` }}>
+                            <div className="rank-searchbar">📍 plumber near me — Rohini, Delhi</div>
+                            {getRankedBusinesses().map((biz, i) => (
+                                <div key={biz.name} className={`rank-item ${biz.isYou ? 'active' : 'other'}`} style={{ order: i }}>
+                                    <div className={`rank-num ${i === 0 ? 'top' : 'dim'}`}>{i + 1}</div>
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                        <div className={biz.isYou ? 'rank-name' : 'rank-name-dim'}>{biz.name}</div>
+                                        <div className="rank-meta">★ {biz.rating} · {biz.isYou && rankStep >= 3 ? biz.reviews + 3 : biz.reviews} reviews</div>
+                                    </div>
+                                    {biz.isYou && i === 0 && <div className="rank-badge">▲ +3</div>}
                                 </div>
-                                <div className="home-rank-badge">▲ +3</div>
-                            </div>
-                            <div className="home-rank-item other">
-                                <div className="home-rank-num">2</div>
-                                <div><div className="home-rank-name" style={{ fontWeight: 400, fontSize: '13px' }}>Sharma Plumbing Co.</div><div className="home-rank-meta">★ 4.3 · 82 reviews</div></div>
-                            </div>
-                            <div className="home-rank-item other">
-                                <div className="home-rank-num">3</div>
-                                <div><div className="home-rank-name" style={{ fontWeight: 400, fontSize: '13px' }}>Delhi Quick Fix</div><div className="home-rank-meta">★ 4.1 · 64 reviews</div></div>
-                            </div>
-                            <div className="home-rank-item other">
-                                <div className="home-rank-num">4</div>
-                                <div><div className="home-rank-name" style={{ fontWeight: 400, fontSize: '13px' }}>City Pipe Experts</div><div className="home-rank-meta">★ 4.0 · 51 reviews</div></div>
-                            </div>
+                            ))}
                         </div>
-                        <div className="home-float-badge home-glass">Rank #4 → <span className="home-grad-blue" style={{ fontWeight: 700 }}>#1</span></div>
+                        <div className="rank-glow"></div>
+                        {rankStep >= 3 && <div className="rank-float-label home-glass">Rank #4 → <span className="home-grad-blue" style={{ fontWeight: 700 }}>#1</span></div>}
+                    </div>
+                </div>
+            </section>
+
+            <section className="social-proof-bar scroll-reveal" ref={counterRef}>
+                <div className="home-wrap">
+                    <div className="proof-stats">
+                        <div className="proof-stat"><span className="proof-num">{counterValues.businesses.toLocaleString()}+</span><span className="proof-label">Businesses Automated</span></div>
+                        <div className="proof-divider"></div>
+                        <div className="proof-stat"><span className="proof-num">{counterValues.reviews.toLocaleString()}+</span><span className="proof-label">Reviews Replied</span></div>
+                        <div className="proof-divider"></div>
+                        <div className="proof-stat"><span className="proof-num">{counterValues.keywords.toLocaleString()}+</span><span className="proof-label">SEO Keywords Injected</span></div>
                     </div>
                 </div>
             </section>
@@ -136,15 +203,31 @@ export default function Home() {
                 <div className="home-wrap">
                     <div className="home-center"><h2 className="home-grad-metal" style={{ fontSize: '32px' }}>What We Give You.</h2></div>
                     <div className="home-grid3">
-                        <div className="home-card home-glass">
+                        <div className="feature-card home-glass">
+                            <svg className="home-icon-box" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '48px', height: '48px', color: 'var(--blue)' }}>
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14">
+                                    <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="5s" repeatCount="indefinite" />
+                                </polyline>
+                            </svg>
                             <h3 className="home-grad-blue" style={{ fontSize: '24px' }}>24/7 Autopilot</h3>
                             <p style={{ marginTop: '10px' }}>We give you your time back. Never worry about replying to another Google review manually. Our engine works around the clock.</p>
                         </div>
-                        <div className="home-card home-glass">
+                        <div className="feature-card home-glass">
+                            <svg className="home-icon-box" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '48px', height: '48px', color: 'var(--orange)' }}>
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <circle cx="12" cy="12" r="6"></circle>
+                                <circle cx="12" cy="12" r="2"></circle>
+                                <path d="M12 2v2"/><path d="M12 20v2"/><path d="M2 12h2"/><path d="M20 12h2"/>
+                            </svg>
                             <h3 className="home-grad-blue" style={{ fontSize: '24px' }}>Local Dominance</h3>
                             <p style={{ marginTop: '10px' }}>We give you the #1 spot. By automatically injecting the exact keywords your customers search for into your replies.</p>
                         </div>
-                        <div className="home-card home-glass">
+                        <div className="feature-card home-glass">
+                            <svg className="home-icon-box" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '48px', height: '48px', color: 'var(--green)' }}>
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                                <polyline points="9 12 11 14 15 10"></polyline>
+                            </svg>
                             <h3 className="home-grad-blue" style={{ fontSize: '24px' }}>Peace of Mind</h3>
                             <p style={{ marginTop: '10px' }}>We give you a bulletproof reputation. Our AI handles negative feedback gracefully and amplifies 5-star praise.</p>
                         </div>
@@ -157,20 +240,36 @@ export default function Home() {
                 <div className="home-wrap">
                     <div className="home-center"><h2 className="home-grad-metal" style={{ fontSize: '32px' }}>Everything you need to outrank your competitors.</h2></div>
                     <div className="home-grid3">
-                        <div className="home-card home-glass home-glass-hover">
-                            <div className="home-icon-box home-icon-blue">🧠</div>
-                            <h3>Zero-Effort Local SEO.</h3>
+                        <div className="feature-card home-glass home-glass-hover">
+                            <svg className="home-icon-box" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '48px', height: '48px', color: 'var(--blue)' }}>
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                <animateTransform attributeName="transform" type="translate" values="0,0; 2,-2; 0,0" dur="2s" repeatCount="indefinite" />
+                            </svg>
+                            <h3>Zero-Effort Local SEO</h3>
                             <p>Our AI injects high-value keywords like "Emergency Plumber" into every review reply automatically.</p>
+                            <div className="feature-stat"><span style={{ fontWeight: 800, fontSize: '20px', color: 'var(--blue)' }}>2,400+</span> <span style={{ fontSize: '14px', color: 'rgba(255,255,255,.6)' }}>keywords injected</span></div>
                         </div>
-                        <div className="home-card home-glass home-glass-hover">
-                            <div className="home-icon-box home-icon-orange">⚡</div>
-                            <h3>Instant Review Replies.</h3>
+                        <div className="feature-card home-glass home-glass-hover">
+                            <svg className="home-icon-box" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '48px', height: '48px', color: 'var(--orange)' }}>
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z">
+                                    <animate attributeName="opacity" values="1;0.2;1" dur="2s" repeatCount="indefinite"/>
+                                </path>
+                            </svg>
+                            <h3>Instant Review Replies</h3>
                             <p>Show customers you care. The AI replies to 5-star reviews instantly with empathy.</p>
+                            <div className="feature-stat"><span style={{ fontWeight: 800, fontSize: '20px', color: 'var(--orange)' }}>&lt;15ms</span> <span style={{ fontSize: '14px', color: 'rgba(255,255,255,.6)' }}>avg reply time</span></div>
                         </div>
-                        <div className="home-card home-glass home-glass-hover">
-                            <div className="home-icon-box home-icon-green">📅</div>
-                            <h3>Auto-Pilot Photos.</h3>
+                        <div className="feature-card home-glass home-glass-hover">
+                            <svg className="home-icon-box" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '48px', height: '48px', color: 'var(--green)' }}>
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                <polyline points="21 15 16 10 5 21"></polyline>
+                            </svg>
+                            <h3>Auto-Pilot Photos</h3>
                             <p>Bulk upload your photos once, and we drip-feed them to your Google Gallery all month long.</p>
+                            <div className="feature-stat"><span style={{ fontWeight: 800, fontSize: '20px', color: 'var(--green)' }}>1,200+</span> <span style={{ fontSize: '14px', color: 'rgba(255,255,255,.6)' }}>photos scheduled</span></div>
                         </div>
                     </div>
                 </div>
@@ -207,54 +306,54 @@ export default function Home() {
                 <div className="home-wrap">
                     <div className="home-center"><h2 className="home-grad-metal" style={{ fontSize: '32px' }}>Cheaper than a newspaper ad.<br/>Better than an SEO agency.</h2></div>
                     <div className="home-price-grid">
-                        <div className="home-price-card home-glass home-glass-hover">
-                            <div className="home-plan-label">Monthly</div>
-                            <div className="home-price-strike">₹360</div>
-                            <div className="home-price-num"><span className="amt">₹289</span></div>
-                            <div className="home-price-perday">₹9.6 / day</div>
+                        <div className="price-card home-glass home-glass-hover">
+                            <div className="plan-label">Monthly</div>
+                            <div className="price-strike">₹360</div>
+                            <div className="price-amount"><span className="amt">₹289</span></div>
+                            <div className="price-perday">₹9.6 / day</div>
                             <div style={{ fontSize: '11px', color: 'var(--blue-soft)', fontWeight: 'bold', marginTop: '4px', marginBottom: '8px' }}>+ First Time Discount Applied</div>
-                            <div className="home-price-sub">Billed every month. Cancel anytime.</div>
-                            <ul className="home-feat-list">
+                            <div className="price-sub">Billed every month. Cancel anytime.</div>
+                            <ul className="price-features home-feat-list">
                                 <li><span className="home-check blue">✓</span>AI Review Replies</li>
                                 <li><span className="home-check blue">✓</span>Keyword Discovery</li>
                                 <li><span className="home-check blue">✓</span>Photo Scheduler</li>
                                 <li><span className="home-check blue">✓</span>1 GBP Location</li>
                             </ul>
-                            <button className="home-price-btn ghost" onClick={handleLogin}>Start Free Demo</button>
+                            <button className="price-btn ghost" onClick={handleLogin}>Start Free Demo</button>
                         </div>
-                        <div className="home-price-card home-glass home-glass-hover" style={{ position: 'relative' }}>
-                            <div className="home-plan-badge">MOST POPULAR</div>
-                            <div className="home-plan-label">Half-Yearly</div>
-                            <div className="home-price-strike">₹2,160</div>
-                            <div className="home-price-num"><span className="amt">₹1,649</span></div>
-                            <div className="home-price-perday">₹9.1 / day</div>
+                        <div className="price-card home-glass home-glass-hover" style={{ position: 'relative' }}>
+                            <div className="plan-badge popular">MOST POPULAR</div>
+                            <div className="plan-label">Half-Yearly</div>
+                            <div className="price-strike">₹2,160</div>
+                            <div className="price-amount"><span className="amt">₹1,649</span></div>
+                            <div className="price-perday">₹9.1 / day</div>
                             <div style={{ fontSize: '11px', color: 'var(--blue-soft)', fontWeight: 'bold', marginTop: '4px', marginBottom: '8px' }}>+ First Time Discount Applied</div>
-                            <div className="home-price-sub">Billed every 6 months.</div>
-                            <ul className="home-feat-list">
+                            <div className="price-sub">Billed every 6 months.</div>
+                            <ul className="price-features home-feat-list">
                                 <li><span className="home-check blue">✓</span>AI Review Replies</li>
                                 <li><span className="home-check blue">✓</span>Keyword Discovery</li>
                                 <li><span className="home-check blue">✓</span>Photo Scheduler</li>
                                 <li><span className="home-check blue">✓</span>1 GBP Location</li>
                                 <li><span className="home-check blue">✓</span>Priority Support</li>
                             </ul>
-                            <button className="home-price-btn ghost" onClick={handleLogin}>Start Free Demo</button>
+                            <button className="price-btn ghost" onClick={handleLogin}>Start Free Demo</button>
                         </div>
-                        <div className="home-price-card home-glass home-glass-hover winner">
-                            <div className="home-plan-badge winner">BEST VALUE</div>
-                            <div className="home-plan-label blue">Yearly</div>
-                            <div className="home-price-strike">₹4,380</div>
-                            <div className="home-price-num"><span className="amt">₹3,149</span></div>
-                            <div className="home-price-perday">₹8.6 / day</div>
+                        <div className="price-card best home-glass home-glass-hover winner">
+                            <div className="plan-badge best winner">BEST VALUE</div>
+                            <div className="plan-label blue">Yearly</div>
+                            <div className="price-strike">₹4,380</div>
+                            <div className="price-amount"><span className="amt">₹3,149</span></div>
+                            <div className="price-perday">₹8.6 / day</div>
                             <div style={{ fontSize: '11px', color: 'var(--green)', fontWeight: 'bold', marginTop: '4px', marginBottom: '8px' }}>+ First Time Discount Applied</div>
-                            <div className="home-price-sub">Billed once a year.</div>
-                            <ul className="home-feat-list">
+                            <div className="price-sub">Billed once a year.</div>
+                            <ul className="price-features home-feat-list">
                                 <li><span className="home-check green">✓</span>AI Review Replies</li>
                                 <li><span className="home-check green">✓</span>Keyword Discovery</li>
                                 <li><span className="home-check green">✓</span>Photo Scheduler</li>
                                 <li><span className="home-check green">✓</span>1 GBP Location</li>
                                 <li><span className="home-check green">✓</span>Priority Support</li>
                             </ul>
-                            <button className="home-price-btn solid" onClick={handleLogin}>Start Free Demo</button>
+                            <button className="price-btn solid" onClick={handleLogin}>Start Free Demo</button>
                         </div>
                     </div>
 

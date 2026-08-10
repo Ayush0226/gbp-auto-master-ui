@@ -76,16 +76,27 @@ export default function ScrollGuide() {
     const pos = getWaypointPosition(scrollProgress);
     const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
+    // Mathematically generate the exact path the robot takes so it's 100% precise
+    const pathPoints = Array.from({ length: 101 }, (_, i) => {
+        const t = i / 100;
+        const p = getWaypointPosition(t);
+        const y = 5 + (t * 90);
+        const x = isMobile ? Math.min(85, Math.max(15, p.x)) : p.x;
+        return `${x},${y}`;
+    }).join(' ');
+
     return (
         <div className="scroll-guide" aria-hidden="true">
             {/* Dotted trail path */}
             <svg className="scroll-guide-trail" viewBox="0 0 100 100" preserveAspectRatio="none">
-                <path
-                    d={`M 85,95 C 85,80 15,70 15,55 C 15,40 85,35 85,25 C 85,15 50,10 50,5`}
+                <polyline
+                    points={pathPoints}
                     fill="none"
                     stroke="rgba(59,130,246,0.3)"
                     strokeWidth="1.2"
-                    strokeDasharray="2,3"
+                    strokeDasharray="100"
+                    strokeDashoffset={100 - (scrollProgress * 100)}
+                    pathLength="100"
                 />
             </svg>
 
@@ -94,7 +105,7 @@ export default function ScrollGuide() {
                 className="scroll-guide-robot"
                 style={{
                     left: `${isMobile ? Math.min(85, Math.max(15, pos.x)) : pos.x}%`,
-                    top: '50%',
+                    top: `${5 + (scrollProgress * 90)}%`,
                     transform: `translate(-50%, calc(-50% + ${bobOffset}px)) ${pos.side === 'left' ? 'scaleX(1)' : pos.side === 'right' ? 'scaleX(-1)' : 'scaleX(1)'}`,
                 }}
             >
