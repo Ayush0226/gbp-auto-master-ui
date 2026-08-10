@@ -394,11 +394,10 @@ export default function Home() {
             <div className="home-footer-row">
                 <div className="home-logo" style={{ fontSize: '15px' }}>GBP Auto <span className="home-grad-blue">Master</span></div>
                 <div className="home-copyright">© 2026 gbpautomaster.in. All rights reserved.</div>
-                <div className="home-footer-links" style={{ display: 'flex', gap: '24px' }}>
-                    <a href="/privacy">Privacy</a>
-                    <a href="/terms">Terms</a>
-                    <a href="/refund">Refunds</a>
-                    <a href="#contact">Contact</a>
+                <div className="home-footer-links" style={{ display: 'flex', gap: '24px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                    <a href="/privacy" style={{ color: 'rgba(255,255,255,.6)', textDecoration: 'none', fontSize: '13px' }} onMouseOver={e => e.currentTarget.style.color='white'} onMouseOut={e => e.currentTarget.style.color='rgba(255,255,255,.6)'}>Privacy Policy</a>
+                    <a href="/terms" style={{ color: 'rgba(255,255,255,.6)', textDecoration: 'none', fontSize: '13px' }} onMouseOver={e => e.currentTarget.style.color='white'} onMouseOut={e => e.currentTarget.style.color='rgba(255,255,255,.6)'}>Terms of Service</a>
+                    <a href="/refund" style={{ color: 'rgba(255,255,255,.6)', textDecoration: 'none', fontSize: '13px' }} onMouseOver={e => e.currentTarget.style.color='white'} onMouseOut={e => e.currentTarget.style.color='rgba(255,255,255,.6)'}>Cancellation & Refund Policy</a>
                 </div>
             </div>
         </div>

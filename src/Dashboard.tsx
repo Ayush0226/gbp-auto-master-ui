@@ -72,7 +72,7 @@ export default function MasterDashboardPage() {
     // Analytics State
     const [newKeyword, setNewKeyword] = useState('');
     const [targetKeywords, setTargetKeywords] = useState(['cheap plumber rohini', 'best ac repair', 'local geyser fix']);
-    const [competitorKeyword, setCompetitorKeyword] = useState('AC repair near me');
+    const [competitorKeyword, setCompetitorKeyword] = useState('');
     const [competitors, setCompetitors] = useState<any[]>([]);
     const [loadingCompetitors, setLoadingCompetitors] = useState(false);
     const [searchKeywords, setSearchKeywords] = useState<any[]>([]);
