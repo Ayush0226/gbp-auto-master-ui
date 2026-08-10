@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import Home from './Home';
 import Dashboard from './Dashboard';
 import Terms from './Terms';
+import Privacy from './Privacy';
+import Refund from './Refund';
 import './index.css';
 
 function App() {
@@ -21,6 +23,14 @@ function App() {
   
   if (currentPath === '/terms') {
     return <Terms />;
+  }
+
+  if (currentPath === '/privacy') {
+    return <Privacy />;
+  }
+
+  if (currentPath === '/refund') {
+    return <Refund />;
   }
 
   return <Home />;

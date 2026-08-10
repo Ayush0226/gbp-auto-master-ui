@@ -295,7 +295,12 @@ export default function Home() {
             <div className="home-footer-row">
                 <div className="home-logo" style={{ fontSize: '15px' }}>GBP Auto <span className="home-grad-blue">Master</span></div>
                 <div className="home-copyright">© 2026 gbpautomaster.in. All rights reserved.</div>
-                <div className="home-footer-links" style={{ display: 'flex', gap: '24px' }}><a href="#">Privacy</a><a href="/terms">Terms</a><a href="#contact">Contact</a></div>
+                <div className="home-footer-links" style={{ display: 'flex', gap: '24px' }}>
+                    <a href="/privacy">Privacy</a>
+                    <a href="/terms">Terms</a>
+                    <a href="/refund">Refunds</a>
+                    <a href="#contact">Contact</a>
+                </div>
             </div>
         </div>
     );
