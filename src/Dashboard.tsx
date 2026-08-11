@@ -362,15 +362,21 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                 fetch('https://gbp-auto-master-backend-us.onrender.com/api/google/analytics', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ user_id: user?.id, provider_token: providerToken, location_id: activeLocationId })
+                    body: JSON.stringify({ user_id: user.id, provider_token: providerToken, location_id: activeLocationId })
                 })
                 .then(res => res.json())
                 .then(data => {
                     if (data.status === 'success') {
                         setAnalyticsData(data.analytics);
+                    } else {
+                        console.error("Analytics Backend Error:", data);
+                        showToast(`Analytics Error: ${data.message || 'Unknown error'}`, 'error');
                     }
                 })
-                .catch(err => console.error(err));
+                .catch(err => {
+                    console.error("Analytics Fetch Error:", err);
+                    showToast(`Network Error fetching analytics.`, 'error');
+                });
                 
                 fetch('https://gbp-auto-master-backend-us.onrender.com/api/google/search-keywords', {
                     method: 'POST',
