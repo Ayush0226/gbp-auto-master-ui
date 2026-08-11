@@ -1,6 +1,6 @@
 import { Suspense, useRef, useState, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Float, Stars, MeshDistortMaterial } from '@react-three/drei';
+import { Float, Stars } from '@react-three/drei';
 import * as THREE from 'three';
 
 function SceneObjects() {
@@ -26,31 +26,31 @@ function SceneObjects() {
             <Float speed={2} rotationIntensity={1.5} floatIntensity={2} position={[-3.5, 1, -2]}>
                 <mesh>
                     <icosahedronGeometry args={[1.2, 0]} />
-                    <MeshDistortMaterial color="#3B82F6" emissive="#3B82F6" emissiveIntensity={0.5} roughness={0.1} metalness={0.8} transparent opacity={0.85} distort={0.3} speed={2} />
+                    <meshStandardMaterial color="#3B82F6" emissive="#3B82F6" emissiveIntensity={0.5} roughness={0.1} metalness={0.8} transparent opacity={0.85} />
                 </mesh>
             </Float>
             <Float speed={1.5} rotationIntensity={2} floatIntensity={1.5} position={[3.5, -1, -3]}>
                 <mesh>
-                    <torusKnotGeometry args={[0.8, 0.25, 100, 16]} />
-                    <MeshDistortMaterial color="#34A853" emissive="#34A853" emissiveIntensity={0.4} roughness={0.2} metalness={0.9} transparent opacity={0.8} distort={0.2} speed={1.5} />
+                    <torusKnotGeometry args={[0.8, 0.25, 64, 8]} />
+                    <meshStandardMaterial color="#34A853" emissive="#34A853" emissiveIntensity={0.4} roughness={0.2} metalness={0.9} transparent opacity={0.8} />
                 </mesh>
             </Float>
             <Float speed={2.5} rotationIntensity={1} floatIntensity={2.5} position={[0.5, -2.5, -1]}>
                 <mesh>
                     <octahedronGeometry args={[1, 0]} />
-                    <MeshDistortMaterial color="#F97316" emissive="#F97316" emissiveIntensity={0.6} roughness={0.2} metalness={0.5} transparent opacity={0.9} distort={0.4} speed={2} />
+                    <meshStandardMaterial color="#F97316" emissive="#F97316" emissiveIntensity={0.6} roughness={0.2} metalness={0.5} transparent opacity={0.9} />
                 </mesh>
             </Float>
             <Float speed={1.2} rotationIntensity={0.5} floatIntensity={1} position={[-2, -3.5, -5]}>
                 <mesh>
-                    <sphereGeometry args={[1.5, 32, 32]} />
-                    <MeshDistortMaterial color="#1D4ED8" emissive="#1D4ED8" emissiveIntensity={0.3} roughness={0.1} metalness={0.9} transparent opacity={0.5} distort={0.5} speed={1} />
+                    <sphereGeometry args={[1.5, 16, 16]} />
+                    <meshStandardMaterial color="#1D4ED8" emissive="#1D4ED8" emissiveIntensity={0.3} roughness={0.1} metalness={0.9} transparent opacity={0.5} />
                 </mesh>
             </Float>
             <Float speed={1.8} rotationIntensity={1} floatIntensity={1.5} position={[2.5, 2.5, -4]}>
                 <mesh>
-                    <sphereGeometry args={[0.9, 32, 32]} />
-                    <MeshDistortMaterial color="#4ADE80" emissive="#4ADE80" emissiveIntensity={0.4} roughness={0.3} metalness={0.4} transparent opacity={0.7} distort={0.3} speed={1.5} />
+                    <sphereGeometry args={[0.9, 16, 16]} />
+                    <meshStandardMaterial color="#4ADE80" emissive="#4ADE80" emissiveIntensity={0.4} roughness={0.3} metalness={0.4} transparent opacity={0.7} />
                 </mesh>
             </Float>
         </group>
@@ -75,7 +75,7 @@ function Starfield() {
 export default function Scene3D() {
     return (
         <div className="home-3d-canvas">
-            <Canvas camera={{ position: [0, 0, 8], fov: 50 }} gl={{ antialias: true, alpha: true }} dpr={[1, 1.5]}>
+            <Canvas camera={{ position: [0, 0, 8], fov: 50 }} gl={{ antialias: false, alpha: true }} dpr={[1, 1]}>
                 <Suspense fallback={null}>
                     <ambientLight intensity={0.4} />
                     <pointLight position={[10, 10, 10]} intensity={1.5} />

@@ -11,6 +11,13 @@ const MOCK_LOCATIONS = [
 export default function MasterDashboardPage() {
     const [user, setUser] = useState<any>(null);
     const [hasGoogleConnected, setHasGoogleConnected] = useState(false);
+    const [toast, setToast] = useState<{message: string, type: 'success' | 'error' | 'info'} | null>(null);
+
+    const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+        if (message.toLowerCase().includes('0 ai replies')) return; // Prune spam
+        setToast({ message, type });
+        setTimeout(() => setToast(null), 4000);
+    };
     const [providerToken, setProviderToken] = useState<string | null>(null);
     const [liveLocations, setLiveLocations] = useState<any[]>([]);
     
@@ -96,6 +103,8 @@ export default function MasterDashboardPage() {
             if (!session) throw new Error("Not logged in");
 
             const contextDump = `
+STRICT SYSTEM INSTRUCTION: You are TAAY, a strict GBP (Google Business Profile) and SEO consultant. YOU MUST NEVER answer general knowledge questions, write code, or go off-topic. If the user asks something unrelated to their GBP reviews, keywords, or local SEO performance, you MUST politely refuse and steer them back to their business profile analytics. Keep responses short, professional, and directly actionable.
+
 Live Reviews (Recent 15): ${JSON.stringify((liveReviews || []).slice(0, 15))}
 Search Keywords (Top 20): ${JSON.stringify((searchKeywords || []).slice(0, 20))}
 Target SEO Keywords: ${JSON.stringify(targetKeywords || [])}
@@ -263,7 +272,7 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                 body: JSON.stringify({ user_id: user.id, provider_token: providerToken, location_id: activeLocationId })
             });
             const data = await res.json();
-            alert(data.message || "Sync Complete!");
+            showToast(data.message || "Sync Complete!", "success");
             
             // Refetch reviews after sync
             const freshRes = await fetch('https://gbp-auto-master-backend-us.onrender.com/api/google/get-reviews', {
@@ -289,7 +298,7 @@ Analytics: ${JSON.stringify(analyticsData || {})}
             }
         } catch (e) {
             console.error(e);
-            alert("Error syncing reviews");
+            showToast("Error syncing reviews", "error");
         }
         setSyncingReviews(false);
     };
@@ -325,32 +334,57 @@ Analytics: ${JSON.stringify(analyticsData || {})}
 
     // Fetch Analytics Data
     useEffect(() => {
-        if (appState === 'dashboard' && activeView === 'analytics' && providerToken && activeLocationId && activeLocationId !== 'loc1') {
-            fetch('https://gbp-auto-master-backend-us.onrender.com/api/google/analytics', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user_id: user?.id, provider_token: providerToken, location_id: activeLocationId })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    setAnalyticsData(data.analytics);
-                }
-            })
-            .catch(err => console.error(err));
-            
-            fetch('https://gbp-auto-master-backend-us.onrender.com/api/google/search-keywords', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user_id: user?.id, provider_token: providerToken, location_id: activeLocationId })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    setSearchKeywords(data.keywords || []);
-                }
-            })
-            .catch(err => console.error(err));
+        if (appState === 'dashboard' && activeView === 'analytics' && providerToken && activeLocationId) {
+            if (activeLocationId === 'loc1') {
+                // Pitch-ready dummy data
+                setAnalyticsData({
+                    multiDailyMetricTimeSeries: [
+                        { dailyMetric: 'BUSINESS_IMPRESSIONS_DESKTOP_SEARCH', timeSeries: { datedValues: [{value: 3200}] } },
+                        { dailyMetric: 'BUSINESS_IMPRESSIONS_MOBILE_SEARCH', timeSeries: { datedValues: [{value: 9500}] } },
+                        { dailyMetric: 'BUSINESS_IMPRESSIONS_DESKTOP_MAPS', timeSeries: { datedValues: [{value: 8400}] } },
+                        { dailyMetric: 'BUSINESS_IMPRESSIONS_MOBILE_MAPS', timeSeries: { datedValues: [{value: 24200}] } },
+                        { dailyMetric: 'WEBSITE_CLICKS', timeSeries: { datedValues: [{value: 842}] } },
+                        { dailyMetric: 'CALL_CLICKS', timeSeries: { datedValues: [{value: 120}] } },
+                        { dailyMetric: 'BUSINESS_DIRECTION_REQUESTS', timeSeries: { datedValues: [{value: 36}] } },
+                        { dailyMetric: 'BUSINESS_CONVERSATIONS', timeSeries: { datedValues: [{value: 34}] } },
+                        { dailyMetric: 'BUSINESS_BOOKINGS', timeSeries: { datedValues: [{value: 12}] } },
+                        { dailyMetric: 'FOOD_ORDERS', timeSeries: { datedValues: [{value: 8}] } }
+                    ]
+                });
+                setSearchKeywords([
+                    { searchKeyword: 'plumber near me', monthlyImpressionsValue: 4500 },
+                    { searchKeyword: 'ac repair rohini', monthlyImpressionsValue: 3200 },
+                    { searchKeyword: 'geyser installation', monthlyImpressionsValue: 1800 },
+                    { searchKeyword: 'emergency plumber delhi', monthlyImpressionsValue: 950 },
+                    { searchKeyword: 'water leak repair', monthlyImpressionsValue: 620 }
+                ]);
+            } else {
+                fetch('https://gbp-auto-master-backend-us.onrender.com/api/google/analytics', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: user?.id, provider_token: providerToken, location_id: activeLocationId })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        setAnalyticsData(data.analytics);
+                    }
+                })
+                .catch(err => console.error(err));
+                
+                fetch('https://gbp-auto-master-backend-us.onrender.com/api/google/search-keywords', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: user?.id, provider_token: providerToken, location_id: activeLocationId })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        setSearchKeywords(data.keywords || []);
+                    }
+                })
+                .catch(err => console.error(err));
+            }
         }
     }, [appState, activeView, activeLocationId, providerToken, user]);
 
@@ -390,13 +424,13 @@ Analytics: ${JSON.stringify(analyticsData || {})}
 
             // Check if the backend returned an error
             if (res.status !== 200 || data.detail) {
-                alert("Backend Error during create-order: " + (data.detail || JSON.stringify(data)));
+                showToast("Backend Error during create-order: " + (data.detail || JSON.stringify(data)), "error");
                 return;
             }
 
             if (data.free_trial) {
                 // Backend bypassed Razorpay for ATYAUNSUHJ and activated subscription
-                alert('100% Free Trial Activated successfully!');
+                showToast('100% Free Trial Activated successfully!', 'success');
                 setLiveLocations(prev => prev.map(l => l.id === activeLocationId ? { ...l, subscribed: true } : l));
                 return;
             }
@@ -430,7 +464,7 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                     if (verifyData.status === 'success') {
                         setLiveLocations(prev => prev.map(l => l.id === activeLocationId ? { ...l, subscribed: true } : l));
                     } else {
-                        alert("Payment verification failed! Server said: " + (verifyData.detail || JSON.stringify(verifyData)));
+                        showToast("Payment verification failed! Server said: " + (verifyData.detail || JSON.stringify(verifyData)), "error");
                     }
                 },
                 prefill: {
@@ -446,20 +480,20 @@ Analytics: ${JSON.stringify(analyticsData || {})}
             rzp1.open();
         } catch (err) {
             console.error("Error creating order", err);
-            alert("Error initiating checkout. Please try again.");
+            showToast("Error initiating checkout. Please try again.", "error");
         }
     };
 
     const applyPromo = () => {
         if (promoCode === 'FIRSTUNDER10') {
             setDiscountApplied('FIRSTUNDER10');
-            alert('Discount Applied: FIRSTUNDER10');
+            showToast('Discount Applied: FIRSTUNDER10', 'success');
         } else if (promoCode === 'ATYAUNSUHJ') {
             setDiscountApplied('ATYAUNSUHJ');
-            alert('100% Free Trial Code Applied!');
+            showToast('100% Free Trial Code Applied!', 'success');
         } else {
             setDiscountApplied('none');
-            alert("Invalid or expired code");
+            showToast("Invalid or expired code", "error");
         }
     };
 
@@ -519,7 +553,7 @@ Analytics: ${JSON.stringify(analyticsData || {})}
             setPostType('LOCAL_POST');
         } catch (error) {
             console.error('Error scheduling post:', error);
-            alert("Error scheduling post");
+            showToast("Error scheduling post", "error");
         } finally {
             setLoadingAction(false);
         }
@@ -553,12 +587,12 @@ Analytics: ${JSON.stringify(analyticsData || {})}
             });
             const data = await res.json();
             if (data.status === 'success') {
-                alert('Successfully published to Google Business Profile!');
+                showToast('Successfully published to Google Business Profile!', 'success');
             } else {
-                alert('Error publishing to Google: ' + data.message);
+                showToast('Error publishing to Google: ' + data.message, 'error');
             }
         } catch (e) {
-            alert('Server error while publishing');
+            showToast('Server error while publishing', 'error');
         } finally {
             setLoadingAction(false);
         }
@@ -577,7 +611,7 @@ Analytics: ${JSON.stringify(analyticsData || {})}
             if (data.status === 'success') {
                 setCompetitors(data.competitors);
             } else {
-                alert("Error finding competitors");
+                showToast("Error finding competitors", "error");
             }
         } catch (error) {
             console.error(error);
@@ -1236,7 +1270,7 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                             <div className="card glass">
                                 <label className="field-label">Custom Instructions</label>
                                 <textarea rows={3} value={customInstructions} onChange={(e) => setCustomInstructions(e.target.value)} placeholder="e.g. Always mention our 30-day return policy"></textarea>
-                                <button className="btn btn-primary btn-sm" style={{ marginTop: '12px' }} onClick={() => alert('Settings Saved!')}>Save Settings</button>
+                                <button className="btn btn-primary btn-sm" style={{ marginTop: '12px' }} onClick={() => showToast('Settings Saved!', 'success')}>Save Settings</button>
                             </div>
                         </section>
                     )}
@@ -1457,6 +1491,30 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                         <img src="/taay-avatar.jpg" alt="TAAY!!" className="taay-fab-img" />
                     </button>
                 </>
+            )}
+
+            {/* CUSTOM TOAST NOTIFICATION */}
+            {toast && (
+                <div style={{
+                    position: 'fixed',
+                    bottom: '24px',
+                    right: '24px',
+                    background: toast.type === 'error' ? 'var(--red)' : (toast.type === 'success' ? 'var(--green)' : 'var(--blue)'),
+                    color: '#fff',
+                    padding: '12px 20px',
+                    borderRadius: '12px',
+                    boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
+                    zIndex: 99999,
+                    animation: 'slideInUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+                    fontWeight: 600,
+                    fontSize: '14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px'
+                }}>
+                    <span style={{ fontSize: '16px' }}>{toast.type === 'success' ? '✓' : (toast.type === 'error' ? '✕' : 'ℹ')}</span>
+                    {toast.message}
+                </div>
             )}
 
         </div>
