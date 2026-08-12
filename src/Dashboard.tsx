@@ -78,7 +78,7 @@ export default function MasterDashboardPage() {
 
     // Analytics State
     const [newKeyword, setNewKeyword] = useState('');
-    const [targetKeywords, setTargetKeywords] = useState(['cheap plumber rohini', 'best ac repair', 'local geyser fix']);
+    const [targetKeywords, setTargetKeywords] = useState<string[]>([]);
     const [competitorKeyword, setCompetitorKeyword] = useState('');
     const [competitors, setCompetitors] = useState<any[]>([]);
     const [loadingCompetitors, setLoadingCompetitors] = useState(false);
@@ -178,6 +178,42 @@ Analytics: ${JSON.stringify(analyticsData || {})}
 
         initializeDashboard();
     }, []);
+
+    // Fetch User Settings (Keywords & AI Config)
+    useEffect(() => {
+        if (user?.id) {
+            supabase.table('user_settings').select('*').eq('user_id', user.id).single()
+                .then(({ data, error }) => {
+                    if (data && !error) {
+                        setTargetKeywords(data.active_keywords || []);
+                        setIsAiActive(data.is_ai_active ?? true);
+                        setReplyTo1Star(data.reply_to_1_star ?? false);
+                        setAiTone(data.ai_tone || 'Professional');
+                        setCustomInstructions(data.custom_instructions || '');
+                    } else if (error && error.code === 'PGRST116') {
+                        // Settings don't exist yet, we will insert them on first save
+                    }
+                });
+        }
+    }, [user]);
+
+    const saveUserSettings = async (updates: any) => {
+        if (!user?.id) return;
+        
+        // Try to update first
+        const { data, error } = await supabase.table('user_settings')
+            .update(updates)
+            .eq('user_id', user.id)
+            .select();
+            
+        // If update fails because row doesn't exist, insert it
+        if (!data || data.length === 0) {
+            await supabase.table('user_settings').insert({
+                user_id: user.id,
+                ...updates
+            });
+        }
+    };
 
     const checkUserRoute = async (currentUser: any, pToken: string | null) => {
         setUser(currentUser);
@@ -1116,42 +1152,12 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                                                         <h3 style={{ fontSize: '15px' }}>Competitor Leaderboard</h3>
                                                     </div>
-                                                    <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
-                                                        <input 
-                                                            type="text" 
-                                                            className="input"
-                                                            placeholder="e.g. Preschool near me" 
-                                                            value={competitorKeyword} 
-                                                            onChange={(e) => setCompetitorKeyword(e.target.value)}
-                                                            onKeyDown={(e) => { if(e.key === 'Enter') fetchCompetitors(); }}
-                                                            style={{ padding: '8px 12px', flex: 1, border: '1px solid rgba(255,255,255,.1)', background: 'rgba(0,0,0,.2)', color: 'white', borderRadius: '8px' }} 
-                                                        />
-                                                        <button 
-                                                            className="btn btn-primary" 
-                                                            onClick={fetchCompetitors}
-                                                            disabled={loadingCompetitors || !competitorKeyword}
-                                                        >
-                                                            {loadingCompetitors ? 'Searching...' : 'Search'}
-                                                        </button>
+                                                    
+                                                    <div className="card-sm" style={{ background: 'rgba(255,255,255,.03)', border: '1px dashed rgba(255,255,255,.2)', textAlign: 'center', padding: '32px 16px' }}>
+                                                        <span style={{ fontSize: '24px', display: 'block', marginBottom: '8px' }}>🚧</span>
+                                                        <p style={{ fontSize: '14px', fontWeight: 600, color: 'var(--blue-soft)', margin: '0 0 4px' }}>Will be available soon</p>
+                                                        <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)', margin: 0 }}>We are currently upgrading our local rank tracking engine.</p>
                                                     </div>
-
-                                                    {competitors.length > 0 ? (
-                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                                            {competitors.map((comp, idx) => (
-                                                                <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,.03)', padding: '10px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,.05)' }}>
-                                                                    <div>
-                                                                        <p style={{ fontWeight: 600, fontSize: '13px', margin: '0 0 2px' }}>{comp.name || comp.title}</p>
-                                                                        <p style={{ fontSize: '11px', color: 'rgba(255,255,255,.5)', margin: 0 }}>★ {comp.rating || 'N/A'} ({comp.reviews || 0} reviews)</p>
-                                                                    </div>
-                                                                    <span style={{ fontSize: '14px', fontWeight: 700, color: idx === 0 ? 'var(--orange-soft)' : 'rgba(255,255,255,.6)' }}>#{idx + 1}</span>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    ) : (
-                                                        <div className="card-sm" style={{ background: 'rgba(255,255,255,.03)', border: '1px dashed rgba(255,255,255,.2)', textAlign: 'center', padding: '24px 16px' }}>
-                                                            <p style={{ fontSize: '13px', color: 'rgba(255,255,255,.5)', margin: 0 }}>Search a local keyword to see who ranks #1.</p>
-                                                        </div>
-                                                    )}
                                                 </div>
 
                                                 <div className="card glass glass-hover" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -1196,7 +1202,10 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                                                 <p style={{ fontSize: '12.5px', color: 'rgba(255,255,255,.7)', margin: '0 0 12px', lineHeight: 1.5 }}>Your top keyword is <b>"{searchKeywords[0].searchKeyword}"</b>. Should the AI start organically injecting this into your future 5-star replies?</p>
                                                 <button className="btn btn-green btn-sm" onClick={() => {
                                                     if (!targetKeywords.includes(searchKeywords[0].searchKeyword)) {
-                                                        setTargetKeywords([...targetKeywords, searchKeywords[0].searchKeyword]);
+                                                        const newKw = [...targetKeywords, searchKeywords[0].searchKeyword];
+                                                        setTargetKeywords(newKw);
+                                                        saveUserSettings({ active_keywords: newKw });
+                                                        showToast('Keyword added to AI Tracker!', 'success');
                                                     }
                                                 }}>Yes, Target Keyword</button>
                                             </div>
@@ -1210,8 +1219,8 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
                                     <h3 style={{ fontSize: '15px' }}>SEO Injection Tracker</h3>
                                     <div style={{ display: 'flex', gap: '8px' }}>
-                                        <input type="text" placeholder="Add keyword" value={newKeyword} onChange={(e) => setNewKeyword(e.target.value)} style={{ padding: '6px 10px', width: '150px' }} onKeyDown={(e) => { if(e.key === 'Enter' && newKeyword) { setTargetKeywords([...targetKeywords, newKeyword]); setNewKeyword(''); } }} />
-                                        <button className="btn btn-ghost btn-sm" onClick={() => { if(newKeyword) { setTargetKeywords([...targetKeywords, newKeyword]); setNewKeyword(''); } }}>+ Add Target</button>
+                                        <input type="text" placeholder="Add keyword" value={newKeyword} onChange={(e) => setNewKeyword(e.target.value)} style={{ padding: '6px 10px', width: '150px' }} onKeyDown={(e) => { if(e.key === 'Enter' && newKeyword) { const newKw = [...targetKeywords, newKeyword]; setTargetKeywords(newKw); saveUserSettings({ active_keywords: newKw }); setNewKeyword(''); } }} />
+                                        <button className="btn btn-ghost btn-sm" onClick={() => { if(newKeyword) { const newKw = [...targetKeywords, newKeyword]; setTargetKeywords(newKw); saveUserSettings({ active_keywords: newKw }); setNewKeyword(''); } }}>+ Add Target</button>
                                     </div>
                                 </div>
                                 <div className="grid grid-2">
@@ -1219,16 +1228,18 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                                         <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)', marginBottom: '8px' }}>Keywords You Want (Target)</p>
                                         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                                             {targetKeywords.map((kw, i) => (
-                                                <span key={i} className="badge-pill b-gray">{kw}</span>
+                                                <span key={i} className="badge-pill b-gray" style={{ cursor: 'pointer' }} onClick={() => { const newKw = targetKeywords.filter(k => k !== kw); setTargetKeywords(newKw); saveUserSettings({ active_keywords: newKw }); }}>{kw} ✕</span>
                                             ))}
+                                            {targetKeywords.length === 0 && <span style={{ fontSize: '12px', color: 'rgba(255,255,255,.4)' }}>No keywords tracking yet.</span>}
                                         </div>
                                     </div>
                                     <div className="card-sm" style={{ background: 'rgba(52,168,83,.05)', border: '1px solid rgba(52,168,83,.2)' }}>
                                         <p style={{ fontSize: '12px', color: 'var(--green-soft)', marginBottom: '8px', fontWeight: 600 }}>Keywords AI is Actively Injecting</p>
                                         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                                             {targetKeywords.map((kw, i) => (
-                                                <span key={i} className="badge-pill b-green">{kw}</span>
+                                                <span key={i} className="badge-pill b-green">✨ {kw}</span>
                                             ))}
+                                            {targetKeywords.length === 0 && <span style={{ fontSize: '12px', color: 'rgba(255,255,255,.4)' }}>Add keywords to start automation.</span>}
                                         </div>
                                     </div>
                                 </div>
@@ -1276,7 +1287,10 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                             <div className="card glass">
                                 <label className="field-label">Custom Instructions</label>
                                 <textarea rows={3} value={customInstructions} onChange={(e) => setCustomInstructions(e.target.value)} placeholder="e.g. Always mention our 30-day return policy"></textarea>
-                                <button className="btn btn-primary btn-sm" style={{ marginTop: '12px' }} onClick={() => showToast('Settings Saved!', 'success')}>Save Settings</button>
+                                <button className="btn btn-primary btn-sm" style={{ marginTop: '12px' }} onClick={() => {
+                                    saveUserSettings({ is_ai_active: isAiActive, reply_to_1_star: replyTo1Star, ai_tone: aiTone, custom_instructions: customInstructions });
+                                    showToast('Settings Saved successfully!', 'success');
+                                }}>Save Settings</button>
                             </div>
                         </section>
                     )}
