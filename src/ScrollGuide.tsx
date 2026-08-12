@@ -76,7 +76,7 @@ export default function ScrollGuide() {
     const pos = getWaypointPosition(scrollProgress);
     const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
-    // Mathematically generate the exact path the robot takes so it's 100% precise
+    // The full path (faint background)
     const pathPoints = Array.from({ length: 101 }, (_, i) => {
         const t = i / 100;
         const p = getWaypointPosition(t);
@@ -85,18 +85,43 @@ export default function ScrollGuide() {
         return `${x},${y}`;
     }).join(' ');
 
+    // The active path that perfectly tracks the robot
+    const activePointsCount = Math.floor(scrollProgress * 100);
+    const activePathPoints = Array.from({ length: activePointsCount + 1 }, (_, i) => {
+        const t = i / 100;
+        const p = getWaypointPosition(t);
+        const y = 5 + (t * 90);
+        const x = isMobile ? Math.min(85, Math.max(15, p.x)) : p.x;
+        return `${x},${y}`;
+    });
+    
+    // Add the exact fractional point so it seamlessly touches the robot
+    if (scrollProgress > 0) {
+        const p = getWaypointPosition(scrollProgress);
+        const y = 5 + (scrollProgress * 90);
+        const x = isMobile ? Math.min(85, Math.max(15, p.x)) : p.x;
+        activePathPoints.push(`${x},${y}`);
+    }
+    const activePathString = activePathPoints.join(' ');
+
     return (
         <div className="scroll-guide" aria-hidden="true">
             {/* Dotted trail path */}
             <svg className="scroll-guide-trail" viewBox="0 0 100 100" preserveAspectRatio="none">
+                {/* Faint upcoming path */}
                 <polyline
                     points={pathPoints}
                     fill="none"
-                    stroke="rgba(59,130,246,0.3)"
+                    stroke="rgba(59,130,246,0.15)"
                     strokeWidth="1.2"
-                    strokeDasharray="100"
-                    strokeDashoffset={100 - (scrollProgress * 100)}
-                    pathLength="100"
+                    strokeDasharray="1, 1.5"
+                />
+                {/* Solid drawn path up to the robot */}
+                <polyline
+                    points={activePathString}
+                    fill="none"
+                    stroke="rgba(59,130,246,0.6)"
+                    strokeWidth="1.5"
                 />
             </svg>
 
