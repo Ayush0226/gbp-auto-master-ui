@@ -182,7 +182,7 @@ Analytics: ${JSON.stringify(analyticsData || {})}
     // Fetch User Settings (Keywords & AI Config)
     useEffect(() => {
         if (user?.id) {
-            supabase.table('user_settings').select('*').eq('user_id', user.id).single()
+            supabase.from('user_settings').select('*').eq('user_id', user.id).single()
                 .then(({ data, error }) => {
                     if (data && !error) {
                         setTargetKeywords(data.active_keywords || []);
@@ -201,14 +201,14 @@ Analytics: ${JSON.stringify(analyticsData || {})}
         if (!user?.id) return;
         
         // Try to update first
-        const { data, error } = await supabase.table('user_settings')
+        const { data, error } = await supabase.from('user_settings')
             .update(updates)
             .eq('user_id', user.id)
             .select();
             
         // If update fails because row doesn't exist, insert it
         if (!data || data.length === 0) {
-            await supabase.table('user_settings').insert({
+            await supabase.from('user_settings').insert({
                 user_id: user.id,
                 ...updates
             });

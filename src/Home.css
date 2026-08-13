@@ -45,32 +45,32 @@
 }
 
 .home-wrapper.light-theme {
-  --bg-main: #FFFFFF;
-  --text-main: #111827;
-  --text-muted: rgba(0,0,0,0.6);
-  --glass-bg: linear-gradient(180deg, rgba(0,0,0,.03) 0%, rgba(0,0,0,.01) 100%);
-  --glass-border: rgba(0,0,0,.08);
-  --glass-border-hover: rgba(0,0,0,.20);
-  --glass-shadow: inset 0 1px 1px 0 rgba(255,255,255,.5), 0 10px 30px -10px rgba(0,0,0,.08);
-  --divider: linear-gradient(90deg,transparent,rgba(0,0,0,.1),transparent);
-  --overlay-bg: linear-gradient(180deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.95) 100%);
-  --alpha-5: rgba(0,0,0,.05);
-  --alpha-8: rgba(0,0,0,.08);
-  --alpha-10: rgba(0,0,0,.1);
-  --alpha-15: rgba(0,0,0,.15);
-  --alpha-20: rgba(0,0,0,.2);
-  --alpha-30: rgba(0,0,0,.4);
-  --alpha-35: rgba(0,0,0,.45);
-  --alpha-40: rgba(0,0,0,.5);
-  --alpha-50: rgba(0,0,0,.6);
-  --alpha-55: rgba(0,0,0,.7);
-  --alpha-60: rgba(0,0,0,.8);
-  --alpha-70: rgba(0,0,0,.85);
-  --alpha-80: rgba(0,0,0,.9);
-  --alpha-85: rgba(0,0,0,.95);
-  --text-pure: #111827;
+  --bg-main: #F4F6F8;
+  --text-main: #0F172A;
+  --text-muted: #475569;
+  --glass-bg: rgba(255, 255, 255, 0.65);
+  --glass-border: rgba(255, 255, 255, 1);
+  --glass-border-hover: rgba(59, 130, 246, 0.4);
+  --glass-shadow: 0 10px 40px -10px rgba(0,0,0,0.06), inset 0 0 0 1px rgba(255,255,255,0.5);
+  --divider: linear-gradient(90deg,transparent,rgba(0,0,0,.08),transparent);
+  --overlay-bg: linear-gradient(180deg, rgba(244,246,248,0.4) 0%, rgba(244,246,248,1) 100%);
+  --alpha-5: rgba(0,0,0,.04);
+  --alpha-8: rgba(0,0,0,.06);
+  --alpha-10: rgba(0,0,0,.08);
+  --alpha-15: rgba(0,0,0,.12);
+  --alpha-20: rgba(0,0,0,.15);
+  --alpha-30: #94A3B8;
+  --alpha-35: #94A3B8;
+  --alpha-40: #64748B;
+  --alpha-50: #475569;
+  --alpha-55: #475569;
+  --alpha-60: #334155;
+  --alpha-70: #1E293B;
+  --alpha-80: #0F172A;
+  --alpha-85: #0F172A;
+  --text-pure: #000000;
 }
-.home-wrapper.light-theme .home-3d-canvas { filter: invert(1) hue-rotate(180deg) contrast(1.1); }
+.home-wrapper.light-theme .home-3d-canvas { filter: invert(1) hue-rotate(180deg) brightness(1.1); }
 .home-wrapper a { text-decoration: none; color: inherit; }
 .home-wrapper ul { list-style: none; margin: 0; padding: 0; }
 
