@@ -123,6 +123,8 @@ export default function Home() {
             <header className="home-header">
                 <nav className="home-glass home-nav">
                     <a className="home-logo" href="#">GBP Auto <span className="home-grad-blue">Master</span></a>
+                    <ul className="home-navlinks">
+                        <li>Features</li><li>How it Works</li><li>Pricing</li>
                     </ul>
                     <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
                         <button onClick={() => setTheme(prev => prev === 'light' ? 'dark' : 'light')} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Toggle Theme">
