@@ -406,7 +406,7 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                         setAnalyticsData(data.analytics);
                     } else {
                         console.error("Analytics Backend Error:", data);
-                        showToast(`Analytics Error: ${data.message || 'Unknown error'}`, 'error');
+                        // Silently handle analytics errors (e.g. 403 API not enabled) instead of spamming toast
                     }
                 })
                 .catch(err => {
@@ -869,13 +869,16 @@ Analytics: ${JSON.stringify(analyticsData || {})}
 
                             <div className="card glass">
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                                    <h3 style={{ fontSize: '15px', margin: 0 }}>Live Review Feed</h3>
+                                    <div>
+                                        <h3 style={{ fontSize: '15px', margin: 0 }}>Live Review Feed (Latest 15)</h3>
+                                        <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)', margin: '4px 0 0' }}>The AI replies automatically. You can also manually push replies.</p>
+                                    </div>
                                     <button 
                                         className="btn btn-ghost btn-sm" 
                                         onClick={handleSyncReviews}
                                         disabled={syncingReviews || loadingReviews}
                                     >
-                                        {syncingReviews ? 'Syncing...' : 'Force AI Sync'}
+                                        {syncingReviews ? 'Syncing...' : 'Reply to 4 Reviews'}
                                     </button>
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -888,7 +891,7 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                                             <p style={{ fontSize: '13px', color: 'rgba(255,255,255,.5)', margin: 0 }}>Once customers leave reviews, they will appear here.</p>
                                         </div>
                                     ) : (
-                                        liveReviews.map((rev, i) => (
+                                        liveReviews.slice(0, 15).map((rev, i) => (
                                             <div key={i} className="card-sm" style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.08)' }}>
                                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1189,7 +1192,7 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                                             <span style={{ color: 'var(--blue-soft)' }}>{kw.monthlyImpressionsValue || kw.monthlyImpressionValue?.value || kw.monthlyImpressionValue || 'N/A'} impressions</span>
                                         </div>
                                     )) : (
-                                        <p style={{ fontSize: '13px', color: 'rgba(255,255,255,.5)' }}>No search keywords found or API not enabled yet.</p>
+                                        <p style={{ fontSize: '13px', color: 'rgba(255,255,255,.5)' }}>Processing SEO Keywords... Google API can take 24-48 hours to populate search data for new connections.</p>
                                     )}
                                 </div>
 

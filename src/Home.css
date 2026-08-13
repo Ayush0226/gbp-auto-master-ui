@@ -45,7 +45,7 @@
 }
 
 .home-wrapper.light-theme {
-  --bg-main: #F4F6F8;
+  --bg-main: linear-gradient(135deg, #e0e7ff 0%, #f1f5f9 100%);
   --text-main: #0F172A;
   --text-muted: #475569;
   --glass-bg: rgba(255, 255, 255, 0.65);
