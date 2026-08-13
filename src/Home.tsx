@@ -10,6 +10,7 @@ export default function Home() {
     const [countersVisible, setCountersVisible] = useState(false);
     const [counterValues, setCounterValues] = useState({ businesses: 0, reviews: 0, keywords: 0 });
     const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+    const [theme, setTheme] = useState<'light'|'dark'>('light');
     const counterRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -113,7 +114,7 @@ export default function Home() {
     };
 
     return (
-        <div className="home-wrapper">
+        <div className={`home-wrapper ${theme === 'light' ? 'light-theme' : ''}`}>
             <Scene3D />
             <div className="home-canvas-overlay"></div>
             <ScrollGuide />
@@ -122,18 +123,21 @@ export default function Home() {
             <header className="home-header">
                 <nav className="home-glass home-nav">
                     <a className="home-logo" href="#">GBP Auto <span className="home-grad-blue">Master</span></a>
-                    <ul className="home-navlinks">
-                        <li>Features</li><li>How it Works</li><li>Pricing</li>
                     </ul>
-                    <button className="home-login-btn" onClick={handleLogin} disabled={loading}>
-                        <svg width="15" height="15" viewBox="0 0 48 48">
-                            <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.9 6 29.7 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.2-.1-2.4-.4-3.5z"/>
-                            <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.5 16 18.9 12 24 12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.9 6 29.7 4 24 4 15.9 4 8.9 8.6 6.3 14.7z"/>
-                            <path fill="#4CAF50" d="M24 44c5.6 0 10.7-2.1 14.5-5.7l-6.7-5.5C29.6 34.5 26.9 35.5 24 35.5c-5.2 0-9.6-3.3-11.3-7.9l-6.6 5.1C8.9 39.4 15.9 44 24 44z"/>
-                            <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.2 4.2-4.1 5.6l6.7 5.5C41.5 36 44 30.5 44 24c0-1.2-.1-2.4-.4-3.5z"/>
-                        </svg>
-                        {loading ? 'Connecting...' : 'Login with Google'}
-                    </button>
+                    <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                        <button onClick={() => setTheme(prev => prev === 'light' ? 'dark' : 'light')} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Toggle Theme">
+                            {theme === 'light' ? '🌙' : '☀️'}
+                        </button>
+                        <button className="home-login-btn" onClick={handleLogin} disabled={loading}>
+                            <svg width="15" height="15" viewBox="0 0 48 48">
+                                <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.9 6 29.7 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.2-.1-2.4-.4-3.5z"/>
+                                <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.5 16 18.9 12 24 12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.9 6 29.7 4 24 4 15.9 4 8.9 8.6 6.3 14.7z"/>
+                                <path fill="#4CAF50" d="M24 44c5.6 0 10.7-2.1 14.5-5.7l-6.7-5.5C29.6 34.5 26.9 35.5 24 35.5c-5.2 0-9.6-3.3-11.3-7.9l-6.6 5.1C8.9 39.4 15.9 44 24 44z"/>
+                                <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.2 4.2-4.1 5.6l6.7 5.5C41.5 36 44 30.5 44 24c0-1.2-.1-2.4-.4-3.5z"/>
+                            </svg>
+                            {loading ? 'Connecting...' : 'Login with Google'}
+                        </button>
+                    </div>
                 </nav>
             </header>
 
@@ -199,77 +203,40 @@ export default function Home() {
                 </div>
             </section>
 
-            <section id="what-we-give" className="home-section scroll-reveal">
+            <section id="services" className="home-section scroll-reveal">
                 <div className="home-wrap">
-                    <div className="home-center"><h2 className="home-grad-metal" style={{ fontSize: '32px' }}>What We Give You.</h2></div>
-                    <div className="home-grid3">
-                        <div className="feature-card home-glass">
-                            <svg className="home-icon-box" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '48px', height: '48px', color: 'var(--blue)' }}>
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <polyline points="12 6 12 12 16 14">
-                                    <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="5s" repeatCount="indefinite" />
-                                </polyline>
-                            </svg>
-                            <h3 className="home-grad-blue" style={{ fontSize: '24px' }}>24/7 Autopilot</h3>
-                            <p style={{ marginTop: '10px' }}>We give you your time back. Never worry about replying to another Google review manually. Our engine works around the clock.</p>
-                        </div>
-                        <div className="feature-card home-glass">
-                            <svg className="home-icon-box" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '48px', height: '48px', color: 'var(--orange)' }}>
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <circle cx="12" cy="12" r="6"></circle>
-                                <circle cx="12" cy="12" r="2"></circle>
-                                <path d="M12 2v2"/><path d="M12 20v2"/><path d="M2 12h2"/><path d="M20 12h2"/>
-                            </svg>
-                            <h3 className="home-grad-blue" style={{ fontSize: '24px' }}>Local Dominance</h3>
-                            <p style={{ marginTop: '10px' }}>We give you the #1 spot. By automatically injecting the exact keywords your customers search for into your replies.</p>
-                        </div>
-                        <div className="feature-card home-glass">
-                            <svg className="home-icon-box" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '48px', height: '48px', color: 'var(--green)' }}>
-                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                                <polyline points="9 12 11 14 15 10"></polyline>
-                            </svg>
-                            <h3 className="home-grad-blue" style={{ fontSize: '24px' }}>Peace of Mind</h3>
-                            <p style={{ marginTop: '10px' }}>We give you a bulletproof reputation. Our AI handles negative feedback gracefully and amplifies 5-star praise.</p>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <section id="features" className="home-section scroll-reveal">
-                <div className="home-glow" style={{ width: '420px', height: '420px', top: '40px', left: '25%', background: 'radial-gradient(circle,rgba(52,168,83,.2) 0%,transparent 70%)' }}></div>
-                <div className="home-wrap">
-                    <div className="home-center"><h2 className="home-grad-metal" style={{ fontSize: '32px' }}>Everything you need to outrank your competitors.</h2></div>
+                    <div className="home-center" style={{ marginBottom: '40px' }}><h2 className="home-grad-metal" style={{ fontSize: '36px' }}>Automation of Google Business Profile</h2></div>
                     <div className="home-grid3">
                         <div className="feature-card home-glass home-glass-hover">
-                            <svg className="home-icon-box" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '48px', height: '48px', color: 'var(--blue)' }}>
-                                <circle cx="11" cy="11" r="8"></circle>
-                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                                <animateTransform attributeName="transform" type="translate" values="0,0; 2,-2; 0,0" dur="2s" repeatCount="indefinite" />
-                            </svg>
-                            <h3>Zero-Effort Local SEO</h3>
-                            <p>Our AI injects high-value keywords like "Emergency Plumber" into every review reply automatically.</p>
-                            <div className="feature-stat"><span style={{ fontWeight: 800, fontSize: '20px', color: 'var(--blue)' }}>2,400+</span> <span style={{ fontSize: '14px', color: 'rgba(255,255,255,.6)' }}>keywords injected</span></div>
+                            <div className="feature-icon-wrap blue" style={{ fontSize: '28px' }}>🤖</div>
+                            <h3 className="home-grad-blue" style={{ fontSize: '22px' }}>24/7 AI Mentor</h3>
+                            <p style={{ fontWeight: 600, color: 'var(--blue-soft)', marginBottom: '8px' }}>"Everything you need to Top."</p>
+                            <p>A dedicated AI consultant right in your dashboard analyzing your data and telling you exactly what moves to make next to dominate local search.</p>
                         </div>
                         <div className="feature-card home-glass home-glass-hover">
-                            <svg className="home-icon-box" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '48px', height: '48px', color: 'var(--orange)' }}>
-                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z">
-                                    <animate attributeName="opacity" values="1;0.2;1" dur="2s" repeatCount="indefinite"/>
-                                </path>
-                            </svg>
-                            <h3>Instant Review Replies</h3>
-                            <p>Show customers you care. The AI replies to 5-star reviews instantly with empathy.</p>
-                            <div className="feature-stat"><span style={{ fontWeight: 800, fontSize: '20px', color: 'var(--orange)' }}>&lt;15ms</span> <span style={{ fontSize: '14px', color: 'rgba(255,255,255,.6)' }}>avg reply time</span></div>
+                            <div className="feature-icon-wrap orange" style={{ fontSize: '28px' }}>💬</div>
+                            <h3 className="home-grad-blue" style={{ fontSize: '22px' }}>AI Review Replier</h3>
+                            <p>Stop stressing over bad reviews. Our AI instantly replies to every customer with empathy, gracefully de-escalating 1-star reviews and celebrating 5-star praise within 15 milliseconds. Improve your overall ratings effortlessly.</p>
                         </div>
                         <div className="feature-card home-glass home-glass-hover">
-                            <svg className="home-icon-box" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: '48px', height: '48px', color: 'var(--green)' }}>
-                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                                <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                                <polyline points="21 15 16 10 5 21"></polyline>
-                            </svg>
-                            <h3>Auto-Pilot Photos</h3>
-                            <p>Bulk upload your photos once, and we drip-feed them to your Google Gallery all month long.</p>
-                            <div className="feature-stat"><span style={{ fontWeight: 800, fontSize: '20px', color: 'var(--green)' }}>1,200+</span> <span style={{ fontSize: '14px', color: 'rgba(255,255,255,.6)' }}>photos scheduled</span></div>
+                            <div className="feature-icon-wrap green" style={{ fontSize: '28px' }}>📅</div>
+                            <h3 className="home-grad-blue" style={{ fontSize: '22px' }}>Content Calendar</h3>
+                            <p>Upload your photos, videos, and posts once. Our engine automatically schedules and drips them onto your profile every day during Google's most active hours to maximize engagement and keep your profile fresh.</p>
+                        </div>
+                        <div className="feature-card home-glass home-glass-hover">
+                            <div className="feature-icon-wrap blue" style={{ fontSize: '28px' }}>🎯</div>
+                            <h3 className="home-grad-blue" style={{ fontSize: '22px' }}>SEO Keywords Auto Implement</h3>
+                            <p>Injecting local search terms directly into your Google profile is the #1 way to rank higher. Simply list your target keywords, and our AI seamlessly weaves them into every automated reply to boost your Maps ranking.</p>
+                        </div>
+                        <div className="feature-card home-glass home-glass-hover">
+                            <div className="feature-icon-wrap orange" style={{ fontSize: '28px' }}>⚔️</div>
+                            <h3 className="home-grad-blue" style={{ fontSize: '22px' }}>Know your Competitor</h3>
+                            <p>Never guess who's beating you. Search any keyword and instantly see the local leaderboard to track your market share, identify top performers, and outmaneuver the competition.</p>
+                        </div>
+                        <div className="feature-card home-glass home-glass-hover">
+                            <div className="feature-icon-wrap green" style={{ fontSize: '28px' }}>📊</div>
+                            <h3 className="home-grad-blue" style={{ fontSize: '22px' }}>Detailed Analysis</h3>
+                            <p>Beautiful, real-time charts showing your search impressions, call clicks, and website visits so you can track your growth and see the exact return on investment from your automation.</p>
                         </div>
                     </div>
                 </div>
@@ -370,25 +337,6 @@ export default function Home() {
                 </div>
             </section>
 
-            <section id="contact" className="home-section scroll-reveal">
-                <div className="home-wrap">
-                    <div className="home-card home-glass" style={{ textAlign: 'center', padding: '60px 20px' }}>
-                        <h2 className="home-grad-metal" style={{ fontSize: '32px', marginBottom: '8px' }}>Contact Details</h2>
-                        <p style={{ fontSize: '18px', fontWeight: 600, color: 'var(--blue-soft)', margin: '0 0 4px' }}>Ayush Sony</p>
-                        <p style={{ fontSize: '14px', color: 'rgba(255,255,255,.7)', marginBottom: '30px' }}>Freelancer and skilled person</p>
-                        <div style={{ display: 'flex', justifyContent: 'center', gap: '40px', flexWrap: 'wrap' }}>
-                            <div>
-                                <p style={{ fontSize: '13px', color: 'rgba(255,255,255,.5)' }}>Email Us</p>
-                                <p style={{ fontSize: '18px', fontWeight: 600, marginTop: '4px' }} className="home-grad-blue">ayushsony126@gmail.com</p>
-                            </div>
-                            <div>
-                                <p style={{ fontSize: '13px', color: 'rgba(255,255,255,.5)' }}>Call Us (India)</p>
-                                <p style={{ fontSize: '18px', fontWeight: 600, marginTop: '4px' }}>+91 93720 60163</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
 
             <div className="home-divider"></div>
             <div className="home-footer-row">
