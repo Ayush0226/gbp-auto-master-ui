@@ -149,3 +149,54 @@ label.field-label { display: block; font-size: 12px; font-weight: 600; color: rg
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #2A2A2E; border-radius: 8px; }
+
+/* Legal Pages Responsive Container */
+.legal-container {
+    max-width: 800px;
+    margin: 0 auto;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0 16px;
+}
+
+.legal-card {
+    background: rgba(20, 20, 25, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 20px;
+    padding: 24px;
+    box-sizing: border-box;
+    width: 100%;
+    overflow: hidden;
+}
+
+@media(min-width: 640px) {
+    .legal-card {
+        padding: 40px;
+        border-radius: 24px;
+    }
+}
+
+.legal-card h1 {
+    font-size: 28px;
+    margin-bottom: 16px;
+}
+
+.legal-card h2 {
+    font-size: 18px;
+    margin-bottom: 12px;
+    color: var(--blue-soft);
+    margin-top: 32px;
+}
+
+.legal-card p, .legal-card ul {
+    font-size: 14px;
+    line-height: 1.6;
+    margin-bottom: 16px;
+    color: rgba(255,255,255,0.75);
+}
+
+@media(min-width: 640px) {
+    .legal-card h1 { font-size: 36px; margin-bottom: 24px; }
+    .legal-card h2 { font-size: 22px; }
+    .legal-card p, .legal-card ul { font-size: 15px; }
+}

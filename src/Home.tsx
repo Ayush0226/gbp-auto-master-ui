@@ -96,9 +96,29 @@ const FeatureCarousel = () => {
         <div style={{ position: 'relative' }}>
             <div className="home-carousel-ring"></div>
             
-            <div className="features-split-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '48px', alignItems: 'center' }}>
-                {/* Left Side: 3D Rotating Carousel */}
-                <div style={{ position: 'relative' }}>
+            <div className="features-split-grid">
+                
+                {/* Mobile Tabs (Hidden on Desktop) */}
+                <div className="mobile-feature-tabs">
+                    {features.map((feature, index) => (
+                        <div 
+                            key={`mob-${index}`}
+                            className={`mobile-tab ${index === activeIndex ? 'active' : ''}`}
+                            onClick={() => setActiveIndex(index)}
+                            style={{ 
+                                borderColor: index === activeIndex ? feature.hex : 'transparent',
+                                color: index === activeIndex ? feature.hex : 'rgba(255,255,255,0.5)',
+                                background: index === activeIndex ? `${feature.hex}15` : 'rgba(255,255,255,0.05)'
+                            }}
+                        >
+                            <span className="mobile-tab-icon">{feature.icon}</span>
+                            <span className="mobile-tab-title">{feature.title}</span>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Left Side: 3D Rotating Carousel (Hidden on Mobile) */}
+                <div className="desktop-feature-visual" style={{ position: 'relative' }}>
                     <div className="home-carousel-container" style={{ height: '420px' }}>
                         {features.map((feature, index) => (
                             <div 

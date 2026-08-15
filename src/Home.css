@@ -625,3 +625,64 @@
 .light-theme .home-ticker-item {
   color: var(--text-muted);
 }
+
+/* Features Split Grid Responsive Layout */
+.features-split-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 32px;
+    align-items: center;
+}
+
+@media(min-width: 900px) {
+    .features-split-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 48px;
+    }
+}
+
+/* Mobile Tabs */
+.mobile-feature-tabs {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    margin-bottom: 16px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+.mobile-feature-tabs::-webkit-scrollbar {
+    display: none;
+}
+
+.mobile-tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-radius: 99px;
+    border: 1px solid;
+    white-space: nowrap;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 700;
+    transition: all 0.3s ease;
+}
+
+.mobile-tab-icon {
+    font-size: 16px;
+}
+
+/* Hide Visual on Mobile */
+@media(max-width: 899px) {
+    .desktop-feature-visual {
+        display: none !important;
+    }
+}
+
+/* Hide Mobile Tabs on Desktop */
+@media(min-width: 900px) {
+    .mobile-feature-tabs {
+        display: none !important;
+    }
+}
