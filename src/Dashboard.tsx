@@ -173,7 +173,25 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                 }
             }
             
-            await checkUserRoute(session.user, session.provider_token || null);
+            let currentProviderToken = session.provider_token || null;
+            
+            if (!currentProviderToken && session.user?.user_metadata?.google_refresh_token) {
+                try {
+                    const resp = await fetch('https://gbp-auto-master-backend-us.onrender.com/api/auth/refresh-google-token', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ user_id: session.user.id })
+                    });
+                    const data = await resp.json();
+                    if (data.status === 'success' && data.provider_token) {
+                        currentProviderToken = data.provider_token;
+                    }
+                } catch (e) {
+                    console.error("Failed to refresh Google Token", e);
+                }
+            }
+            
+            await checkUserRoute(session.user, currentProviderToken);
         };
 
         initializeDashboard();
