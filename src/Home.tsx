@@ -339,7 +339,9 @@ export default function Home() {
                 <nav className="home-glass home-nav">
                     <a className="home-logo" href="#">GBP Auto <span className="home-grad-blue">Master</span></a>
                     <ul className="home-navlinks">
-                        <li>Features</li><li>How it Works</li><li>Pricing</li>
+                        <li><a href="#services">Features</a></li>
+                        <li><a href="#how">How it Works</a></li>
+                        <li><a href="#pricing">Pricing</a></li>
                     </ul>
                     <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
                         <button className="home-login-btn" onClick={handleLogin} disabled={loading}>
@@ -507,8 +509,8 @@ export default function Home() {
                         <div className="price-card home-glass home-glass-hover" style={{ position: 'relative' }}>
                             <div className="plan-badge popular">MOST POPULAR</div>
                             <div className="plan-label">Half-Yearly</div>
-                            <div className="price-strike">₹2,160</div>
-                            <div className="price-amount"><span className="amt">₹1,699</span></div>
+                            <div className="price-strike">₹3,000</div>
+                            <div className="price-amount"><span className="amt">₹2,099</span></div>
                             <div className="price-perday">₹9.4 / day</div>
                             <div style={{ fontSize: '11px', color: 'var(--blue-soft)', fontWeight: 'bold', marginTop: '4px', marginBottom: '8px' }}>+ First Time Discount Applied</div>
                             <div className="price-sub">Billed every 6 months.</div>

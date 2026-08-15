@@ -19,26 +19,45 @@ const RocketGrowthGraph: React.FC = () => {
     const currentViews = Math.floor(baseViews + (Math.pow(progress, 3) * (peakViews - baseViews)));
 
     useEffect(() => {
-        const handleScroll = () => {
-            if (!containerRef.current) return;
-            const rect = containerRef.current.getBoundingClientRect();
-            // Start when top hits 80% of window, end when bottom hits 20%
-            const windowHeight = window.innerHeight;
-            const startScroll = windowHeight * 0.8;
-            // The container is 1200px tall. We want the animation to stretch over the scroll.
-            // When rect.top = startScroll, progress = 0.
-            // When rect.bottom = windowHeight * 0.2, progress = 1.
-            const totalScrollDistance = rect.height; 
+        let animationFrameId: number;
+        let startTime: number | null = null;
+        const duration = 1500; // 1.5 seconds animation
+
+        const animate = (timestamp: number) => {
+            if (!startTime) startTime = timestamp;
+            const elapsed = timestamp - startTime;
+            let p = elapsed / duration;
             
-            let p = (startScroll - rect.top) / totalScrollDistance;
-            p = Math.max(0, Math.min(1, p));
+            if (p >= 1) p = 1;
+            else {
+                // ease-out cubic
+                p = 1 - Math.pow(1 - p, 3);
+            }
             
             setProgress(p);
+            
+            if (p < 1) {
+                animationFrameId = requestAnimationFrame(animate);
+            }
         };
-        
-        window.addEventListener('scroll', handleScroll);
-        handleScroll();
-        return () => window.removeEventListener('scroll', handleScroll);
+
+        const observer = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting) {
+                // Start animation
+                if (!startTime) {
+                    animationFrameId = requestAnimationFrame(animate);
+                }
+            }
+        }, { threshold: 0.2 });
+
+        if (containerRef.current) {
+            observer.observe(containerRef.current);
+        }
+
+        return () => {
+            observer.disconnect();
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+        };
     }, []);
 
     // Particle logic - drop stars when in the steep climb phase (progress > 0.6)

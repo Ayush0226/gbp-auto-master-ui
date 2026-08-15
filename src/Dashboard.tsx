@@ -545,6 +545,14 @@ Analytics: ${JSON.stringify(analyticsData || {})}
 
     const handleSchedule = async () => {
         if (!selectedDate || !user) return;
+
+        // Hidden limit of 30 posts/photos/videos per month
+        const totalPosts = Object.values(scheduledPosts).reduce((acc: number, posts: any) => acc + (posts?.length || 0), 0);
+        if (totalPosts >= 30) {
+            showToast("You have reached the limit of 30 scheduled items per month.", "error");
+            return;
+        }
+
         setLoadingAction(true);
         
         try {
