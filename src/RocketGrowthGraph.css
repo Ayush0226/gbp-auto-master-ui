@@ -1,0 +1,105 @@
+.rocket-graph-container {
+    height: 1200px; /* Provides ample scroll distance */
+    position: relative;
+    width: 100%;
+    z-index: 20;
+    margin-top: 50px;
+}
+
+.rocket-graph-inner {
+    position: sticky;
+    top: 15vh;
+    height: 70vh;
+    max-width: 1120px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 24px;
+    background: radial-gradient(circle at center, rgba(59, 130, 246, 0.05) 0%, transparent 70%);
+}
+
+.rocket-graph-wrapper {
+    width: 80%;
+    height: 70%;
+    position: relative;
+    border-left: 2px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.graph-axis-label {
+    position: absolute;
+    color: var(--alpha-40);
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+.graph-axis-label.y-axis {
+    top: -30px;
+    left: -20px;
+}
+
+.graph-axis-label.x-axis {
+    bottom: -40px;
+    right: 0;
+}
+
+.graph-counter-badge {
+    position: absolute;
+    top: 20px;
+    left: 40px;
+    background: rgba(15, 15, 20, 0.8);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    padding: 12px 24px;
+    border-radius: 12px;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.graph-counter-label {
+    font-size: 12px;
+    color: var(--blue-soft);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+}
+
+.graph-counter-val {
+    font-size: 36px;
+    font-weight: 900;
+    color: white;
+    font-variant-numeric: tabular-nums;
+}
+
+.graph-svg-layer {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+}
+
+.graph-rocket-sprite {
+    position: absolute;
+    width: 48px;
+    height: 48px;
+    transform-origin: center center;
+    filter: drop-shadow(0 10px 15px rgba(232, 168, 32, 0.5));
+    transition: none; /* Fast tracking tied to scroll */
+}
+
+/* Star particles falling from exhaust */
+.graph-star-trail {
+    position: absolute;
+    font-size: 14px;
+    pointer-events: none;
+    animation: starFall 1.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+    filter: drop-shadow(0 0 5px rgba(232, 168, 32, 0.8));
+    z-index: 0;
+}
+
+@keyframes starFall {
+    0% { transform: scale(0.5) translate(0, 0); opacity: 1; }
+    100% { transform: scale(1.5) translate(0, 100px); opacity: 0; }
+}

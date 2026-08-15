@@ -1,8 +1,205 @@
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from './lib/supabase';
-import Scene3D from './Scene3D';
+import { MapCanvasBackground } from './MapCanvasBackground';
+import RocketGrowthGraph from './RocketGrowthGraph';
 import ScrollGuide from './ScrollGuide';
+import { DetailedAnalysisBg, CompetitorBg, ContentCalendarBg } from './CarouselBackgrounds';
 import './Home.css';
+
+const FeatureCarousel = () => {
+    const [activeIndex, setActiveIndex] = useState(0);
+    const features = [
+        { 
+            icon: '🤖', 
+            title: '24/7 AI Mentor', 
+            slogan: 'Everything you need to Top', 
+            desc: 'A dedicated AI consultant right in your dashboard analyzing your local search data 24/7, pinpointing missing profile attributes, and generating step-by-step strategy recommendations to outrank local competitors.',
+            color: 'blue', 
+            hex: '#3b82f6',
+            highlights: ['Real-time profile diagnostic score', 'Personalized daily optimization tips', 'Instant Maps growth roadmap'],
+            stat: '+340% Maps Views'
+        },
+        { 
+            icon: '💬', 
+            title: 'AI Review Replier', 
+            slogan: 'Turn every review into customer trust', 
+            desc: 'Stop stressing over bad reviews. Our AI instantly replies to every customer with empathy, gracefully de-escalating 1-star reviews and celebrating 5-star praise within 15 milliseconds. Seamlessly weaves in target SEO keywords.',
+            color: 'orange', 
+            hex: '#f97316',
+            highlights: ['15ms response speed', 'Custom brand tone persona', 'Automatic 1-star review alert'],
+            stat: '100% Response Rate'
+        },
+        { 
+            icon: '📅', 
+            title: 'Content Calendar', 
+            slogan: 'Photos, posts & videos uploaded automatically', 
+            desc: 'Upload your photos, videos, and posts once. Our engine automatically schedules and drips them onto your profile every day during Google\'s most active search hours to keep your listing fresh and active.',
+            color: 'green', 
+            hex: '#22c55e',
+            highlights: ['Peak search hour auto-posting', 'Bulk photo & video scheduler', 'Automated offer & event updates'],
+            stat: 'Daily Auto Posts'
+        },
+        { 
+            icon: '🎯', 
+            title: 'SEO Keywords Auto Implement', 
+            slogan: 'Direct keyword insertion for top Maps ranking', 
+            desc: 'Injecting local search terms directly into your Google profile is the #1 way to rank higher. Simply list your target keywords, and our AI seamlessly weaves them into every automated reply to boost your Maps ranking.',
+            color: 'blue', 
+            hex: '#3b82f6',
+            highlights: ['Auto keyword injection in replies', 'Search intent matching algorithm', 'Rank tracking by target terms'],
+            stat: '#1 Local Map Pack'
+        },
+        { 
+            icon: '⚔️', 
+            title: 'Know your Competitor', 
+            slogan: 'Uncover competitor tactics & beat them', 
+            desc: 'Never guess who\'s beating you in local search. Enter any keyword and instantly view the local competitor leaderboard to track market share, inspect their review strategy, and systematically outmaneuver them.',
+            color: 'orange', 
+            hex: '#f97316',
+            highlights: ['Live local leaderboard search', 'Competitor review velocity tracking', 'Keyword gap detection'],
+            stat: 'Full Market Intel'
+        },
+        { 
+            icon: '📊', 
+            title: 'Detailed Analysis', 
+            slogan: 'Track your growth with real-time charts', 
+            desc: 'Beautiful, real-time analytics showing search impressions, phone call clicks, website visits, and direction requests so you can track your business growth and measure exact ROI from automation.',
+            color: 'green', 
+            hex: '#22c55e',
+            highlights: ['Calls, directions & click charts', 'Weekly growth comparison', 'Exportable client reports'],
+            stat: 'Real-Time ROI Charts'
+        }
+    ];
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setActiveIndex((prev) => (prev + 1) % features.length);
+        }, 7000);
+        return () => clearInterval(interval);
+    }, [features.length]);
+
+    const getCardClass = (index: number) => {
+        if (index === activeIndex) return 'active';
+        if (index === (activeIndex - 1 + features.length) % features.length) return 'prev';
+        if (index === (activeIndex + 1) % features.length) return 'next';
+        
+        const diff = index - activeIndex;
+        if (diff > 1 || (diff < 0 && Math.abs(diff) < features.length - 1)) {
+            return 'hidden-right';
+        }
+        return 'hidden-left';
+    };
+
+    const activeFeature = features[activeIndex];
+
+    return (
+        <div style={{ position: 'relative' }}>
+            <div className="home-carousel-ring"></div>
+            
+            <div className="features-split-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '48px', alignItems: 'center' }}>
+                {/* Left Side: 3D Rotating Carousel */}
+                <div style={{ position: 'relative' }}>
+                    <div className="home-carousel-container" style={{ height: '420px' }}>
+                        {features.map((feature, index) => (
+                            <div 
+                                key={index}
+                                className={`home-carousel-card ${getCardClass(index)}`}
+                                onClick={() => setActiveIndex(index)}
+                                style={{ '--theme-color': feature.hex } as React.CSSProperties}
+                            >
+                                {/* Replace the standard watermark with SVG for specific slides */}
+                                {feature.title === 'Detailed Analysis' ? <DetailedAnalysisBg /> :
+                                 feature.title === 'Know your Competitor' ? <CompetitorBg /> :
+                                 feature.title === 'Content Calendar' ? <ContentCalendarBg /> :
+                                 <div className="card-watermark">{feature.icon}</div>}
+                                
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                                    <div style={{ fontSize: '24px', textAlign: 'left', filter: index === activeIndex ? `drop-shadow(0 0 12px ${feature.hex})` : 'none', transition: 'all 0.5s ease', opacity: index === activeIndex ? 1 : 0.6 }}>
+                                        {feature.icon}
+                                    </div>
+                                    <span style={{ fontSize: '11px', fontWeight: 800, color: index === activeIndex ? feature.hex : 'rgba(255,255,255,0.4)', background: 'rgba(255,255,255,0.06)', padding: '2px 8px', borderRadius: '4px' }}>
+                                        0{index + 1} / 0{features.length}
+                                    </span>
+                                </div>
+                                
+                                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                    <h3 style={{ fontSize: '32px', color: index === activeIndex ? feature.hex : '#fff', fontWeight: 900, lineHeight: 1.1, textAlign: 'left', margin: 0, transition: 'color 0.5s ease', letterSpacing: '-0.5px' }}>
+                                        {feature.title.split(' ').map((word, i) => (
+                                            <span key={i} style={{ display: 'block' }}>{word}</span>
+                                        ))}
+                                    </h3>
+                                </div>
+
+                                {/* Active 7-Second Progress Bar */}
+                                {index === activeIndex && (
+                                    <div style={{ width: '100%', height: '3px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px', overflow: 'hidden', marginTop: 'auto' }}>
+                                        <div 
+                                            key={activeIndex}
+                                            style={{ 
+                                                height: '100%', 
+                                                background: feature.hex, 
+                                                width: '100%', 
+                                                animation: 'carouselProgress 7s linear forwards' 
+                                            }} 
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                    <div className="carousel-dots" style={{ marginTop: '12px' }}>
+                        {features.map((_, idx) => (
+                            <div 
+                                key={idx} 
+                                className={`carousel-dot ${idx === activeIndex ? 'active' : ''}`}
+                                onClick={() => setActiveIndex(idx)}
+                            />
+                        ))}
+                    </div>
+                </div>
+
+                {/* Right Side: Detailed Feature Info Panel */}
+                <div className="home-glass feature-detail-panel" style={{ padding: '40px', borderRadius: '24px', position: 'relative', overflow: 'hidden', border: `1px solid ${activeFeature.hex}44`, background: 'rgba(15, 15, 22, 0.85)', backdropFilter: 'blur(20px)', transition: 'all 0.5s ease' }}>
+                    <div style={{ position: 'absolute', top: '-60px', right: '-60px', width: '200px', height: '200px', background: activeFeature.hex, filter: 'blur(90px)', opacity: 0.25, pointerEvents: 'none' }}></div>
+                    
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '20px' }}>
+                        <span style={{ fontSize: '36px' }}>{activeFeature.icon}</span>
+                        <span style={{ background: `${activeFeature.hex}22`, color: activeFeature.hex, border: `1px solid ${activeFeature.hex}66`, padding: '6px 14px', borderRadius: '99px', fontSize: '13px', fontWeight: 700, letterSpacing: '0.5px' }}>
+                            {activeFeature.slogan}
+                        </span>
+                    </div>
+
+                    <h3 style={{ fontSize: '34px', color: '#FFFFFF', fontWeight: 800, marginBottom: '16px', lineHeight: 1.1 }}>
+                        {activeFeature.title}
+                    </h3>
+
+                    <p style={{ color: 'rgba(255, 255, 255, 0.75)', fontSize: '16px', lineHeight: 1.7, marginBottom: '28px' }}>
+                        {activeFeature.desc}
+                    </p>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '32px' }}>
+                        {activeFeature.highlights.map((item, idx) => (
+                            <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '12px', color: '#F1F5F9', fontWeight: 600, fontSize: '14px' }}>
+                                <span style={{ width: '22px', height: '22px', borderRadius: '50%', background: activeFeature.hex, color: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 800 }}>✓</span>
+                                {item}
+                            </div>
+                        ))}
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '20px', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                        <div>
+                            <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.5)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700 }}>Proven Outcome</div>
+                            <div style={{ fontSize: '20px', fontWeight: 800, color: activeFeature.hex, marginTop: '2px' }}>{activeFeature.stat}</div>
+                        </div>
+                        <a className="home-btn-primary" href="#pricing" style={{ padding: '12px 24px', fontSize: '14px' }}>
+                            Get Started Now &rarr;
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 export default function Home() {
     const [loading, setLoading] = useState(false);
@@ -10,7 +207,7 @@ export default function Home() {
     const [countersVisible, setCountersVisible] = useState(false);
     const [counterValues, setCounterValues] = useState({ businesses: 0, reviews: 0, keywords: 0 });
     const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-    const [theme, setTheme] = useState<'light'|'dark'>('light');
+    const [theme, setTheme] = useState<'light'|'dark'>('dark');
     const counterRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -115,8 +312,6 @@ export default function Home() {
 
     return (
         <div className={`home-wrapper ${theme === 'light' ? 'light-theme' : ''}`}>
-            <Scene3D />
-            <div className="home-canvas-overlay"></div>
             <ScrollGuide />
             <div className="home-noise"></div>
 
@@ -127,9 +322,6 @@ export default function Home() {
                         <li>Features</li><li>How it Works</li><li>Pricing</li>
                     </ul>
                     <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                        <button onClick={() => setTheme(prev => prev === 'light' ? 'dark' : 'light')} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Toggle Theme">
-                            {theme === 'light' ? '🌙' : '☀️'}
-                        </button>
                         <button className="home-login-btn" onClick={handleLogin} disabled={loading}>
                             <svg width="15" height="15" viewBox="0 0 48 48">
                                 <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.9 6 29.7 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.2-.1-2.4-.4-3.5z"/>
@@ -143,7 +335,28 @@ export default function Home() {
                 </nav>
             </header>
 
-            <section className="home-hero home-section">
+            {/* Continuous Feature Ticker Marquee */}
+            <div className="home-ticker-wrap">
+                <div className="home-ticker-inner">
+                    {/* First set */}
+                    <div className="home-ticker-item"><span>🚀</span> Auto-Reply to Reviews in 15ms</div>
+                    <div className="home-ticker-item"><span>📈</span> Rank #1 on Google Maps</div>
+                    <div className="home-ticker-item"><span>🎯</span> Smart SEO Keyword Injection</div>
+                    <div className="home-ticker-item"><span>📸</span> Automated Photo Scheduler</div>
+                    <div className="home-ticker-item"><span>⚔️</span> Live Competitor Tracking</div>
+                    <div className="home-ticker-item"><span>🤖</span> 24/7 AI Local SEO Mentor</div>
+                    {/* Duplicate set for seamless looping */}
+                    <div className="home-ticker-item"><span>🚀</span> Auto-Reply to Reviews in 15ms</div>
+                    <div className="home-ticker-item"><span>📈</span> Rank #1 on Google Maps</div>
+                    <div className="home-ticker-item"><span>🎯</span> Smart SEO Keyword Injection</div>
+                    <div className="home-ticker-item"><span>📸</span> Automated Photo Scheduler</div>
+                    <div className="home-ticker-item"><span>⚔️</span> Live Competitor Tracking</div>
+                    <div className="home-ticker-item"><span>🤖</span> 24/7 AI Local SEO Mentor</div>
+                </div>
+            </div>
+
+            <section className="home-hero home-section" style={{ paddingTop: '80px', position: 'relative', overflow: 'hidden' }}>
+                <MapCanvasBackground />
                 <div className="home-glow" style={{ width: '640px', height: '640px', top: '-160px', left: '50%', transform: 'translateX(-50%)', background: 'radial-gradient(circle,rgba(59,130,246,.32) 0%,transparent 70%)' }}></div>
                 <div className="home-glow" style={{ width: '380px', height: '380px', top: '160px', left: '-120px', background: 'radial-gradient(circle,rgba(52,168,83,.2) 0%,transparent 70%)' }}></div>
                 <div className="home-glow" style={{ width: '340px', height: '340px', top: '260px', right: '-100px', background: 'radial-gradient(circle,rgba(249,115,22,.16) 0%,transparent 70%)' }}></div>
@@ -205,44 +418,21 @@ export default function Home() {
                 </div>
             </section>
 
-            <section id="services" className="home-section scroll-reveal">
+            <section id="services" className="home-section scroll-reveal" style={{ position: 'relative', overflow: 'hidden' }}>
                 <div className="home-wrap">
-                    <div className="home-center" style={{ marginBottom: '40px' }}><h2 className="home-grad-metal" style={{ fontSize: '36px' }}>Automation of Google Business Profile</h2></div>
-                    <div className="home-grid3">
-                        <div className="feature-card home-glass home-glass-hover">
-                            <div className="feature-icon-wrap blue" style={{ fontSize: '28px' }}>🤖</div>
-                            <h3 className="home-grad-blue" style={{ fontSize: '22px' }}>24/7 AI Mentor</h3>
-                            <p style={{ fontWeight: 600, color: 'var(--blue-soft)', marginBottom: '8px' }}>"Everything you need to Top."</p>
-                            <p>A dedicated AI consultant right in your dashboard analyzing your data and telling you exactly what moves to make next to dominate local search.</p>
+                    <div className="home-center" style={{ marginBottom: '10px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', marginBottom: '12px' }}>
+                            <div style={{ height: '2px', width: '40px', background: '#E8A820' }}></div>
+                            <span style={{ color: '#E8A820', fontWeight: 700, letterSpacing: '2px', fontSize: '13px', textTransform: 'uppercase' }}>What We Offer</span>
+                            <div style={{ height: '2px', width: '40px', background: '#E8A820' }}></div>
                         </div>
-                        <div className="feature-card home-glass home-glass-hover">
-                            <div className="feature-icon-wrap orange" style={{ fontSize: '28px' }}>💬</div>
-                            <h3 className="home-grad-blue" style={{ fontSize: '22px' }}>AI Review Replier</h3>
-                            <p>Stop stressing over bad reviews. Our AI instantly replies to every customer with empathy, gracefully de-escalating 1-star reviews and celebrating 5-star praise within 15 milliseconds. Improve your overall ratings effortlessly.</p>
-                        </div>
-                        <div className="feature-card home-glass home-glass-hover">
-                            <div className="feature-icon-wrap green" style={{ fontSize: '28px' }}>📅</div>
-                            <h3 className="home-grad-blue" style={{ fontSize: '22px' }}>Content Calendar</h3>
-                            <p>Upload your photos, videos, and posts once. Our engine automatically schedules and drips them onto your profile every day during Google's most active hours to maximize engagement and keep your profile fresh.</p>
-                        </div>
-                        <div className="feature-card home-glass home-glass-hover">
-                            <div className="feature-icon-wrap blue" style={{ fontSize: '28px' }}>🎯</div>
-                            <h3 className="home-grad-blue" style={{ fontSize: '22px' }}>SEO Keywords Auto Implement</h3>
-                            <p>Injecting local search terms directly into your Google profile is the #1 way to rank higher. Simply list your target keywords, and our AI seamlessly weaves them into every automated reply to boost your Maps ranking.</p>
-                        </div>
-                        <div className="feature-card home-glass home-glass-hover">
-                            <div className="feature-icon-wrap orange" style={{ fontSize: '28px' }}>⚔️</div>
-                            <h3 className="home-grad-blue" style={{ fontSize: '22px' }}>Know your Competitor</h3>
-                            <p>Never guess who's beating you. Search any keyword and instantly see the local leaderboard to track your market share, identify top performers, and outmaneuver the competition.</p>
-                        </div>
-                        <div className="feature-card home-glass home-glass-hover">
-                            <div className="feature-icon-wrap green" style={{ fontSize: '28px' }}>📊</div>
-                            <h3 className="home-grad-blue" style={{ fontSize: '22px' }}>Detailed Analysis</h3>
-                            <p>Beautiful, real-time charts showing your search impressions, call clicks, and website visits so you can track your growth and see the exact return on investment from your automation.</p>
-                        </div>
+                        <h2 style={{ fontSize: '48px', color: '#fff', fontWeight: 800 }}>Arsenal of <span style={{ color: '#E8A820' }}>automation</span></h2>
                     </div>
+                    <FeatureCarousel />
                 </div>
             </section>
+            
+            <RocketGrowthGraph />
 
             <section id="how" className="home-section scroll-reveal">
                 <div className="home-wrap">
@@ -274,34 +464,40 @@ export default function Home() {
                 <div className="home-glow" style={{ width: '560px', height: '560px', top: '0', left: '50%', transform: 'translateX(-50%)', background: 'radial-gradient(circle,rgba(59,130,246,.32) 0%,transparent 70%)' }}></div>
                 <div className="home-wrap">
                     <div className="home-center"><h2 className="home-grad-metal" style={{ fontSize: '32px' }}>Cheaper than a newspaper ad.<br/>Better than an SEO agency.</h2></div>
+                    
+                    <div className="pricing-rocket-container">
+                        <svg width="60" height="60" viewBox="0 0 64 64" fill="none">
+                            {/* Rocket Body */}
+                            <path d="M 32 8 C 40 20 42 34 42 44 L 22 44 C 22 34 24 20 32 8 Z" fill="#1F2937" stroke="#4B5563" strokeWidth="2" strokeLinejoin="round" />
+                            {/* Rocket Window */}
+                            <circle cx="32" cy="28" r="5" fill="#111827" stroke="#60A5FA" strokeWidth="2" />
+                            {/* Rocket Fins */}
+                            <path d="M 22 38 L 14 48 L 22 44 Z" fill="#374151" stroke="#4B5563" strokeWidth="1" strokeLinejoin="round" />
+                            <path d="M 42 38 L 50 48 L 42 44 Z" fill="#374151" stroke="#4B5563" strokeWidth="1" strokeLinejoin="round" />
+                            {/* Rocket Engine */}
+                            <path d="M 28 44 L 36 44 L 34 48 L 30 48 Z" fill="#4B5563" />
+                            {/* Fire */}
+                            <path d="M 28 48 Q 32 60 36 48 Q 32 54 28 48 Z" fill="#EF4444">
+                                <animate attributeName="fill" values="#EF4444;#F59E0B;#EF4444" dur="0.2s" repeatCount="indefinite" />
+                            </path>
+                        </svg>
+                    </div>
+
                     <div className="home-price-grid">
-                        <div className="price-card home-glass home-glass-hover">
-                            <div className="plan-label">Monthly</div>
-                            <div className="price-strike">₹360</div>
-                            <div className="price-amount"><span className="amt">₹289</span></div>
-                            <div className="price-perday">₹9.6 / day</div>
-                            <div style={{ fontSize: '11px', color: 'var(--blue-soft)', fontWeight: 'bold', marginTop: '4px', marginBottom: '8px' }}>+ First Time Discount Applied</div>
-                            <div className="price-sub">Billed every month. Cancel anytime.</div>
-                            <ul className="price-features home-feat-list">
-                                <li><span className="home-check blue">✓</span>AI Review Replies</li>
-                                <li><span className="home-check blue">✓</span>Keyword Discovery</li>
-                                <li><span className="home-check blue">✓</span>Photo Scheduler</li>
-                                <li><span className="home-check blue">✓</span>1 GBP Location</li>
-                            </ul>
-                            <button className="price-btn ghost" onClick={handleLogin}>Start Free Demo</button>
-                        </div>
                         <div className="price-card home-glass home-glass-hover" style={{ position: 'relative' }}>
                             <div className="plan-badge popular">MOST POPULAR</div>
                             <div className="plan-label">Half-Yearly</div>
                             <div className="price-strike">₹2,160</div>
-                            <div className="price-amount"><span className="amt">₹1,649</span></div>
-                            <div className="price-perday">₹9.1 / day</div>
+                            <div className="price-amount"><span className="amt">₹1,699</span></div>
+                            <div className="price-perday">₹9.4 / day</div>
                             <div style={{ fontSize: '11px', color: 'var(--blue-soft)', fontWeight: 'bold', marginTop: '4px', marginBottom: '8px' }}>+ First Time Discount Applied</div>
                             <div className="price-sub">Billed every 6 months.</div>
                             <ul className="price-features home-feat-list">
-                                <li><span className="home-check blue">✓</span>AI Review Replies</li>
-                                <li><span className="home-check blue">✓</span>Keyword Discovery</li>
-                                <li><span className="home-check blue">✓</span>Photo Scheduler</li>
+                                <li><span className="home-check blue">✓</span>24/7 AI Local SEO Mentor</li>
+                                <li><span className="home-check blue">✓</span>Auto AI Review Replies</li>
+                                <li><span className="home-check blue">✓</span>Target Keyword Discovery</li>
+                                <li><span className="home-check blue">✓</span>Automated Content Calendar</li>
+                                <li><span className="home-check blue">✓</span>Detailed Growth Analytics</li>
                                 <li><span className="home-check blue">✓</span>1 GBP Location</li>
                                 <li><span className="home-check blue">✓</span>Priority Support</li>
                             </ul>
@@ -311,16 +507,19 @@ export default function Home() {
                             <div className="plan-badge best winner">BEST VALUE</div>
                             <div className="plan-label blue">Yearly</div>
                             <div className="price-strike">₹4,380</div>
-                            <div className="price-amount"><span className="amt">₹3,149</span></div>
-                            <div className="price-perday">₹8.6 / day</div>
+                            <div className="price-amount"><span className="amt">₹3,999</span></div>
+                            <div className="price-perday">₹10.9 / day</div>
                             <div style={{ fontSize: '11px', color: 'var(--green)', fontWeight: 'bold', marginTop: '4px', marginBottom: '8px' }}>+ First Time Discount Applied</div>
                             <div className="price-sub">Billed once a year.</div>
                             <ul className="price-features home-feat-list">
-                                <li><span className="home-check green">✓</span>AI Review Replies</li>
-                                <li><span className="home-check green">✓</span>Keyword Discovery</li>
-                                <li><span className="home-check green">✓</span>Photo Scheduler</li>
+                                <li><span className="home-check green">✓</span>24/7 AI Local SEO Mentor</li>
+                                <li><span className="home-check green">✓</span>Auto AI Review Replies</li>
+                                <li><span className="home-check green">✓</span>Target Keyword Discovery</li>
+                                <li><span className="home-check green">✓</span>Automated Content Calendar</li>
+                                <li><span className="home-check green">✓</span>Detailed Growth Analytics</li>
                                 <li><span className="home-check green">✓</span>1 GBP Location</li>
                                 <li><span className="home-check green">✓</span>Priority Support</li>
+                                <li style={{ fontWeight: 'bold', color: '#fff', background: 'rgba(52,168,83,0.1)', padding: '6px 12px', borderRadius: '8px', marginLeft: '-12px' }}><span className="home-check green">⭐</span>Live Competitor Leaderboard</li>
                             </ul>
                             <button className="price-btn solid" onClick={handleLogin}>Start Free Demo</button>
                         </div>
@@ -345,9 +544,9 @@ export default function Home() {
                 <div className="home-logo" style={{ fontSize: '15px' }}>GBP Auto <span className="home-grad-blue">Master</span></div>
                 <div className="home-copyright">© 2026 gbpautomaster.in. All rights reserved.</div>
                 <div className="home-footer-links" style={{ display: 'flex', gap: '24px', flexWrap: 'wrap', justifyContent: 'center' }}>
-                    <a href="/privacy">Privacy Policy</a>
-                    <a href="/terms">Terms of Service</a>
-                    <a href="/refund">Cancellation & Refund Policy</a>
+                    <a href="/privacy" onClick={(e) => { e.preventDefault(); window.history.pushState({}, '', '/privacy'); window.dispatchEvent(new Event('popstate')); }}>Privacy Policy</a>
+                    <a href="/terms" onClick={(e) => { e.preventDefault(); window.history.pushState({}, '', '/terms'); window.dispatchEvent(new Event('popstate')); }}>Terms of Service</a>
+                    <a href="/refund" onClick={(e) => { e.preventDefault(); window.history.pushState({}, '', '/refund'); window.dispatchEvent(new Event('popstate')); }}>Cancellation & Refund Policy</a>
                 </div>
             </div>
         </div>

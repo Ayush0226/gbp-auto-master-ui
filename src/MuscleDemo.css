@@ -1,0 +1,356 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap');
+
+.muscle-demo {
+    --bg-primary: #0B0B0B;
+    --bg-secondary: #141416;
+    --bg-tertiary: #1C1C1E;
+    
+    --accent-gold: #E8A820;
+    --accent-orange: #FF9500;
+    --gradient-gold: linear-gradient(135deg, var(--accent-gold) 0%, var(--accent-orange) 100%);
+    
+    --text-main: #F2F0EE;
+    --text-muted: rgba(242, 240, 238, 0.72);
+    
+    --border-color: #36363A;
+    --border-hover: rgba(232, 168, 32, 0.5);
+    
+    --card-bg: rgba(20, 20, 22, 0.6);
+    --pill-bg: rgba(232, 168, 32, 0.15);
+    
+    background-color: var(--bg-primary);
+    color: var(--text-main);
+    font-family: 'DM Sans', Inter, system-ui, sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+    line-height: 1.6;
+}
+
+/* Animations */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(25px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.muscle-demo .animate-fade-in-up {
+    animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Utility Classes */
+.muscle-demo .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px;
+}
+
+.muscle-demo h1, 
+.muscle-demo h2, 
+.muscle-demo h3 {
+    margin: 0;
+    text-transform: uppercase;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+}
+
+.muscle-demo h1 {
+    font-size: clamp(48px, 8vw, 72px);
+    font-weight: 900;
+}
+
+.muscle-demo h2 {
+    font-size: clamp(32px, 5vw, 44px);
+    font-weight: 800;
+}
+
+.muscle-demo h3 {
+    font-size: clamp(20px, 3vw, 24px);
+    font-weight: 700;
+}
+
+/* Specific UI Components */
+.muscle-demo .pill-badge {
+    display: inline-block;
+    background: var(--pill-bg);
+    color: var(--accent-gold);
+    padding: 6px 16px;
+    border-radius: 9999px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+}
+
+.muscle-demo .btn-primary {
+    background: var(--gradient-gold);
+    color: #000;
+    border: none;
+    padding: 16px 32px;
+    font-size: 16px;
+    font-weight: 700;
+    border-radius: 4px;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-family: 'DM Sans', sans-serif;
+}
+
+.muscle-demo .btn-primary:hover {
+    transform: scale(1.02);
+    box-shadow: 0 10px 25px rgba(232, 168, 32, 0.3);
+}
+
+.muscle-demo .btn-outline {
+    background: transparent;
+    color: var(--text-main);
+    border: 1px solid var(--border-color);
+    padding: 16px 32px;
+    font-size: 16px;
+    font-weight: 700;
+    border-radius: 4px;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-family: 'DM Sans', sans-serif;
+}
+
+.muscle-demo .btn-outline:hover {
+    border-color: var(--accent-gold);
+    color: var(--accent-gold);
+    background: rgba(232, 168, 32, 0.05);
+}
+
+/* Glass Card */
+.muscle-demo .glass-card {
+    background: var(--card-bg);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 32px;
+    transition: all 0.3s ease;
+}
+
+.muscle-demo .glass-card:hover {
+    border-color: var(--border-hover);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+}
+
+/* Nav */
+.muscle-demo .nav-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 100;
+    background: rgba(11, 11, 11, 0.85);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    padding: 20px 0;
+}
+
+.muscle-demo .nav-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.muscle-demo .nav-links {
+    display: flex;
+    gap: 32px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.muscle-demo .nav-links a {
+    color: var(--text-main);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: color 0.2s ease;
+}
+
+.muscle-demo .nav-links a:hover {
+    color: var(--accent-gold);
+}
+
+/* Hero Section */
+.muscle-demo .hero-section {
+    position: relative;
+    padding: 180px 0 120px;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    background-image: linear-gradient(to right, rgba(11,11,11,0.95) 0%, rgba(11,11,11,0.4) 100%), url('https://images.unsplash.com/photo-1542038784456-1ea8e935640e?auto=format&fit=crop&q=80');
+    background-size: cover;
+    background-position: center;
+}
+
+.muscle-demo .hero-content {
+    max-width: 700px;
+}
+
+.muscle-demo .hero-desc {
+    font-size: 20px;
+    color: var(--text-muted);
+    margin: 24px 0 40px;
+    line-height: 1.6;
+}
+
+/* Feature Grid */
+.muscle-demo .features-section {
+    padding: 120px 0;
+    background: var(--bg-secondary);
+}
+
+.muscle-demo .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 24px;
+    margin-top: 60px;
+}
+
+.muscle-demo .feature-card {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    padding: 40px 32px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.muscle-demo .feature-card:hover {
+    border-color: var(--accent-gold);
+    transform: translateY(-5px);
+}
+
+.muscle-demo .feature-icon {
+    width: 48px;
+    height: 48px;
+    background: rgba(232, 168, 32, 0.1);
+    color: var(--accent-gold);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 24px;
+}
+
+.muscle-demo .feature-card h3 {
+    font-size: 22px;
+    margin-bottom: 16px;
+    transition: color 0.3s ease;
+}
+
+.muscle-demo .feature-card:hover h3 {
+    color: var(--accent-gold);
+}
+
+.muscle-demo .feature-card p {
+    color: var(--text-muted);
+    font-size: 15px;
+    margin: 0;
+}
+
+/* Tabs */
+.muscle-demo .tabs-section {
+    padding: 120px 0;
+    background: var(--bg-primary);
+}
+
+.muscle-demo .tab-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 48px;
+    margin-bottom: 40px;
+}
+
+.muscle-demo .tab-btn {
+    background: var(--bg-tertiary);
+    color: var(--text-muted);
+    border: 1px solid var(--border-color);
+    padding: 12px 24px;
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.muscle-demo .tab-btn:hover {
+    background: rgba(255,255,255,0.05);
+    color: var(--text-main);
+}
+
+.muscle-demo .tab-btn.active {
+    background: var(--accent-gold);
+    color: #000;
+    border-color: var(--accent-gold);
+}
+
+.muscle-demo .tab-content {
+    background: var(--bg-secondary);
+    border-radius: 16px;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border: 1px solid var(--border-color);
+}
+
+.muscle-demo .tab-text {
+    padding: 60px;
+}
+
+.muscle-demo .tab-image {
+    background-size: cover;
+    background-position: center;
+    min-height: 400px;
+}
+
+.muscle-demo .checklist {
+    list-style: none;
+    padding: 0;
+    margin: 32px 0 0;
+}
+
+.muscle-demo .checklist li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    color: var(--text-main);
+    font-weight: 500;
+}
+
+.muscle-demo .checklist li svg {
+    color: var(--accent-gold);
+    flex-shrink: 0;
+}
+
+@media (max-width: 900px) {
+    .muscle-demo .tab-content {
+        grid-template-columns: 1fr;
+    }
+    .muscle-demo .nav-links {
+        display: none;
+    }
+}

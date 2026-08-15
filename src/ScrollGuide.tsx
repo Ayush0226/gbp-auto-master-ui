@@ -1,13 +1,13 @@
 import { useEffect, useState, useRef } from 'react';
 
-// Waypoints for the robot's journey (percentage of scroll → position)
+// Waypoints for the robot's journey
 const WAYPOINTS = [
-    { scroll: 0,    x: 85, message: "Hey! Let me show you around 👋", side: 'right' },
-    { scroll: 0.12, x: 15, message: "Here's what we give you ✨", side: 'left' },
-    { scroll: 0.28, x: 85, message: "These features are 🔥", side: 'right' },
-    { scroll: 0.48, x: 15, message: "It's this easy, really! 🚀", side: 'left' },
-    { scroll: 0.68, x: 85, message: "Pick your perfect plan 💰", side: 'right' },
-    { scroll: 0.88, x: 50, message: "Let's get started! 🎯", side: 'center' },
+    { scroll: 0,    x: 85, message: "Hey there! I'm Taay, your GBP Guide 🤖", side: 'right' },
+    { scroll: 0.15, x: 15, message: "Watch us rank you #1 on Google Maps! 📈", side: 'left' },
+    { scroll: 0.35, x: 85, message: "Swipe through our AI features below! ⚡", side: 'right' },
+    { scroll: 0.55, x: 15, message: "Spy on your local competitors live ⚔️", side: 'left' },
+    { scroll: 0.75, x: 85, message: "Only ₹9.6/day — grab the discount! 💰", side: 'right' },
+    { scroll: 0.92, x: 50, message: "Let me set up your profile now! 🎯", side: 'center' },
 ];
 
 function lerp(a: number, b: number, t: number) {
@@ -115,6 +115,7 @@ export default function ScrollGuide() {
                     stroke="rgba(59,130,246,0.15)"
                     strokeWidth="1.2"
                     strokeDasharray="1, 1.5"
+                    vectorEffect="non-scaling-stroke"
                 />
                 {/* Solid drawn path up to the robot */}
                 <polyline
@@ -122,6 +123,7 @@ export default function ScrollGuide() {
                     fill="none"
                     stroke="rgba(59,130,246,0.6)"
                     strokeWidth="1.5"
+                    vectorEffect="non-scaling-stroke"
                 />
             </svg>
 
@@ -144,11 +146,11 @@ export default function ScrollGuide() {
                         </circle>
                         
                         {/* Head */}
-                        <rect x="16" y="8" width="32" height="24" rx="8" fill="url(#robotGrad)" stroke="#3B82F6" strokeWidth="1.5" />
+                        <rect x="16" y="8" width="32" height="24" rx="8" fill="url(#robotGrad)" stroke="#4B5563" strokeWidth="1.5" />
                         
                         {/* Eyes */}
-                        <circle cx="24" cy="20" r="4" fill="#0A0A0A" />
-                        <circle cx="40" cy="20" r="4" fill="#0A0A0A" />
+                        <circle cx="24" cy="20" r="4" fill="#030712" />
+                        <circle cx="40" cy="20" r="4" fill="#030712" />
                         <circle cx="25" cy="19" r="1.8" fill="#60A5FA">
                             <animate attributeName="cx" values="25;23;25" dur="3s" repeatCount="indefinite" />
                         </circle>
@@ -160,7 +162,7 @@ export default function ScrollGuide() {
                         <path d="M 25 26 Q 32 30 39 26" stroke="#4ADE80" strokeWidth="1.5" fill="none" strokeLinecap="round" />
                         
                         {/* Body */}
-                        <rect x="20" y="34" width="24" height="18" rx="6" fill="url(#robotGrad)" stroke="#3B82F6" strokeWidth="1.5" />
+                        <rect x="20" y="34" width="24" height="18" rx="6" fill="url(#robotGrad)" stroke="#4B5563" strokeWidth="1.5" />
                         
                         {/* Body light */}
                         <circle cx="32" cy="43" r="3" fill="#3B82F6">
@@ -168,21 +170,21 @@ export default function ScrollGuide() {
                         </circle>
                         
                         {/* Arms */}
-                        <rect x="10" y="36" width="8" height="4" rx="2" fill="#3B82F6" opacity="0.8">
+                        <rect x="10" y="36" width="8" height="4" rx="2" fill="#1F2937" stroke="#4B5563" strokeWidth="1" opacity="0.8">
                             <animateTransform attributeName="transform" type="rotate" values="-5,14,38;5,14,38;-5,14,38" dur="2s" repeatCount="indefinite" />
                         </rect>
-                        <rect x="46" y="36" width="8" height="4" rx="2" fill="#3B82F6" opacity="0.8">
+                        <rect x="46" y="36" width="8" height="4" rx="2" fill="#1F2937" stroke="#4B5563" strokeWidth="1" opacity="0.8">
                             <animateTransform attributeName="transform" type="rotate" values="5,50,38;-5,50,38;5,50,38" dur="2s" repeatCount="indefinite" />
                         </rect>
                         
                         {/* Feet */}
-                        <rect x="22" y="53" width="8" height="5" rx="2.5" fill="#1D4ED8" />
-                        <rect x="34" y="53" width="8" height="5" rx="2.5" fill="#1D4ED8" />
+                        <rect x="22" y="53" width="8" height="5" rx="2.5" fill="#111827" stroke="#4B5563" strokeWidth="1" />
+                        <rect x="34" y="53" width="8" height="5" rx="2.5" fill="#111827" stroke="#4B5563" strokeWidth="1" />
                         
                         <defs>
                             <linearGradient id="robotGrad" x1="32" y1="8" x2="32" y2="52" gradientUnits="userSpaceOnUse">
-                                <stop offset="0%" stopColor="#1e293b" />
-                                <stop offset="100%" stopColor="#0f172a" />
+                                <stop offset="0%" stopColor="#374151" />
+                                <stop offset="100%" stopColor="#111827" />
                             </linearGradient>
                         </defs>
                     </svg>
