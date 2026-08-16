@@ -36,7 +36,6 @@ export default function MasterDashboardPage() {
     const [promoCode, setPromoCode] = useState('');
     
     const PRICING_PLANS = {
-        monthly: { name: 'Monthly', original: 499, discounted: 399 },
         half_yearly: { name: 'Half-Yearly', original: 2999, discounted: 1999 },
         yearly: { name: 'Yearly', original: 5499, discounted: 3999 }
     };
