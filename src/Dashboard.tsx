@@ -36,9 +36,9 @@ export default function MasterDashboardPage() {
     const [promoCode, setPromoCode] = useState('');
     
     const PRICING_PLANS = {
-        monthly: { name: 'Monthly', original: 360, discounted: 289 },
-        half_yearly: { name: 'Half-Yearly', original: 2160, discounted: 1649 },
-        yearly: { name: 'Yearly', original: 4380, discounted: 3149 }
+        monthly: { name: 'Monthly', original: 499, discounted: 399 },
+        half_yearly: { name: 'Half-Yearly', original: 2999, discounted: 1999 },
+        yearly: { name: 'Yearly', original: 5499, discounted: 3999 }
     };
     
     const router = {
@@ -65,7 +65,7 @@ export default function MasterDashboardPage() {
     // Locations State
     const [activeLocationId, setActiveLocationId] = useState<string>('loc1');
     const activeLocObj = liveLocations.find(l => l.id === activeLocationId) || (liveLocations.length > 0 ? liveLocations[0] : null);
-    const activeLocationName = activeLocObj ? activeLocObj.name : "Loading Location...";
+    const activeLocationName = activeLocObj ? activeLocObj.name : "No Location Connected";
     
     // Analytics State
     const [analyticsData, setAnalyticsData] = useState<any>(null);
@@ -1501,12 +1501,27 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                                     <h3 style={{ fontSize: '16px', marginBottom: '16px' }}>Activate Automation for {activeLocationName}</h3>
                                     <p style={{ fontSize: '13px', color: 'rgba(255,255,255,.6)', marginBottom: '20px' }}>This location currently does not have an active AI subscription. Choose a plan below to activate.</p>
                                     <div className="grid grid-3">
-                                        {(Object.keys(PRICING_PLANS) as Array<keyof typeof PRICING_PLANS>).map((key) => (
-                                            <div key={key} className="card-sm glass glass-hover" onClick={() => setSelectedPlan(key)} style={{ cursor: 'pointer', border: selectedPlan === key ? '1px solid rgba(59,130,246,.4)' : '' }}>
-                                                <p style={{ fontSize: '12px', color: selectedPlan === key ? 'var(--blue-soft)' : 'rgba(255,255,255,.5)' }}>{PRICING_PLANS[key].name}</p>
-                                                <p style={{ fontWeight: 700, fontSize: '20px', marginTop: '4px' }}>₹{PRICING_PLANS[key].original}</p>
-                                            </div>
-                                        ))}
+                                        {(Object.keys(PRICING_PLANS) as Array<keyof typeof PRICING_PLANS>).map((key) => {
+                                            const plan = PRICING_PLANS[key];
+                                            const days = key === 'monthly' ? 30 : (key === 'half_yearly' ? 180 : 365);
+                                            const perDay = (plan.discounted / days).toFixed(1);
+                                            const discountAmt = plan.original - plan.discounted;
+                                            
+                                            return (
+                                                <div key={key} className="card-sm glass glass-hover" onClick={() => setSelectedPlan(key)} style={{ cursor: 'pointer', position: 'relative', border: selectedPlan === key ? '1px solid rgba(59,130,246,.4)' : '' }}>
+                                                    {key === 'yearly' && <span className="badge-pill b-green" style={{ position: 'absolute', top: '-10px', right: '-10px', fontSize: '10px' }}>Best Value</span>}
+                                                    <p style={{ fontSize: '13px', color: selectedPlan === key ? 'var(--blue-soft)' : 'rgba(255,255,255,.5)' }}>{plan.name}</p>
+                                                    
+                                                    <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', marginTop: '4px' }}>
+                                                        <p style={{ fontWeight: 700, fontSize: '24px', margin: 0 }}>₹{plan.discounted}</p>
+                                                        <p style={{ fontSize: '13px', color: 'rgba(255,255,255,.4)', textDecoration: 'line-through', paddingBottom: '3px', margin: 0 }}>₹{plan.original}</p>
+                                                    </div>
+                                                    
+                                                    <p style={{ fontSize: '11px', color: 'var(--green-soft)', marginTop: '6px', fontWeight: 600 }}>Save ₹{discountAmt} (1st-time user)</p>
+                                                    <p style={{ fontSize: '11px', color: 'rgba(255,255,255,.5)', marginTop: '4px' }}>Just ₹{perDay} / day</p>
+                                                </div>
+                                            );
+                                        })}
                                     </div>
                                     <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)', marginTop: '16px' }}>
                                         * Note: After the initial payment, the original standard price will apply upon renewal.
