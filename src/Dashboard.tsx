@@ -28,7 +28,7 @@ export default function MasterDashboardPage() {
     
     // Demo State
     const [demoSelectedLoc, setDemoSelectedLoc] = useState<string | null>(null);
-    const [demoResultNames, setDemoResultNames] = useState<string[]>([]);
+    const [demoResultNames, setDemoResultNames] = useState<any[]>([]);
     
     // Payment State
     const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'half_yearly' | 'yearly'>('half_yearly');
@@ -37,7 +37,7 @@ export default function MasterDashboardPage() {
     
     const PRICING_PLANS = {
         half_yearly: { name: 'Half-Yearly', original: 2999, discounted: 1999 },
-        yearly: { name: 'Yearly', original: 5499, discounted: 3999 }
+        yearly: { name: 'Yearly', original: 5500, discounted: 3999 }
     };
     
     const router = {
@@ -92,6 +92,28 @@ export default function MasterDashboardPage() {
     // Report Modal State
     const [showReportModal, setShowReportModal] = useState(false);
     const [reportGenerating, setReportGenerating] = useState(false);
+
+    // PWA Install State
+    const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+
+    useEffect(() => {
+        const handleBeforeInstallPrompt = (e: any) => {
+            e.preventDefault();
+            setDeferredPrompt(e);
+        };
+        window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+        return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    }, []);
+
+    const handleInstallPWA = async () => {
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === 'accepted') {
+                setDeferredPrompt(null);
+            }
+        }
+    };
 
     const handleSendChat = async () => {
         if (!chatInput.trim()) return;
@@ -299,7 +321,13 @@ Analytics: ${JSON.stringify(analyticsData || {})}
             .then(res => res.json())
             .then(data => {
                 if (data.status === 'success') {
-                    setLiveReviews(data.reviews || []);
+                    const sortedReviews = (data.reviews || []).sort((a: any, b: any) => {
+                        if (a.has_reply === b.has_reply) {
+                            return new Date(b.createTime).getTime() - new Date(a.createTime).getTime();
+                        }
+                        return a.has_reply ? 1 : -1;
+                    });
+                    setLiveReviews(sortedReviews);
                     setLiveLocations(prev => prev.map(loc => {
                         if (loc.id === activeLocationId) {
                             return { 
@@ -316,6 +344,17 @@ Analytics: ${JSON.stringify(analyticsData || {})}
             })
             .catch(err => console.error(err))
             .finally(() => setLoadingReviews(false));
+        }
+    }, [appState, activeLocationId, providerToken, user]);
+
+    // Auto-Register Webhook Silently
+    useEffect(() => {
+        if (appState === 'dashboard' && providerToken && user && activeLocationId && activeLocationId !== 'loc1') {
+            fetch('https://gbp-auto-master-backend-us.onrender.com/api/google/register-webhook', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: user.id, provider_token: providerToken, location_id: activeLocationId })
+            }).catch(e => console.error("Silent webhook registration failed:", e));
         }
     }, [appState, activeLocationId, providerToken, user]);
 
@@ -339,7 +378,13 @@ Analytics: ${JSON.stringify(analyticsData || {})}
             });
             const freshData = await freshRes.json();
             if (freshData.status === 'success') {
-                setLiveReviews(freshData.reviews || []);
+                const sortedReviews = (freshData.reviews || []).sort((a: any, b: any) => {
+                    if (a.has_reply === b.has_reply) {
+                        return new Date(b.createTime).getTime() - new Date(a.createTime).getTime();
+                    }
+                    return a.has_reply ? 1 : -1;
+                });
+                setLiveReviews(sortedReviews);
                 setLiveLocations(prev => prev.map(loc => {
                     if (loc.id === activeLocationId) {
                         return { 
@@ -459,16 +504,29 @@ Analytics: ${JSON.stringify(analyticsData || {})}
         if (!demoSelectedLoc) return;
         setAppState('demo-running');
         
-        // Simulating the Python Render backend processing 2 newest reviews
-        setTimeout(async () => {
-            // Update supabase user metadata to prevent taking demo again
-            await supabase.auth.updateUser({
-                data: { demo_used: true }
+        try {
+            const res = await fetch("https://gbp-auto-master-backend-us.onrender.com/api/google/run-demo", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: user?.id, provider_token: providerToken, location_id: demoSelectedLoc })
             });
+            const data = await res.json();
             
-            setDemoResultNames(['Ankit Verma', 'Priya Sharma']);
-            setAppState('demo-success');
-        }, 3500);
+            if (data.status === 'success') {
+                await supabase.auth.updateUser({
+                    data: { demo_used: true }
+                });
+                setDemoResultNames(data.replies);
+                setAppState('demo-success');
+            } else {
+                showToast("Demo failed: " + data.message, "error");
+                setAppState('demo-select');
+            }
+        } catch (e) {
+            console.error(e);
+            showToast("Network error running demo", "error");
+            setAppState('demo-select');
+        }
     };
 
     const handleCheckout = async () => {
@@ -593,7 +651,43 @@ Analytics: ${JSON.stringify(analyticsData || {})}
 
             // Format date as YYYY-MM-DD
             const postDateObj = new Date(currentYear, currentMonth, selectedDate);
-            // using local time to format YYYY-MM-DD to avoid UTC shifting
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            if (postDateObj.getTime() <= today.getTime()) {
+                const confirmed = window.confirm("Since this is scheduled for today (or the past), it will be published to Google Maps immediately. Continue?");
+                if (!confirmed) {
+                    setLoadingAction(false);
+                    return;
+                }
+                
+                // Publish immediately
+                const res = await fetch("https://gbp-auto-master-backend-us.onrender.com/api/google/publish-post", {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        provider_token: providerToken,
+                        location_id: activeLocationId,
+                        summary: postText,
+                        image_url: image_url,
+                        post_type: postType
+                    })
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    showToast('Successfully published to Google Business Profile immediately!', 'success');
+                    setIsSchedulingNew(false);
+                    setPostText('');
+                    setFile(null);
+                    setPostType('LOCAL_POST');
+                } else {
+                    showToast('Error publishing to Google: ' + data.message, 'error');
+                }
+                setLoadingAction(false);
+                return;
+            }
+
+            // Future date logic
             const year = postDateObj.getFullYear();
             const month = String(postDateObj.getMonth() + 1).padStart(2, '0');
             const day = String(postDateObj.getDate()).padStart(2, '0');
@@ -743,6 +837,11 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                     <div className={`nav-item ${activeView === 'billing' ? 'active' : ''}`} onClick={() => { setActiveView('billing'); }}>
                         <span className="ic">💳</span> Billing
                     </div>
+                    {deferredPrompt && (
+                        <div className="nav-item" onClick={handleInstallPWA} style={{ color: 'var(--green-soft)', border: '1px dashed rgba(52,168,83,.4)', marginTop: '12px', background: 'rgba(52,168,83,.05)' }}>
+                            <span className="ic">📱</span> Install App
+                        </div>
+                    )}
                 </nav>
 
                 <div className="sidebar-foot" style={{ cursor: 'pointer', color: 'var(--red-soft)' }} onClick={() => supabase.auth.signOut().then(() => router.push('/'))}>
@@ -815,11 +914,13 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                                     <span className="badge-pill b-green">✓ Demo complete</span>
                                     <h3 style={{ fontSize: '18px', margin: '12px 0 16px' }}>The AI just replied to 2 real reviews:</h3>
                                     <div className="grid grid-2">
-                                        {demoResultNames.map((name, i) => (
+                                        {demoResultNames.map((replyObj, i) => (
                                             <div key={i} className="card-sm" style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.08)' }}>
-                                                <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.45)', margin: '0 0 4px' }}>Reply sent to</p>
-                                                <p style={{ fontWeight: 600, fontSize: '14px', margin: 0 }}>{name}</p>
-                                                <p style={{ fontSize: '12.5px', color: 'rgba(255,255,255,.6)', marginTop: '8px' }}>"Thank you {name}! We're thrilled our team could help so quickly…"</p>
+                                                <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.45)', margin: '0 0 4px' }}>Review from</p>
+                                                <p style={{ fontWeight: 600, fontSize: '14px', margin: 0 }}>{replyObj.reviewer}</p>
+                                                <p style={{ fontSize: '12.5px', color: 'rgba(255,255,255,.6)', marginTop: '8px', fontStyle: 'italic', borderLeft: '2px solid rgba(255,255,255,.2)', paddingLeft: '8px' }}>"{replyObj.comment}"</p>
+                                                <p style={{ fontSize: '12px', color: 'var(--green-soft)', marginTop: '12px', marginBottom: '4px', fontWeight: 'bold' }}>AI Auto-Reply live on Google:</p>
+                                                <p style={{ fontSize: '13px', color: 'rgba(255,255,255,.9)', margin: 0, lineHeight: '1.4' }}>"{replyObj.ai_reply}"</p>
                                             </div>
                                         ))}
                                     </div>
@@ -836,7 +937,10 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                                         {(Object.keys(PRICING_PLANS) as Array<keyof typeof PRICING_PLANS>).map((key) => (
                                             <div key={key} className="card-sm glass glass-hover" onClick={() => setSelectedPlan(key)} style={{ cursor: 'pointer', border: selectedPlan === key ? '1px solid rgba(59,130,246,.4)' : '' }}>
                                                 <p style={{ fontSize: '12px', color: selectedPlan === key ? 'var(--blue-soft)' : 'rgba(255,255,255,.5)' }}>{PRICING_PLANS[key].name}</p>
-                                                <p style={{ fontWeight: 700, fontSize: '20px', marginTop: '4px' }}>₹{PRICING_PLANS[key].original}</p>
+                                                <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginTop: '4px' }}>
+                                                    <p style={{ fontWeight: 700, fontSize: '20px', margin: 0 }}>₹{PRICING_PLANS[key].discounted}</p>
+                                                    <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.4)', textDecoration: 'line-through', margin: 0 }}>₹{PRICING_PLANS[key].original}</p>
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
@@ -1369,6 +1473,37 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                                     <p style={{ fontSize: '12.5px', color: 'rgba(255,255,255,.5)', margin: '4px 0 0' }}>Turn off to instantly stop replying to new reviews.</p>
                                 </div>
                                 <div className={`toggle ${isAiActive ? 'on' : ''}`} onClick={() => setIsAiActive(!isAiActive)}><span className="knob"></span></div>
+                            </div>
+
+                            <div className="card glass" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', background: 'rgba(52,168,83,.05)', border: '1px solid rgba(52,168,83,.2)' }}>
+                                <div>
+                                    <p style={{ fontWeight: 600, fontSize: '15px', color: 'var(--green-soft)', margin: 0 }}>Enable Instant Google Webhooks</p>
+                                    <p style={{ fontSize: '12.5px', color: 'rgba(255,255,255,.6)', margin: '4px 0 0', lineHeight: 1.5 }}>Link your Google Account to our Pub/Sub Webhook so AI replies instantly in seconds, bypassing cron jobs.</p>
+                                </div>
+                                <button className="btn btn-green btn-sm" onClick={async () => {
+                                    setLoadingAction(true);
+                                    try {
+                                        const res = await fetch("https://gbp-auto-master-backend-us.onrender.com/api/google/register-webhook", {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({
+                                                provider_token: providerToken,
+                                                location_id: activeLocationId,
+                                                user_id: user?.id
+                                            })
+                                        });
+                                        const data = await res.json();
+                                        if (data.status === 'success') {
+                                            showToast('Webhook successfully registered! Instant replies are now live.', 'success');
+                                        } else {
+                                            showToast('Error registering Webhook: ' + data.message, 'error');
+                                        }
+                                    } catch (e) {
+                                        showToast('Server error during webhook registration', 'error');
+                                    } finally {
+                                        setLoadingAction(false);
+                                    }
+                                }}>{loadingAction ? 'Connecting...' : 'Connect Webhook'}</button>
                             </div>
 
                             <div className="card glass" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>

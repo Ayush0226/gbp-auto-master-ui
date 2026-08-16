@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GBP AutoMaster - Detailed Brochure</title>
+    <style>
+        :root {
+            --obsidian: #0f1115;
+            --blue: #3b82f6;
+            --green: #34a853;
+            --blue-soft: #60a5fa;
+            --green-soft: #4ade80;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--obsidian);
+            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        .page {
+            width: 210mm;
+            min-height: 297mm;
+            padding: 20mm;
+            margin: 10mm auto;
+            background: #0f1115;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            position: relative;
+            overflow: hidden;
+            box-sizing: border-box;
+        }
+        .glow-blue {
+            position: absolute;
+            top: -100px;
+            right: -100px;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(59,130,246,0.15) 0%, rgba(59,130,246,0) 70%);
+            border-radius: 50%;
+            z-index: 0;
+        }
+        .glow-green {
+            position: absolute;
+            bottom: -100px;
+            left: -100px;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(52,168,83,0.15) 0%, rgba(52,168,83,0) 70%);
+            border-radius: 50%;
+            z-index: 0;
+        }
+        .content {
+            position: relative;
+            z-index: 1;
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 30px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 20px;
+        }
+        .logo-img {
+            height: 60px;
+            border-radius: 12px;
+            margin-right: 20px;
+            border: 2px solid rgba(255,255,255,0.1);
+        }
+        .title h1 {
+            margin: 0;
+            font-size: 32px;
+            letter-spacing: 1px;
+        }
+        .grad-text {
+            background: linear-gradient(to right, var(--blue-soft), var(--green-soft));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .tagline {
+            font-size: 16px;
+            color: rgba(255,255,255,0.7);
+            margin-top: 5px;
+        }
+        .section {
+            margin-bottom: 30px;
+        }
+        .section h2 {
+            font-size: 20px;
+            color: var(--blue-soft);
+            margin-bottom: 12px;
+            border-left: 3px solid var(--blue);
+            padding-left: 10px;
+        }
+        .card-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        .card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 16px;
+        }
+        .card h3 {
+            margin: 0 0 8px 0;
+            font-size: 16px;
+            color: var(--green-soft);
+        }
+        .card p {
+            margin: 0;
+            font-size: 13px;
+            color: rgba(255,255,255,0.7);
+            line-height: 1.5;
+        }
+        .card ul {
+            margin: 8px 0 0 0;
+            padding-left: 20px;
+            font-size: 12.5px;
+            color: rgba(255,255,255,0.8);
+        }
+        .card ul li {
+            margin-bottom: 4px;
+        }
+        .step-box {
+            display: flex;
+            align-items: center;
+            background: linear-gradient(90deg, rgba(59,130,246,0.1) 0%, transparent 100%);
+            border-left: 2px solid var(--blue);
+            padding: 10px 15px;
+            margin-bottom: 10px;
+            border-radius: 0 8px 8px 0;
+        }
+        .step-num {
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--blue-soft);
+            margin-right: 15px;
+        }
+        .step-text {
+            font-size: 13.5px;
+            color: rgba(255,255,255,0.8);
+            line-height: 1.4;
+        }
+        .comparison {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .comp-box {
+            flex: 1;
+            padding: 16px;
+            border-radius: 12px;
+        }
+        .comp-bad {
+            background: rgba(239, 68, 68, 0.05);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+        .comp-good {
+            background: rgba(52, 168, 83, 0.05);
+            border: 1px solid rgba(52, 168, 83, 0.2);
+        }
+        .comp-box h4 {
+            margin: 0 0 12px 0;
+            font-size: 15px;
+        }
+        .comp-bad h4 { color: #ef4444; }
+        .comp-good h4 { color: var(--green-soft); }
+        .comp-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .comp-list li {
+            font-size: 12.5px;
+            margin-bottom: 8px;
+            display: flex;
+            gap: 8px;
+            color: rgba(255,255,255,0.8);
+        }
+        .pricing {
+            display: flex;
+            gap: 15px;
+        }
+        .price-card {
+            flex: 1;
+            background: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%);
+            border: 1px solid rgba(59,130,246,0.3);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+        .price-card h3 {
+            margin: 0;
+            font-size: 16px;
+            color: rgba(255,255,255,0.8);
+        }
+        .price {
+            font-size: 32px;
+            font-weight: bold;
+            margin: 10px 0 5px 0;
+            color: white;
+        }
+        .price span {
+            font-size: 14px;
+            color: rgba(255,255,255,0.5);
+        }
+        .strike {
+            text-decoration: line-through;
+            color: rgba(255,255,255,0.4);
+            font-size: 14px;
+        }
+        @media print {
+            body { background: #0f1115; }
+            .page { margin: 0; box-shadow: none; width: 100%; height: 100%; }
+            .glow-blue, .glow-green { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <div class="glow-blue"></div>
+        <div class="glow-green"></div>
+        
+        <div class="content">
+            <div class="header">
+                <img src="logo.jpg" alt="GBP AutoMaster Logo" class="logo-img" onerror="this.src='https://placehold.co/60x60/3b82f6/white?text=GBP'" />
+                <div class="title">
+                    <h1>GBP Auto<span class="grad-text">Master</span></h1>
+                    <div class="tagline">The Ultimate AI Autopilot for Google Business Profiles</div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>The Power of Total Automation</h2>
+                <p style="color: rgba(255,255,255,0.8); line-height: 1.5; font-size: 14px; margin: 0;">
+                    Google's algorithm heavily rewards businesses that actively engage with their customers and post regular updates. However, managing a Google Business Profile (GBP) manually takes hours of effort every week. <b>GBP AutoMaster</b> puts your entire local SEO strategy on autopilot using advanced Artificial Intelligence. It secures your spot in the coveted Google "Map Pack" by ensuring 100% response rates and consistent profile activity.
+                </p>
+            </div>
+
+            <div class="section">
+                <h2>Deep-Dive: Core Capabilities</h2>
+                <div class="card-grid">
+                    <div class="card">
+                        <h3>🤖 Contextual AI Auto-Replies</h3>
+                        <p>Our proprietary AI engine doesn't just say "Thank you." It analyzes the sentiment of the review and writes personalized, professional responses.</p>
+                        <ul>
+                            <li><b>Keyword Injection:</b> Automatically weaves local SEO keywords (e.g. "plumber in Rohini") into replies to boost indexing.</li>
+                            <li><b>Crisis Management:</b> Custom handles 1-star reviews with empathy and redirects them to customer support.</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h3>📅 Automated Content Calendar</h3>
+                        <p>Keep your profile fresh without the daily hassle. Google favors profiles that post weekly updates and photos.</p>
+                        <ul>
+                            <li>Schedule Google posts, promotional offers, and photo gallery uploads months in advance.</li>
+                            <li>Visual calendar interface to plan out your entire local marketing strategy in minutes.</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h3>📈 Local SEO Analytics Engine</h3>
+                        <p>Stop guessing if your marketing works. Get crystal clear data directly from Google's backend APIs.</p>
+                        <ul>
+                            <li>Track exact profile visitors, map views, and direct calls generated.</li>
+                            <li>Analyze overall customer sentiment ratios across all tracked reviews.</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h3>⚡ Master Autopilot Control</h3>
+                        <p>Full control over your AI. Personalize exactly how the AI speaks to your customers.</p>
+                        <ul>
+                            <li>Select the AI's Tone: Professional, Casual, or Friendly.</li>
+                            <li>Add custom instructions (e.g., "Always mention our 30-day money-back guarantee").</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>How It Works</h2>
+                <div class="step-box">
+                    <div class="step-num">1</div>
+                    <div class="step-text"><b>Secure Connection:</b> Connect your Google Account safely via OAuth in 1 click. We instantly fetch your locations.</div>
+                </div>
+                <div class="step-box">
+                    <div class="step-num">2</div>
+                    <div class="step-text"><b>AI Configuration:</b> Toggle the "Master Autopilot" switch, set your brand's tone of voice, and add custom instructions.</div>
+                </div>
+                <div class="step-box">
+                    <div class="step-num">3</div>
+                    <div class="step-text"><b>Hands-Free Growth:</b> Sit back as the AI monitors your profile 24/7, replies to reviews instantly, and publishes scheduled updates.</div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>The Cost of Doing Nothing vs. The Advantage</h2>
+                <div class="comparison">
+                    <div class="comp-box comp-bad">
+                        <h4>❌ Without GBP AutoMaster</h4>
+                        <ul class="comp-list">
+                            <li><span>⚠️</span> Unanswered reviews severely hurt your local ranking.</li>
+                            <li><span>⚠️</span> Competitors outrank you by posting updates more frequently.</li>
+                            <li><span>⚠️</span> Customers see a "dead" profile and choose other businesses.</li>
+                            <li><span>⚠️</span> You waste 5+ hours a week logging into Google to manage it manually.</li>
+                        </ul>
+                    </div>
+                    <div class="comp-box comp-good">
+                        <h4>✅ With GBP AutoMaster</h4>
+                        <ul class="comp-list">
+                            <li><span>✓</span> 100% Response rate actively boosts your Map Pack ranking.</li>
+                            <li><span>✓</span> AI injects targeted SEO keywords into every reply automatically.</li>
+                            <li><span>✓</span> Consistent profile activity signals deep trust to Google's algorithm.</li>
+                            <li><span>✓</span> Complete hands-off automation. Reclaim your time to focus on your business.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>Simple, Transparent Pricing</h2>
+                <div class="pricing">
+                    <div class="price-card">
+                        <h3>Half-Yearly Plan</h3>
+                        <div class="strike">₹2,999</div>
+                        <div class="price">₹1,999<span> / 6 mos</span></div>
+                        <p style="color: var(--blue-soft); font-size: 13px; margin-top: 6px;">Perfect for getting started</p>
+                    </div>
+                    <div class="price-card" style="border-color: var(--green-soft); background: linear-gradient(180deg, rgba(52,168,83,0.1) 0%, rgba(255,255,255,0.01) 100%);">
+                        <div style="background: var(--green); color: #fff; font-size: 11px; font-weight: bold; padding: 3px 8px; border-radius: 20px; display: inline-block; margin-bottom: 6px;">BEST VALUE</div>
+                        <h3>Yearly Plan</h3>
+                        <div class="strike">₹5,500</div>
+                        <div class="price">₹3,999<span> / yr</span></div>
+                        <p style="color: var(--green-soft); font-size: 13px; margin-top: 6px;">Save over 25% instantly</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px; color: rgba(255,255,255,0.4); font-size: 11px;">
+                Securely powered by Google APIs and advanced AI Models.
+            </div>
+        </div>
+    </div>
+</body>
+</html>
