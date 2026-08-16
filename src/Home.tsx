@@ -509,9 +509,9 @@ export default function Home() {
                         <div className="price-card home-glass home-glass-hover" style={{ position: 'relative' }}>
                             <div className="plan-badge popular">MOST POPULAR</div>
                             <div className="plan-label">Half-Yearly</div>
-                            <div className="price-strike">₹3,000</div>
-                            <div className="price-amount"><span className="amt">₹2,099</span></div>
-                            <div className="price-perday">₹9.4 / day</div>
+                            <div className="price-strike">₹2,999</div>
+                            <div className="price-amount"><span className="amt">₹1,999</span></div>
+                            <div className="price-perday">₹11 / day</div>
                             <div style={{ fontSize: '11px', color: 'var(--blue-soft)', fontWeight: 'bold', marginTop: '4px', marginBottom: '8px' }}>+ First Time Discount Applied</div>
                             <div className="price-sub">Billed every 6 months.</div>
                             <ul className="price-features home-feat-list">
@@ -528,7 +528,7 @@ export default function Home() {
                         <div className="price-card best home-glass home-glass-hover winner">
                             <div className="plan-badge best winner">BEST VALUE</div>
                             <div className="plan-label blue">Yearly</div>
-                            <div className="price-strike">₹4,380</div>
+                            <div className="price-strike">₹5,500</div>
                             <div className="price-amount"><span className="amt">₹3,999</span></div>
                             <div className="price-perday">₹10.9 / day</div>
                             <div style={{ fontSize: '11px', color: 'var(--green)', fontWeight: 'bold', marginTop: '4px', marginBottom: '8px' }}>+ First Time Discount Applied</div>
