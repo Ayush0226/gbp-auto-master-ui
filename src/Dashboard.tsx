@@ -712,7 +712,13 @@ Analytics: ${JSON.stringify(analyticsData || {})}
             {/* SIDEBAR */}
             {sidebarOpen && <div className="sidebar-backdrop" onClick={() => setSidebarOpen(false)}></div>}
             <aside className={`sidebar glass ${sidebarOpen ? 'mobile-open' : ''}`} id="sidebar">
-                <div className="sidebar-logo">GBP Auto <span className="grad-blue">Master</span></div>
+                <div className="sidebar-logo" style={{ display: 'flex', alignItems: 'center', marginBottom: '30px' }}>
+                    <img src="/logo.jpg" alt="Logo" style={{ height: '42px', marginRight: '14px', borderRadius: '8px' }} />
+                    <div style={{ lineHeight: '1.2' }}>
+                        <div style={{ fontSize: '18px', fontWeight: 'bold', color: 'white' }}>GBP Auto</div>
+                        <div className="grad-blue" style={{ fontSize: '14px', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Master</div>
+                    </div>
+                </div>
 
                 <div className="active-location-badge glass">
                     <span className="dot"></span>
