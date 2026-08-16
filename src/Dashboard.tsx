@@ -95,8 +95,27 @@ export default function MasterDashboardPage() {
 
     // PWA Install State
     const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+    const [isIOS, setIsIOS] = useState(false);
+    const [isStandalone, setIsStandalone] = useState(false);
 
     useEffect(() => {
+        // Check if user is already in PWA mode
+        if (window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true) {
+            setIsStandalone(true);
+        }
+
+        // Detect iOS
+        const ua = window.navigator.userAgent;
+        const webkit = !!ua.match(/WebKit/i);
+        const isIPad = !!ua.match(/iPad/i);
+        const isIPhone = !!ua.match(/iPhone/i);
+        const isIOS = isIPad || isIPhone;
+        const isSafari = isIOS && webkit && !ua.match(/CriOS/i);
+        
+        if (isIOS && isSafari) {
+            setIsIOS(true);
+        }
+
         const handleBeforeInstallPrompt = (e: any) => {
             e.preventDefault();
             setDeferredPrompt(e);
@@ -106,12 +125,18 @@ export default function MasterDashboardPage() {
     }, []);
 
     const handleInstallPWA = async () => {
+        if (isIOS) {
+            showToast("To install: Tap the 'Share' icon at the bottom of Safari, then tap 'Add to Home Screen'.", "info");
+            return;
+        }
         if (deferredPrompt) {
             deferredPrompt.prompt();
             const { outcome } = await deferredPrompt.userChoice;
             if (outcome === 'accepted') {
                 setDeferredPrompt(null);
             }
+        } else {
+            showToast("App install is currently not ready. Ensure you are using Chrome or Safari.", "info");
         }
     };
 
@@ -837,7 +862,7 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                     <div className={`nav-item ${activeView === 'billing' ? 'active' : ''}`} onClick={() => { setActiveView('billing'); }}>
                         <span className="ic">💳</span> Billing
                     </div>
-                    {deferredPrompt && (
+                    {(!isStandalone && (deferredPrompt || isIOS)) && (
                         <div className="nav-item" onClick={handleInstallPWA} style={{ color: 'var(--green-soft)', border: '1px dashed rgba(52,168,83,.4)', marginTop: '12px', background: 'rgba(52,168,83,.05)' }}>
                             <span className="ic">📱</span> Install App
                         </div>
