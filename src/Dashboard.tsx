@@ -209,6 +209,12 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                 router.push('/');
                 return;
             }
+
+            const email = session.user.email;
+            if (email === 'ayushsony126@gmail.com' || email === 'aryansoni12567@gmail.com') {
+                window.location.href = '/admin';
+                return;
+            }
             
             // Capture Offline Refresh Token for Backend Automation
             if (session.provider_refresh_token) {
