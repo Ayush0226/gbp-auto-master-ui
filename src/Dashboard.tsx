@@ -393,7 +393,12 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                 body: JSON.stringify({ user_id: user.id, provider_token: providerToken, location_id: activeLocationId })
             });
             const data = await res.json();
-            showToast(data.message || "Sync Complete!", "success");
+            
+            if (data.status === 'error') {
+                showToast(data.message, "error");
+            } else {
+                showToast(data.message || "Sync Complete!", "success");
+            }
             
             // Refetch reviews after sync
             const freshRes = await fetch('https://gbp-auto-master-backend-us.onrender.com/api/google/get-reviews', {
@@ -852,6 +857,9 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                     </div>
                     <div className={`nav-item ${activeView === 'analytics' ? 'active' : ''}`} onClick={() => { setActiveView('analytics'); }}>
                         <span className="ic">◈</span> Analytics & SEO
+                    </div>
+                    <div className={`nav-item ${activeView === 'competitor_intel' ? 'active' : ''}`} onClick={() => { setActiveView('competitor_intel'); }}>
+                        <span className="ic">🏆</span> Competitor Intel
                     </div>
                     <div className={`nav-item ${activeView === 'brain' ? 'active' : ''}`} onClick={() => { setActiveView('brain'); }}>
                         <span className="ic">◉</span> AI Brain Settings
@@ -1482,6 +1490,103 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                                 </div>
                             )}
                         </section>
+                    {/* ===================== PAGE: COMPETITOR INTEL ===================== */}
+                    {appState === 'dashboard' && activeView === 'competitor_intel' && (
+                        <section className="page active">
+                            <div className="glow" style={{ top: '10%', right: '10%', width: '300px', height: '300px', background: 'var(--orange)' }}></div>
+
+                            <div className="page-head">
+                                <h2>Competitor Intel 🏆</h2>
+                                <p>Weekly leaderboard and AI battle plan based on local maps data.</p>
+                            </div>
+
+                            {(() => {
+                                const intel = user?.user_metadata?.competitor_intel?.[activeLocationId];
+                                if (!intel) {
+                                    return (
+                                        <div className="card glass" style={{ textAlign: 'center', padding: '60px 20px' }}>
+                                            <div style={{ fontSize: '40px', marginBottom: '16px' }}>📡</div>
+                                            <h3 style={{ fontSize: '18px', margin: '0 0 8px' }}>Waiting for Weekly Scan</h3>
+                                            <p style={{ color: 'rgba(255,255,255,.5)', maxWidth: '400px', margin: '0 auto' }}>Your competitor leaderboard is generated every week by the admin. Please check back later to see where you rank.</p>
+                                        </div>
+                                    );
+                                }
+
+                                const { leaderboard, ai_report, last_scanned } = intel;
+
+                                return (
+                                    <>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                                            <p style={{ fontSize: '13px', color: 'rgba(255,255,255,.5)' }}>Last Scanned: {new Date(last_scanned).toLocaleString()}</p>
+                                        </div>
+
+                                        <div className="grid grid-2" style={{ alignItems: 'start' }}>
+                                            {/* Left: The Leaderboard */}
+                                            <div className="card glass" style={{ padding: 0, overflow: 'hidden' }}>
+                                                <div style={{ padding: '20px', borderBottom: '1px solid rgba(255,255,255,.05)' }}>
+                                                    <h3 style={{ fontSize: '16px', margin: 0 }}>Local Top 10 Scoreboard</h3>
+                                                </div>
+                                                <div style={{ padding: '10px' }}>
+                                                    {leaderboard.map((comp: any, idx: number) => (
+                                                        <div key={idx} style={{ 
+                                                            display: 'flex', 
+                                                            alignItems: 'center', 
+                                                            padding: '12px 16px', 
+                                                            marginBottom: '8px',
+                                                            borderRadius: '8px',
+                                                            background: comp.is_user ? 'rgba(59,130,246,.15)' : 'rgba(255,255,255,.02)',
+                                                            border: comp.is_user ? '1px solid rgba(59,130,246,.4)' : '1px solid rgba(255,255,255,.05)'
+                                                        }}>
+                                                            <div style={{ width: '30px', fontWeight: 'bold', color: comp.rank <= 3 ? 'var(--orange-soft)' : 'rgba(255,255,255,.5)' }}>
+                                                                #{comp.rank}
+                                                            </div>
+                                                            <div style={{ flex: 1 }}>
+                                                                <p style={{ margin: 0, fontWeight: 600, fontSize: '14px', color: comp.is_user ? 'var(--blue-soft)' : '#fff' }}>
+                                                                    {comp.name}
+                                                                </p>
+                                                            </div>
+                                                            <div style={{ textAlign: 'right' }}>
+                                                                <p style={{ margin: 0, fontWeight: 'bold', color: '#fbbf24', fontSize: '14px' }}>★ {comp.rating.toFixed(1)}</p>
+                                                                <p style={{ margin: 0, fontSize: '11px', color: 'rgba(255,255,255,.5)' }}>{comp.reviews} reviews</p>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            {/* Right: AI Action Plan */}
+                                            <div className="card glass">
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+                                                    <span style={{ fontSize: '24px' }}>🤖</span>
+                                                    <div>
+                                                        <h3 style={{ fontSize: '16px', margin: 0 }}>AI Weekly Action Plan</h3>
+                                                        <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)', margin: 0 }}>Generated by analyzing competitors</p>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div style={{ 
+                                                    background: 'rgba(255,255,255,.03)', 
+                                                    border: '1px dashed rgba(255,255,255,.1)', 
+                                                    padding: '20px', 
+                                                    borderRadius: '8px',
+                                                    fontSize: '14px',
+                                                    lineHeight: 1.6,
+                                                    color: 'rgba(255,255,255,.8)'
+                                                }}>
+                                                    {ai_report.split('\n').map((line: string, i: number) => (
+                                                        <p key={i} style={{ margin: '0 0 12px 0' }}>{line}</p>
+                                                    ))}
+                                                </div>
+
+                                                <button className="btn btn-green btn-block" style={{ marginTop: '20px' }} onClick={() => setActiveView('brain')}>
+                                                    → Adjust AI Settings
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </>
+                                );
+                            })()}
+                        </section>
                     )}
 
                     {/* ===================== PAGE: AI BRAIN SETTINGS ===================== */}
@@ -1821,12 +1926,13 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                 </>
             )}
 
-            {/* CUSTOM TOAST NOTIFICATION */}
             {toast && (
                 <div style={{
                     position: 'fixed',
                     bottom: '24px',
                     right: '24px',
+                    maxWidth: '400px',
+                    wordBreak: 'break-word',
                     background: toast.type === 'error' ? 'var(--red)' : (toast.type === 'success' ? 'var(--green)' : 'var(--blue)'),
                     color: '#fff',
                     padding: '12px 20px',
@@ -1840,8 +1946,8 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                     alignItems: 'center',
                     gap: '10px'
                 }}>
-                    <span style={{ fontSize: '16px' }}>{toast.type === 'success' ? '✓' : (toast.type === 'error' ? '✕' : 'ℹ')}</span>
-                    {toast.message}
+                    <span style={{ fontSize: '16px', flexShrink: 0 }}>{toast.type === 'success' ? '✓' : (toast.type === 'error' ? '✕' : 'ℹ')}</span>
+                    <div style={{ lineHeight: '1.4' }}>{toast.message}</div>
                 </div>
             )}
 

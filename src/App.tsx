@@ -6,6 +6,7 @@ import Terms from './Terms';
 import Privacy from './Privacy';
 import Refund from './Refund';
 import { MuscleDemoHome } from './MuscleDemoHome';
+import AdminDashboard from './AdminDashboard';
 import './index.css';
 
 function App() {
@@ -57,6 +58,10 @@ function App() {
   const renderRoute = () => {
     if (currentPath === '/dashboard') {
       return <Dashboard />;
+    }
+    
+    if (currentPath === '/admin') {
+      return <AdminDashboard />;
     }
     
     if (currentPath === '/terms') {
