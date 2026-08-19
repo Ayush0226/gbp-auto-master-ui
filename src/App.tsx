@@ -36,16 +36,20 @@ function App() {
     // Listen for Supabase OAuth redirects globally
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' || session?.user) {
-        // Clear the hash from the URL to prevent ugly links, then go to dashboard
+        
+        // Auto-detect admin
+        const isAdmin = session?.user?.email === 'ayushsony126@gmail.com' || session?.user?.email === 'aryansoni12567@gmail.com';
+        const targetRoute = isAdmin ? '/admin' : '/dashboard';
+
+        // Clear the hash from the URL to prevent ugly links
         if (window.location.hash.includes('access_token')) {
-            window.history.replaceState(null, '', '/dashboard');
-            setCurrentPath('/dashboard');
+            window.history.replaceState(null, '', targetRoute);
+            setCurrentPath(targetRoute);
         } else {
-            // Only redirect to dashboard if they are on the home page. 
-            // Allow them to stay on /admin or other sub-pages.
+            // Only redirect if they are on the home page. Allow manual navigation.
             if (window.location.pathname === '/') {
-                window.history.replaceState(null, '', '/dashboard');
-                setCurrentPath('/dashboard');
+                window.history.replaceState(null, '', targetRoute);
+                setCurrentPath(targetRoute);
             }
         }
       }
