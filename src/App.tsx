@@ -41,7 +41,12 @@ function App() {
             window.history.replaceState(null, '', '/dashboard');
             setCurrentPath('/dashboard');
         } else {
-            setCurrentPath('/dashboard');
+            // Only redirect to dashboard if they are on the home page. 
+            // Allow them to stay on /admin or other sub-pages.
+            if (window.location.pathname === '/') {
+                window.history.replaceState(null, '', '/dashboard');
+                setCurrentPath('/dashboard');
+            }
         }
       }
     });
