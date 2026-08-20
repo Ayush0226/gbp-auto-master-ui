@@ -1500,7 +1500,11 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                                     </div>
                                 </div>
                             )}
+                            </>
+                            );
+                            })()}
                         </section>
+                    )}
                     {/* ===================== PAGE: COMPETITOR INTEL ===================== */}
                     {appState === 'dashboard' && activeView === 'competitor_intel' && (
                         <section className="page active">
