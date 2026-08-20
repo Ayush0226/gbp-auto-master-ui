@@ -213,7 +213,7 @@ Analytics: ${JSON.stringify(analyticsData || {})}
             }
 
             const email = session.user.email;
-            if (email === 'ayushsony126@gmail.com' || email === 'aryansoni12567@gmail.com') {
+            if (email === 'ayushsony126@gmail.com') {
                 setIsAdmin(true);
             }
             

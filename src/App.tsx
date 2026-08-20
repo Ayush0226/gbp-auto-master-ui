@@ -38,7 +38,7 @@ function App() {
       if (event === 'SIGNED_IN' || session?.user) {
         
         // Auto-detect admin
-        const isAdmin = session?.user?.email === 'ayushsony126@gmail.com' || session?.user?.email === 'aryansoni12567@gmail.com';
+        const isAdmin = session?.user?.email === 'ayushsony126@gmail.com';
         const targetRoute = isAdmin ? '/admin' : '/dashboard';
 
         // Clear the hash from the URL to prevent ugly links

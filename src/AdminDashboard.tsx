@@ -20,7 +20,7 @@ export default function AdminDashboard() {
             }
 
             const email = session.user.email;
-            if (email !== 'ayushsony126@gmail.com' && email !== 'aryansoni12567@gmail.com') {
+            if (email !== 'ayushsony126@gmail.com') {
                 router.push('/dashboard');
                 return;
             }
