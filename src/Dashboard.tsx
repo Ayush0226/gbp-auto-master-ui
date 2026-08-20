@@ -1504,6 +1504,8 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                                     </>
                                 );
                             })()}
+                        </section>
+                    )}
 
                     {/* ===================== PAGE: AI BRAIN SETTINGS ===================== */}
                     {appState === 'dashboard' && activeView === 'brain' && (
