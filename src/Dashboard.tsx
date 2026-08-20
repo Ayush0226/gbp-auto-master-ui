@@ -1500,9 +1500,6 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                                     </div>
                                 </div>
                             )}
-                            </>
-                            );
-                            })()}
                         </section>
                     )}
                     {/* ===================== PAGE: COMPETITOR INTEL ===================== */}
