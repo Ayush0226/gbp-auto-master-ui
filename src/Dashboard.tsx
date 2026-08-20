@@ -77,8 +77,13 @@ export default function MasterDashboardPage() {
     const [liveReviews, setLiveReviews] = useState<any[]>([]);
     const [loadingReviews, setLoadingReviews] = useState(false);
     const [syncingReviews, setSyncingReviews] = useState(false);
+    
+    // Inline Review Editing
+    const [editingReviewId, setEditingReviewId] = useState<string | null>(null);
+    const [editReplyText, setEditReplyText] = useState('');
+    const [savingReplyId, setSavingReplyId] = useState<string | null>(null);
 
-    // Analytics State
+    // AI Configuration State
     const [newKeyword, setNewKeyword] = useState('');
     const [targetKeywords, setTargetKeywords] = useState<string[]>([]);
     const [competitorKeyword, setCompetitorKeyword] = useState('');
@@ -441,6 +446,37 @@ Analytics: ${JSON.stringify(analyticsData || {})}
             showToast("Error syncing reviews", "error");
         }
         setSyncingReviews(false);
+    };
+
+    const handlePostManualReply = async (reviewId: string, replyText: string) => {
+        if (!replyText.trim()) {
+            showToast("Reply cannot be empty", "error");
+            return;
+        }
+        setSavingReplyId(reviewId);
+        try {
+            const res = await fetch('https://gbp-auto-master-backend-us.onrender.com/api/google/post-reply', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    provider_token: providerToken,
+                    review_id: reviewId,
+                    reply_text: replyText
+                })
+            });
+            const data = await res.json();
+            if (data.status === 'success') {
+                showToast("Reply updated successfully!", "success");
+                setLiveReviews(prev => prev.map(r => r.id === reviewId ? { ...r, has_reply: true, reply_comment: replyText } : r));
+                setEditingReviewId(null);
+            } else {
+                showToast("Failed to post: " + data.message, "error");
+            }
+        } catch (e: any) {
+            showToast("Network Error: " + e.message, "error");
+        } finally {
+            setSavingReplyId(null);
+        }
     };
 
     // Fetch Calendar Posts from Supabase
@@ -868,10 +904,7 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                         <span className="ic">▦</span> Content Calendar
                     </div>
                     <div className={`nav-item ${activeView === 'analytics' ? 'active' : ''}`} onClick={() => { setActiveView('analytics'); }}>
-                        <span className="ic">◈</span> Analytics & SEO
-                    </div>
-                    <div className={`nav-item ${activeView === 'competitor_intel' ? 'active' : ''}`} onClick={() => { setActiveView('competitor_intel'); }}>
-                        <span className="ic">🏆</span> Competitor Intel
+                        <span className="ic">◈</span> Rank Pusher
                     </div>
                     <div className={`nav-item ${activeView === 'brain' ? 'active' : ''}`} onClick={() => { setActiveView('brain'); }}>
                         <span className="ic">◉</span> AI Brain Settings
@@ -1075,7 +1108,7 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                                             <p style={{ fontSize: '13px', color: 'rgba(255,255,255,.5)', margin: 0 }}>Once customers leave reviews, they will appear here.</p>
                                         </div>
                                     ) : (
-                                        liveReviews.slice(0, 15).map((rev, i) => (
+                                        liveReviews.slice(0, 4).map((rev, i) => (
                                             <div key={i} className="card-sm" style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.08)' }}>
                                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1091,15 +1124,65 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                                                 <p style={{ fontSize: '13px', color: 'rgba(255,255,255,.8)', margin: '8px 0', lineHeight: 1.5 }}>
                                                     "{rev.comment || 'No comment provided'}"
                                                 </p>
+                                                
+                                                {rev.has_reply && editingReviewId !== rev.id && (
+                                                    <div style={{ marginTop: '12px', padding: '10px', background: 'rgba(52,168,83,.05)', borderLeft: '2px solid var(--green-soft)' }}>
+                                                        <p style={{ fontSize: '11px', color: 'var(--green-soft)', margin: '0 0 4px', fontWeight: 'bold' }}>Our Reply:</p>
+                                                        <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.9)', margin: 0 }}>{rev.reply_comment || 'Replied'}</p>
+                                                    </div>
+                                                )}
+
+                                                {editingReviewId === rev.id && (
+                                                    <div style={{ marginTop: '12px' }}>
+                                                        <textarea 
+                                                            className="input" 
+                                                            rows={3} 
+                                                            style={{ width: '100%', marginBottom: '8px' }}
+                                                            value={editReplyText}
+                                                            onChange={(e) => setEditReplyText(e.target.value)}
+                                                            placeholder="Type your new reply here..."
+                                                        />
+                                                        <div style={{ display: 'flex', gap: '8px' }}>
+                                                            <button 
+                                                                className="btn btn-green btn-sm" 
+                                                                onClick={() => handlePostManualReply(rev.id, editReplyText)}
+                                                                disabled={savingReplyId === rev.id}
+                                                            >
+                                                                {savingReplyId === rev.id ? 'Saving...' : 'Save Reply'}
+                                                            </button>
+                                                            <button 
+                                                                className="btn btn-ghost btn-sm" 
+                                                                onClick={() => setEditingReviewId(null)}
+                                                            >
+                                                                Cancel
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                )}
+
                                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px' }}>
                                                     <p style={{ fontSize: '11px', color: 'rgba(255,255,255,.4)', margin: 0 }}>
                                                         {new Date(rev.createTime).toLocaleDateString()}
                                                     </p>
-                                                    {rev.has_reply ? (
-                                                        <span className="badge-pill b-green" style={{ padding: '2px 8px', fontSize: '10px' }}>✓ Replied</span>
-                                                    ) : (
-                                                        <span className="badge-pill" style={{ padding: '2px 8px', fontSize: '10px', background: 'rgba(255,255,255,.1)' }}>Unreplied</span>
-                                                    )}
+                                                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                                        {editingReviewId !== rev.id && (
+                                                            <button 
+                                                                className="btn btn-ghost btn-sm" 
+                                                                style={{ padding: '2px 8px', fontSize: '10px' }}
+                                                                onClick={() => {
+                                                                    setEditingReviewId(rev.id);
+                                                                    setEditReplyText(rev.reply_comment || '');
+                                                                }}
+                                                            >
+                                                                ✎ Edit Reply
+                                                            </button>
+                                                        )}
+                                                        {rev.has_reply ? (
+                                                            <span className="badge-pill b-green" style={{ padding: '2px 8px', fontSize: '10px' }}>✓ Replied</span>
+                                                        ) : (
+                                                            <span className="badge-pill" style={{ padding: '2px 8px', fontSize: '10px', background: 'rgba(255,255,255,.1)' }}>Unreplied</span>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                         ))
@@ -1232,7 +1315,7 @@ Analytics: ${JSON.stringify(analyticsData || {})}
 
                             <div className="page-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
                                 <div>
-                                    <h2 style={{ margin: 0 }}>Analytics & SEO</h2>
+                                    <h2 style={{ margin: 0 }}>Rank Pusher</h2>
                                     <p style={{ marginTop: '4px' }}>Local ranking performance and AI traffic insights.</p>
                                 </div>
                                 <button className="btn btn-green btn-sm" onClick={() => { setShowReportModal(true); setReportGenerating(true); setTimeout(() => setReportGenerating(false), 2500); }}>✨ Generate AI Analysis Report</button>
@@ -1246,20 +1329,9 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                                     return series.timeSeries.datedValues.reduce((acc: number, val: any) => acc + parseInt(val.value || 0), 0);
                                 };
 
-                                const websiteClicks = getMetricTotal('WEBSITE_CLICKS');
-                                const callClicks = getMetricTotal('CALL_CLICKS');
-                                const directionRequests = getMetricTotal('BUSINESS_DIRECTION_REQUESTS');
-                                const callsAndDirections = callClicks + directionRequests;
-                                const desktopMaps = getMetricTotal('BUSINESS_IMPRESSIONS_DESKTOP_MAPS');
-                                const mobileMaps = getMetricTotal('BUSINESS_IMPRESSIONS_MOBILE_MAPS');
-                                const desktopSearch = getMetricTotal('BUSINESS_IMPRESSIONS_DESKTOP_SEARCH');
-                                const mobileSearch = getMetricTotal('BUSINESS_IMPRESSIONS_MOBILE_SEARCH');
                                 const messages = getMetricTotal('BUSINESS_CONVERSATIONS');
                                 const bookings = getMetricTotal('BUSINESS_BOOKINGS');
                                 const foodOrders = getMetricTotal('FOOD_ORDERS');
-                                
-                                const totalMapViews = desktopMaps + mobileMaps;
-                                const profileVisitors = totalMapViews + desktopSearch + mobileSearch;
 
                                 // Real Sentiment Calculation
                                 let positive = 0;
@@ -1280,22 +1352,6 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                                 return (
                                     <>
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-                                            <div className="card glass glass-hover animate-in" style={{ '--delay': '0.1s' } as any}>
-                                                <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)' }}>Profile Visitors (30d)</p>
-                                                <p style={{ fontSize: '24px', fontWeight: 800, marginTop: '6px' }} className="grad-blue">{analyticsData ? profileVisitors.toLocaleString() : '...'}</p>
-                                            </div>
-                                            <div className="card glass glass-hover animate-in" style={{ '--delay': '0.2s' } as any}>
-                                                <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)' }}>Total Map Views</p>
-                                                <p style={{ fontSize: '24px', fontWeight: 800, marginTop: '6px' }}>{analyticsData ? totalMapViews.toLocaleString() : '...'}</p>
-                                            </div>
-                                            <div className="card glass glass-hover animate-in" style={{ '--delay': '0.3s' } as any}>
-                                                <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)' }}>Website Clicks</p>
-                                                <p style={{ fontSize: '24px', fontWeight: 800, marginTop: '6px' }}>{analyticsData ? websiteClicks.toLocaleString() : '...'}</p>
-                                            </div>
-                                            <div className="card glass glass-hover animate-in" style={{ '--delay': '0.4s' } as any}>
-                                                <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)' }}>Calls & Directions</p>
-                                                <p style={{ fontSize: '24px', fontWeight: 800, marginTop: '6px' }}>{analyticsData ? callsAndDirections.toLocaleString() : '...'}</p>
-                                            </div>
                                             {messages > 0 && (
                                                 <div className="card glass glass-hover animate-in" style={{ '--delay': '0.5s' } as any}>
                                                     <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)' }}>Messages (Chat)</p>
@@ -1362,245 +1418,92 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                                                 </div>
                                             </div>
                                         </div>
-                                    </>
-                                );
-                            })()}
-
-
-                            {/* 4. Search Queries AI Widget */}
-                            <div className="card glass">
-                                <h3 style={{ fontSize: '15px', marginBottom: '6px' }}>Search Query Insights</h3>
-                                <p style={{ fontSize: '12.5px', color: 'rgba(255,255,255,.5)', marginBottom: '20px' }}>The exact words people typed into Google to find your profile this month.</p>
-                                
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                    {searchKeywords.length > 0 ? searchKeywords.map((kw, i) => (
-                                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13.5px', paddingBottom: '8px', borderBottom: '1px solid rgba(255,255,255,.08)' }}>
-                                            <span>"{kw.searchKeyword}"</span>
-                                            <span style={{ color: 'var(--blue-soft)' }}>{kw.monthlyImpressionsValue || kw.monthlyImpressionValue?.value || kw.monthlyImpressionValue || 'N/A'} impressions</span>
-                                        </div>
-                                    )) : (
-                                        <p style={{ fontSize: '13px', color: 'rgba(255,255,255,.5)' }}>Processing SEO Keywords... Google API can take 24-48 hours to populate search data for new connections.</p>
-                                    )}
-                                </div>
-
-                                {searchKeywords.length > 0 && (
-                                    <div className="card-sm" style={{ background: 'rgba(52,168,83,.05)', border: '1px solid rgba(52,168,83,.2)', marginTop: '20px' }}>
-                                        <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-                                            <span style={{ fontSize: '20px' }}>✨</span>
-                                            <div>
-                                                <p style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--green-soft)', margin: '0 0 4px' }}>AI Suggestion: High Value Keyword Detected</p>
-                                                <p style={{ fontSize: '12.5px', color: 'rgba(255,255,255,.7)', margin: '0 0 12px', lineHeight: 1.5 }}>Your top keyword is <b>"{searchKeywords[0].searchKeyword}"</b>. Should the AI start organically injecting this into your future 5-star replies?</p>
-                                                <button className="btn btn-green btn-sm" onClick={() => {
-                                                    if (!targetKeywords.includes(searchKeywords[0].searchKeyword)) {
-                                                        const newKw = [...targetKeywords, searchKeywords[0].searchKeyword];
-                                                        setTargetKeywords(newKw);
-                                                        saveUserSettings({ active_keywords: newKw });
-                                                        showToast('Keyword added to AI Tracker!', 'success');
-                                                    }
-                                                }}>Yes, Target Keyword</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* 5. SEO Target Keywords Tracker */}
-                            <div className="card glass" style={{ marginTop: '18px' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
-                                    <h3 style={{ fontSize: '15px' }}>SEO Injection Tracker</h3>
-                                    <div style={{ display: 'flex', gap: '8px' }}>
-                                        <input type="text" placeholder="Add keyword" value={newKeyword} onChange={(e) => setNewKeyword(e.target.value)} style={{ padding: '6px 10px', width: '150px' }} onKeyDown={(e) => { if(e.key === 'Enter' && newKeyword) { const newKw = [...targetKeywords, newKeyword]; setTargetKeywords(newKw); saveUserSettings({ active_keywords: newKw }); setNewKeyword(''); } }} />
-                                        <button className="btn btn-ghost btn-sm" onClick={() => { if(newKeyword) { const newKw = [...targetKeywords, newKeyword]; setTargetKeywords(newKw); saveUserSettings({ active_keywords: newKw }); setNewKeyword(''); } }}>+ Add Target</button>
-                                    </div>
-                                </div>
-                                <div className="grid grid-2">
-                                    <div className="card-sm" style={{ background: 'rgba(255,255,255,.02)', border: '1px solid rgba(255,255,255,.08)' }}>
-                                        <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)', marginBottom: '8px' }}>Keywords You Want (Target)</p>
-                                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                                            {targetKeywords.map((kw, i) => (
-                                                <span key={i} className="badge-pill b-gray" style={{ cursor: 'pointer' }} onClick={() => { const newKw = targetKeywords.filter(k => k !== kw); setTargetKeywords(newKw); saveUserSettings({ active_keywords: newKw }); }}>{kw} ✕</span>
-                                            ))}
-                                            {targetKeywords.length === 0 && <span style={{ fontSize: '12px', color: 'rgba(255,255,255,.4)' }}>No keywords tracking yet.</span>}
-                                        </div>
-                                    </div>
-                                    <div className="card-sm" style={{ background: 'rgba(52,168,83,.05)', border: '1px solid rgba(52,168,83,.2)' }}>
-                                        <p style={{ fontSize: '12px', color: 'var(--green-soft)', marginBottom: '8px', fontWeight: 600 }}>Keywords AI is Actively Injecting</p>
-                                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                                            {targetKeywords.map((kw, i) => (
-                                                <span key={i} className="badge-pill b-green">✨ {kw}</span>
-                                            ))}
-                                            {targetKeywords.length === 0 && <span style={{ fontSize: '12px', color: 'rgba(255,255,255,.4)' }}>Add keywords to start automation.</span>}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            {/* AI Analysis Report Modal */}
-                            {showReportModal && (
-                                <div style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', backdropFilter: 'blur(8px)' }}>
-                                    <div className="card glass" style={{ maxWidth: '750px', width: '100%', maxHeight: '90vh', overflowY: 'auto', position: 'relative', border: '1px solid rgba(52,168,83,.4)', boxShadow: '0 0 40px rgba(52,168,83,.1)' }}>
-                                        <button 
-                                            onClick={() => setShowReportModal(false)}
-                                            style={{ position: 'absolute', top: '20px', right: '20px', background: 'transparent', border: 'none', color: '#fff', fontSize: '24px', cursor: 'pointer' }}
-                                        >✕</button>
-                                        
-                                        {reportGenerating ? (
-                                            <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-                                                <div style={{ fontSize: '40px', marginBottom: '20px', animation: 'spin 2s linear infinite' }}>⚙️</div>
-                                                <h3 style={{ fontSize: '20px', marginBottom: '8px' }}>AI is analyzing your GBP...</h3>
-                                                <p style={{ color: 'rgba(255,255,255,.6)' }}>Extracting sentiment from reviews, calculating SEO scores, and finding local keyword gaps.</p>
-                                            </div>
-                                        ) : (
-                                            <div>
-                                                <div style={{ textAlign: 'center', marginBottom: '30px', paddingBottom: '20px', borderBottom: '1px solid rgba(255,255,255,.1)' }}>
-                                                    <h2 style={{ fontSize: '24px', margin: '0 0 8px' }}>Google Business Profile Analysis</h2>
-                                                    <p style={{ color: 'var(--green-soft)' }}>Generated for {activeLocationName} • {new Date().toLocaleDateString()}</p>
-                                                </div>
-                                                
-                                                <div className="grid grid-2" style={{ marginBottom: '24px' }}>
-                                                    <div className="card-sm" style={{ background: 'rgba(52,168,83,.05)', border: '1px solid rgba(52,168,83,.2)', textAlign: 'center' }}>
-                                                        <p style={{ fontSize: '13px', color: 'rgba(255,255,255,.6)', marginBottom: '8px' }}>AI Health & SEO Score</p>
-                                                        <h1 style={{ fontSize: '48px', color: 'var(--green)', margin: 0 }}>92<span style={{ fontSize: '20px', color: 'rgba(255,255,255,.3)' }}>/100</span></h1>
-                                                        <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)', marginTop: '8px' }}>Top 5% in your local area</p>
+                                        {/* Competitor Intel Section */}
+                                        {(() => {
+                                            const intel = user?.user_metadata?.competitor_intel?.[activeLocationId];
+                                            if (!intel) {
+                                                return (
+                                                    <div className="card glass" style={{ textAlign: 'center', padding: '60px 20px', marginTop: '24px' }}>
+                                                        <div style={{ fontSize: '40px', margin: '0 0 16px' }}>🏆</div>
+                                                        <h3 style={{ fontSize: '18px', margin: '0 0 8px' }}>Waiting for Weekly Scan</h3>
+                                                        <p style={{ color: 'rgba(255,255,255,.5)', maxWidth: '400px', margin: '0 auto' }}>Your local competitor leaderboard is generated every week by the admin. Check back later.</p>
                                                     </div>
-                                                    <div className="card-sm" style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.08)' }}>
-                                                        <h4 style={{ fontSize: '14px', margin: '0 0 12px' }}>Review Sentiment Deep-Dive</h4>
-                                                        <p style={{ fontSize: '12.5px', color: 'rgba(255,255,255,.7)', margin: '0 0 8px' }}>✅ <b>Top Positive Topic:</b> "Fast Service" (Mentioned 14 times)</p>
-                                                        <p style={{ fontSize: '12.5px', color: 'rgba(255,255,255,.7)', margin: '0 0 8px' }}>✅ <b>Secondary Topic:</b> "Friendly Staff" (Mentioned 9 times)</p>
-                                                        <p style={{ fontSize: '12.5px', color: 'rgba(255,255,255,.7)', margin: '0' }}>⚠️ <b>Improvement Area:</b> "Wait Time" (Mentioned 2 times in 3-star reviews)</p>
+                                                );
+                                            }
+
+                                            const { leaderboard, ai_report, last_scanned } = intel;
+                                            return (
+                                                <div style={{ marginTop: '32px' }}>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                                                        <h3 style={{ fontSize: '18px', margin: 0 }}>Competitor Leaderboard</h3>
+                                                        <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)', margin: 0 }}>Last Scanned: {new Date(last_scanned).toLocaleString()}</p>
                                                     </div>
-                                                </div>
 
-                                                <h3 style={{ fontSize: '16px', marginBottom: '12px', borderBottom: '1px solid rgba(255,255,255,.1)', paddingBottom: '8px' }}>Keyword Injection Traction</h3>
-                                                <div style={{ marginBottom: '24px' }}>
-                                                    <p style={{ fontSize: '13px', color: 'rgba(255,255,255,.7)', marginBottom: '12px', lineHeight: 1.5 }}>
-                                                        The AI Engine successfully injected your target SEO keywords into <b>{activeLocObj?.recentAnswered || 0} recent review replies</b>. 
-                                                        Because Google indexes Owner Replies, this signals strong local relevance for these topics.
-                                                    </p>
-                                                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                                                        {targetKeywords.length > 0 ? targetKeywords.map((kw, i) => (
-                                                            <span key={i} className="badge-pill b-green" style={{ padding: '6px 12px' }}>{kw} <span style={{ color: 'rgba(255,255,255,.5)', marginLeft: '4px' }}>+12% impressions</span></span>
-                                                        )) : (
-                                                            <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.4)', fontStyle: 'italic' }}>No target keywords configured in Tracker yet.</p>
-                                                        )}
-                                                    </div>
-                                                </div>
-
-                                                <h3 style={{ fontSize: '16px', marginBottom: '12px', borderBottom: '1px solid rgba(255,255,255,.1)', paddingBottom: '8px' }}>Actionable AI Recommendations</h3>
-                                                <ul style={{ paddingLeft: '20px', margin: 0, fontSize: '13.5px', color: 'rgba(255,255,255,.8)', lineHeight: 1.6 }}>
-                                                    <li style={{ marginBottom: '8px' }}><b>Post More Photos:</b> Your profile hasn't uploaded a photo in 14 days. Profiles with recent photos receive 42% more directions requests. <i>(Try scheduling one in the Calendar tab)</i></li>
-                                                    <li style={{ marginBottom: '8px' }}><b>Leverage Offers:</b> Create a "Google Post" with a promo code. Our analysis shows a gap where competitors are running local offers this week.</li>
-                                                    <li><b>Monitor New Competitor:</b> A new listing named "Fast Fix Solutions" opened 2 miles away. Keep your review velocity high to maintain the #1 map pack spot.</li>
-                                                </ul>
-                                                
-                                                <div style={{ textAlign: 'center', marginTop: '30px' }}>
-                                                    <button className="btn btn-ghost" onClick={() => window.print()}>🖨️ Print / Save as PDF</button>
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
-                        </section>
-                    )}
-                    {/* ===================== PAGE: COMPETITOR INTEL ===================== */}
-                    {appState === 'dashboard' && activeView === 'competitor_intel' && (
-                        <section className="page active">
-                            <div className="glow" style={{ top: '10%', right: '10%', width: '300px', height: '300px', background: 'var(--orange)' }}></div>
-
-                            <div className="page-head">
-                                <h2>Competitor Intel 🏆</h2>
-                                <p>Weekly leaderboard and AI battle plan based on local maps data.</p>
-                            </div>
-
-                            {(() => {
-                                const intel = user?.user_metadata?.competitor_intel?.[activeLocationId];
-                                if (!intel) {
-                                    return (
-                                        <div className="card glass" style={{ textAlign: 'center', padding: '60px 20px' }}>
-                                            <div style={{ fontSize: '40px', marginBottom: '16px' }}>📡</div>
-                                            <h3 style={{ fontSize: '18px', margin: '0 0 8px' }}>Waiting for Weekly Scan</h3>
-                                            <p style={{ color: 'rgba(255,255,255,.5)', maxWidth: '400px', margin: '0 auto' }}>Your competitor leaderboard is generated every week by the admin. Please check back later to see where you rank.</p>
-                                        </div>
-                                    );
-                                }
-
-                                const { leaderboard, ai_report, last_scanned } = intel;
-
-                                return (
-                                    <>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                                            <p style={{ fontSize: '13px', color: 'rgba(255,255,255,.5)' }}>Last Scanned: {new Date(last_scanned).toLocaleString()}</p>
-                                        </div>
-
-                                        <div className="grid grid-2" style={{ alignItems: 'start' }}>
-                                            {/* Left: The Leaderboard */}
-                                            <div className="card glass" style={{ padding: 0, overflow: 'hidden' }}>
-                                                <div style={{ padding: '20px', borderBottom: '1px solid rgba(255,255,255,.05)' }}>
-                                                    <h3 style={{ fontSize: '16px', margin: 0 }}>Local Top 10 Scoreboard</h3>
-                                                </div>
-                                                <div style={{ padding: '10px' }}>
-                                                    {leaderboard.map((comp: any, idx: number) => (
-                                                        <div key={idx} style={{ 
-                                                            display: 'flex', 
-                                                            alignItems: 'center', 
-                                                            padding: '12px 16px', 
-                                                            marginBottom: '8px',
-                                                            borderRadius: '8px',
-                                                            background: comp.is_user ? 'rgba(59,130,246,.15)' : 'rgba(255,255,255,.02)',
-                                                            border: comp.is_user ? '1px solid rgba(59,130,246,.4)' : '1px solid rgba(255,255,255,.05)'
-                                                        }}>
-                                                            <div style={{ width: '30px', fontWeight: 'bold', color: comp.rank <= 3 ? 'var(--orange-soft)' : 'rgba(255,255,255,.5)' }}>
-                                                                #{comp.rank}
+                                                    <div className="grid grid-2" style={{ alignItems: 'start' }}>
+                                                        {/* Left: The Leaderboard */}
+                                                        <div className="card glass" style={{ padding: 0, overflow: 'hidden' }}>
+                                                            <div style={{ padding: '20px', borderBottom: '1px solid rgba(255,255,255,.05)' }}>
+                                                                <h3 style={{ fontSize: '15px', margin: 0 }}>Local Top 10 Scoreboard</h3>
                                                             </div>
-                                                            <div style={{ flex: 1 }}>
-                                                                <p style={{ margin: 0, fontWeight: 600, fontSize: '14px', color: comp.is_user ? 'var(--blue-soft)' : '#fff' }}>
-                                                                    {comp.name}
-                                                                </p>
-                                                            </div>
-                                                            <div style={{ textAlign: 'right' }}>
-                                                                <p style={{ margin: 0, fontWeight: 'bold', color: '#fbbf24', fontSize: '14px' }}>★ {comp.rating.toFixed(1)}</p>
-                                                                <p style={{ margin: 0, fontSize: '11px', color: 'rgba(255,255,255,.5)' }}>{comp.reviews} reviews</p>
+                                                            <div style={{ padding: '10px' }}>
+                                                                {leaderboard.map((comp: any, idx: number) => (
+                                                                    <div key={idx} style={{ 
+                                                                        display: 'flex', 
+                                                                        alignItems: 'center', 
+                                                                        padding: '12px 16px', 
+                                                                        marginBottom: '8px',
+                                                                        borderRadius: '8px',
+                                                                        background: comp.is_user ? 'rgba(59,130,246,.15)' : 'rgba(255,255,255,.02)',
+                                                                        border: comp.is_user ? '1px solid rgba(59,130,246,.4)' : '1px solid rgba(255,255,255,.05)'
+                                                                    }}>
+                                                                        <div style={{ width: '30px', fontWeight: 'bold', color: comp.rank <= 3 ? 'var(--orange-soft)' : 'rgba(255,255,255,.5)' }}>
+                                                                            #{comp.rank}
+                                                                        </div>
+                                                                        <div style={{ flex: 1 }}>
+                                                                            <p style={{ margin: 0, fontWeight: 600, fontSize: '14px', color: comp.is_user ? 'var(--blue-soft)' : '#fff' }}>
+                                                                                {comp.name}
+                                                                            </p>
+                                                                        </div>
+                                                                        <div style={{ textAlign: 'right' }}>
+                                                                            <p style={{ margin: 0, fontWeight: 'bold', color: '#fbbf24', fontSize: '14px' }}>★ {comp.rating.toFixed(1)}</p>
+                                                                            <p style={{ margin: 0, fontSize: '11px', color: 'rgba(255,255,255,.5)' }}>{comp.reviews} reviews</p>
+                                                                        </div>
+                                                                    </div>
+                                                                ))}
                                                             </div>
                                                         </div>
-                                                    ))}
-                                                </div>
-                                            </div>
 
-                                            {/* Right: AI Action Plan */}
-                                            <div className="card glass">
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-                                                    <span style={{ fontSize: '24px' }}>🤖</span>
-                                                    <div>
-                                                        <h3 style={{ fontSize: '16px', margin: 0 }}>AI Weekly Action Plan</h3>
-                                                        <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)', margin: 0 }}>Generated by analyzing competitors</p>
+                                                        {/* Right: Goods and Bads */}
+                                                        <div className="card glass">
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+                                                                <span style={{ fontSize: '24px' }}>🤖</span>
+                                                                <div>
+                                                                    <h3 style={{ fontSize: '15px', margin: 0 }}>Goods and Bads (Where it lacks)</h3>
+                                                                    <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)', margin: 0 }}>AI Analysis of your GBP vs Competitors</p>
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <div style={{ 
+                                                                background: 'rgba(255,255,255,.03)', 
+                                                                border: '1px dashed rgba(255,255,255,.1)', 
+                                                                padding: '20px', 
+                                                                borderRadius: '8px',
+                                                                fontSize: '14px',
+                                                                lineHeight: 1.6,
+                                                                color: 'rgba(255,255,255,.8)'
+                                                            }}>
+                                                                {ai_report.split('\n').map((line: string, i: number) => (
+                                                                    <p key={i} style={{ margin: '0 0 12px 0' }}>{line}</p>
+                                                                ))}
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                                
-                                                <div style={{ 
-                                                    background: 'rgba(255,255,255,.03)', 
-                                                    border: '1px dashed rgba(255,255,255,.1)', 
-                                                    padding: '20px', 
-                                                    borderRadius: '8px',
-                                                    fontSize: '14px',
-                                                    lineHeight: 1.6,
-                                                    color: 'rgba(255,255,255,.8)'
-                                                }}>
-                                                    {ai_report.split('\n').map((line: string, i: number) => (
-                                                        <p key={i} style={{ margin: '0 0 12px 0' }}>{line}</p>
-                                                    ))}
-                                                </div>
-
-                                                <button className="btn btn-green btn-block" style={{ marginTop: '20px' }} onClick={() => setActiveView('brain')}>
-                                                    → Adjust AI Settings
-                                                </button>
-                                            </div>
-                                        </div>
+                                            );
+                                        })()}
                                     </>
                                 );
                             })()}
-                        </section>
-                    )}
 
                     {/* ===================== PAGE: AI BRAIN SETTINGS ===================== */}
                     {appState === 'dashboard' && activeView === 'brain' && (
@@ -1946,7 +1849,9 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                     right: '24px',
                     maxWidth: '400px',
                     wordBreak: 'break-word',
-                    background: toast.type === 'error' ? 'var(--red)' : (toast.type === 'success' ? 'var(--green)' : 'var(--blue)'),
+                    background: toast.type === 'error' ? 'rgba(239, 68, 68, 0.85)' : (toast.type === 'success' ? 'rgba(34, 197, 94, 0.85)' : 'rgba(59, 130, 246, 0.85)'),
+                    backdropFilter: 'blur(12px)',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
                     color: '#fff',
                     padding: '12px 20px',
                     borderRadius: '12px',

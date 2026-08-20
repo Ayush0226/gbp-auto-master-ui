@@ -9,6 +9,18 @@ export default function AdminDashboard({ onBackToApp }: { onBackToApp?: () => vo
     const [searchQuery, setSearchQuery] = useState('');
     const [activeTab, setActiveTab] = useState('clients');
 
+    // Review Queue State
+    const [reviewQueueUser, setReviewQueueUser] = useState<any>(null);
+    const [loadingDrafts, setLoadingDrafts] = useState(false);
+    const [reviewDrafts, setReviewDrafts] = useState<any[]>([]);
+
+    const [toast, setToast] = useState<{message: string, type: 'success' | 'error' | 'info'} | null>(null);
+
+    const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+        setToast({ message, type });
+        setTimeout(() => setToast(null), 4000);
+    };
+
     const router = {
         push: (path: string) => {
             if (path === '/dashboard' && onBackToApp) {
@@ -94,15 +106,102 @@ export default function AdminDashboard({ onBackToApp }: { onBackToApp?: () => vo
             });
             const data = await res.json();
             if (data.status === 'success') {
-                alert(data.message);
+                showToast(data.message, 'success');
                 fetchUsers(adminUser.email);
             } else {
-                alert("Error: " + data.message);
+                showToast("Error: " + data.message, 'error');
                 setLoading(false);
             }
         } catch (e: any) {
-            alert(e.message);
+            showToast(e.message, 'error');
             setLoading(false);
+        }
+    };
+
+    const openReviewQueue = async (u: any) => {
+        setReviewQueueUser(u);
+        setLoadingDrafts(true);
+        setReviewDrafts([]);
+        
+        try {
+            // 1. Get offline provider token for this user
+            const authRes = await fetch('https://gbp-auto-master-backend-us.onrender.com/api/auth/refresh-google-token', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: u.id })
+            });
+            const authData = await authRes.json();
+            if (authData.status !== 'success') {
+                showToast("Failed to get Google Token for user. Are they connected?", 'error');
+                setLoadingDrafts(false);
+                return;
+            }
+            
+            // Get location ID (just grab the first active one)
+            const activeLoc = Object.keys(u.subscriptions || {}).find(loc => u.subscriptions[loc].status === 'active');
+            if (!activeLoc) {
+                showToast("User has no active subscriptions.", 'error');
+                setLoadingDrafts(false);
+                return;
+            }
+            const cleanLoc = activeLoc.replace('locations/', '');
+
+            // 2. Fetch Drafts
+            const draftRes = await fetch('https://gbp-auto-master-backend-us.onrender.com/api/google/draft-reviews', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_id: u.id,
+                    provider_token: authData.provider_token,
+                    location_id: cleanLoc
+                })
+            });
+            
+            const draftData = await draftRes.json();
+            if (draftData.status === 'success') {
+                setReviewDrafts(draftData.drafts || []);
+            } else {
+                showToast("Error fetching drafts: " + draftData.message, 'error');
+            }
+        } catch (e: any) {
+            showToast(e.message, 'error');
+        } finally {
+            setLoadingDrafts(false);
+        }
+    };
+
+    const postDraftReply = async (reviewId: string, replyText: string, idx: number) => {
+        try {
+            // Get offline token again
+            const authRes = await fetch('https://gbp-auto-master-backend-us.onrender.com/api/auth/refresh-google-token', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: reviewQueueUser.id })
+            });
+            const authData = await authRes.json();
+            if (authData.status !== 'success') throw new Error("Token refresh failed");
+
+            const postRes = await fetch('https://gbp-auto-master-backend-us.onrender.com/api/google/post-reply', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    provider_token: authData.provider_token,
+                    review_id: reviewId,
+                    reply_text: replyText
+                })
+            });
+            const postData = await postRes.json();
+            if (postData.status === 'success') {
+                showToast("Reply posted successfully!", 'success');
+                // Remove from queue
+                const newDrafts = [...reviewDrafts];
+                newDrafts.splice(idx, 1);
+                setReviewDrafts(newDrafts);
+            } else {
+                showToast("Failed to post: " + postData.message, 'error');
+            }
+        } catch(e: any) {
+            showToast(e.message, 'error');
         }
     };
 
@@ -208,6 +307,7 @@ export default function AdminDashboard({ onBackToApp }: { onBackToApp?: () => vo
                                         <th style={{ padding: '16px 24px', fontWeight: 600, color: 'rgba(255,255,255,.5)', borderBottom: '1px solid rgba(255,255,255,.08)' }}>Demo Status</th>
                                         <th style={{ padding: '16px 24px', fontWeight: 600, color: 'rgba(255,255,255,.5)', borderBottom: '1px solid rgba(255,255,255,.08)' }}>Google API Status</th>
                                         <th style={{ padding: '16px 24px', fontWeight: 600, color: 'rgba(255,255,255,.5)', borderBottom: '1px solid rgba(255,255,255,.08)' }}>Subscriptions</th>
+                                        <th style={{ padding: '16px 24px', fontWeight: 600, color: 'rgba(255,255,255,.5)', borderBottom: '1px solid rgba(255,255,255,.08)' }}>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -251,6 +351,12 @@ export default function AdminDashboard({ onBackToApp }: { onBackToApp?: () => vo
                                                     <span style={{ color: 'rgba(255,255,255,.3)', fontStyle: 'italic' }}>No active plans</span>
                                                 )}
                                             </td>
+                                            <td style={{ padding: '16px 24px' }}>
+                                                <div style={{ display: 'flex', gap: '8px' }}>
+                                                    <button className="btn btn-ghost btn-sm" style={{ padding: '6px 10px' }} onClick={() => openReviewQueue(u)}>Reviews</button>
+                                                    <button className="btn btn-ghost btn-sm" style={{ padding: '6px 10px' }} onClick={() => alert("Calendar for " + u.full_name)}>Calendar</button>
+                                                </div>
+                                            </td>
                                         </tr>
                                     ))}
                                     {filteredUsers.length === 0 && !loading && (
@@ -267,6 +373,95 @@ export default function AdminDashboard({ onBackToApp }: { onBackToApp?: () => vo
                     </div>
                 </main>
             </div>
+
+            {/* Review Queue Modal */}
+            {reviewQueueUser && (
+                <div style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', backdropFilter: 'blur(8px)' }}>
+                    <div className="card glass" style={{ maxWidth: '800px', width: '100%', maxHeight: '90vh', overflowY: 'auto', position: 'relative' }}>
+                        <button 
+                            onClick={() => setReviewQueueUser(null)}
+                            style={{ position: 'absolute', top: '20px', right: '20px', background: 'transparent', border: 'none', color: '#fff', fontSize: '24px', cursor: 'pointer' }}
+                        >✕</button>
+
+                        <h2 style={{ fontSize: '24px', margin: '0 0 8px' }}>Review Approval Queue</h2>
+                        <p style={{ color: 'var(--green-soft)', marginBottom: '24px' }}>Managing reviews for {reviewQueueUser.full_name}</p>
+
+                        {loadingDrafts ? (
+                            <div style={{ textAlign: 'center', padding: '40px' }}>
+                                <div style={{ width: '40px', height: '40px', borderRadius: '50%', border: '3px solid rgba(59,130,246,.2)', borderTopColor: 'var(--blue)', animation: 'spin .8s linear infinite', margin: '0 auto 16px' }}></div>
+                                <p>Fetching unreplied reviews and generating AI drafts...</p>
+                            </div>
+                        ) : reviewDrafts.length > 0 ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                                {reviewDrafts.map((draft, idx) => (
+                                    <div key={idx} style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.1)', borderRadius: '8px', padding: '20px' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+                                            <div style={{ fontWeight: 'bold' }}>{draft.reviewer}</div>
+                                            <div style={{ color: '#fbbf24' }}>{draft.rating}</div>
+                                        </div>
+                                        <div style={{ fontStyle: 'italic', color: 'rgba(255,255,255,.7)', marginBottom: '16px' }}>
+                                            "{draft.comment}"
+                                        </div>
+                                        <div>
+                                            <label style={{ fontSize: '12px', color: 'var(--green-soft)', fontWeight: 'bold', display: 'block', marginBottom: '8px' }}>✨ AI Draft (Edit before sending):</label>
+                                            <textarea 
+                                                className="input" 
+                                                rows={3} 
+                                                style={{ width: '100%', marginBottom: '12px' }}
+                                                value={draft.draft_reply}
+                                                onChange={(e) => {
+                                                    const newDrafts = [...reviewDrafts];
+                                                    newDrafts[idx].draft_reply = e.target.value;
+                                                    setReviewDrafts(newDrafts);
+                                                }}
+                                            />
+                                            <button 
+                                                className="btn btn-green btn-sm" 
+                                                onClick={() => postDraftReply(draft.review_id, draft.draft_reply, idx)}
+                                            >
+                                                Approve & Post Reply
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div style={{ textAlign: 'center', padding: '40px', color: 'rgba(255,255,255,.5)' }}>
+                                <div style={{ fontSize: '32px', marginBottom: '12px' }}>🎉</div>
+                                <p>No unreplied reviews! All caught up.</p>
+                                <p style={{ fontSize: '12px', marginTop: '8px' }}>Any unreplied reviews left unattended will automatically post at midnight.</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+            
+            {toast && (
+                <div style={{
+                    position: 'fixed',
+                    bottom: '24px',
+                    right: '24px',
+                    maxWidth: '400px',
+                    wordBreak: 'break-word',
+                    background: toast.type === 'error' ? 'rgba(239, 68, 68, 0.85)' : (toast.type === 'success' ? 'rgba(34, 197, 94, 0.85)' : 'rgba(59, 130, 246, 0.85)'),
+                    backdropFilter: 'blur(12px)',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    color: '#fff',
+                    padding: '12px 20px',
+                    borderRadius: '12px',
+                    boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
+                    zIndex: 99999,
+                    animation: 'slideInUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+                    fontWeight: 600,
+                    fontSize: '14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px'
+                }}>
+                    <span style={{ fontSize: '16px', flexShrink: 0 }}>{toast.type === 'success' ? '✓' : (toast.type === 'error' ? '✕' : 'ℹ')}</span>
+                    <div style={{ lineHeight: '1.4' }}>{toast.message}</div>
+                </div>
+            )}
         </div>
     );
 }
