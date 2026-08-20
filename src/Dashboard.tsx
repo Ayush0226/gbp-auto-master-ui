@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from './lib/supabase';
+import AdminDashboard from './AdminDashboard';
 
 // Dummy Google Locations for the demo
 const MOCK_LOCATIONS = [
@@ -10,6 +11,7 @@ const MOCK_LOCATIONS = [
 
 export default function MasterDashboardPage() {
     const [user, setUser] = useState<any>(null);
+    const [isAdmin, setIsAdmin] = useState(false);
     const [hasGoogleConnected, setHasGoogleConnected] = useState(false);
     const [toast, setToast] = useState<{message: string, type: 'success' | 'error' | 'info'} | null>(null);
 
@@ -212,8 +214,7 @@ Analytics: ${JSON.stringify(analyticsData || {})}
 
             const email = session.user.email;
             if (email === 'ayushsony126@gmail.com' || email === 'aryansoni12567@gmail.com') {
-                window.location.href = '/admin';
-                return;
+                setIsAdmin(true);
             }
             
             // Capture Offline Refresh Token for Backend Automation
@@ -832,6 +833,10 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                 <div style={{ width: '44px', height: '44px', borderRadius: '50%', border: '3px solid rgba(59,130,246,.2)', borderTopColor: 'var(--blue)', animation: 'spin .8s linear infinite' }}></div>
             </div>
         );
+    }
+
+    if (isAdmin) {
+        return <AdminDashboard />;
     }
 
     return (
