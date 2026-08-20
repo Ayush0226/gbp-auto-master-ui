@@ -10,6 +10,7 @@ const MOCK_LOCATIONS = [
 ];
 
 export default function MasterDashboardPage() {
+    const [adminOverride, setAdminOverride] = useState(false);
     const [user, setUser] = useState<any>(null);
     const [isAdmin, setIsAdmin] = useState(false);
     const [hasGoogleConnected, setHasGoogleConnected] = useState(false);
@@ -835,8 +836,8 @@ Analytics: ${JSON.stringify(analyticsData || {})}
         );
     }
 
-    if (isAdmin) {
-        return <AdminDashboard />;
+    if (isAdmin && !adminOverride) {
+        return <AdminDashboard onBackToApp={() => setAdminOverride(true)} />;
     }
 
     return (
