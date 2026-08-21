@@ -144,7 +144,9 @@ export default function AdminDashboard({ onBackToApp }: { onBackToApp?: () => vo
                 setLoadingDrafts(false);
                 return;
             }
-            const cleanLoc = activeLoc.replace('locations/', '');
+            
+            // Ensure location_id has the 'locations/' prefix for the Google API path
+            const locationPath = activeLoc.includes('locations/') ? activeLoc : `locations/${activeLoc}`;
 
             // 2. Fetch Drafts
             const draftRes = await fetch('https://gbp-auto-master-backend-us.onrender.com/api/google/draft-reviews', {
@@ -153,7 +155,7 @@ export default function AdminDashboard({ onBackToApp }: { onBackToApp?: () => vo
                 body: JSON.stringify({
                     user_id: u.id,
                     provider_token: authData.provider_token,
-                    location_id: cleanLoc
+                    location_id: locationPath
                 })
             });
             
