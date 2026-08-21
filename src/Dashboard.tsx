@@ -132,6 +132,31 @@ export default function MasterDashboardPage() {
         return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     }, []);
 
+    const [reportData, setReportData] = useState<{ summary: string; action_items: string[] } | null>(null);
+
+    const generateReport = async () => {
+        setShowReportModal(true);
+        setReportGenerating(true);
+        try {
+            const contextDump = `Live Reviews: ${liveReviews?.length}, Competitors: ${competitors?.length}, Rank: ${activeLocObj?.rank || 'N/A'}`;
+            const resp = await fetch('https://gbp-auto-master-backend-us.onrender.com/api/ai/generate-report', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: user?.id, context_dump: contextDump })
+            });
+            const data = await resp.json();
+            if (data.status === 'success') {
+                setReportData(data.report);
+            } else {
+                showToast("Failed to generate report", "error");
+            }
+        } catch (e) {
+            showToast("Network Error", "error");
+        } finally {
+            setReportGenerating(false);
+        }
+    };
+
     const handleInstallPWA = async () => {
         if (isIOS) {
             showToast("To install: Tap the 'Share' icon at the bottom of Safari, then tap 'Add to Home Screen'.", "info");
@@ -1318,7 +1343,7 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                                     <h2 style={{ margin: 0 }}>Rank Pusher</h2>
                                     <p style={{ marginTop: '4px' }}>Local ranking performance and AI traffic insights.</p>
                                 </div>
-                                <button className="btn btn-green btn-sm" onClick={() => { setShowReportModal(true); setReportGenerating(true); setTimeout(() => setReportGenerating(false), 2500); }}>✨ Generate AI Analysis Report</button>
+                                <button className="btn btn-green btn-sm" onClick={generateReport}>✨ Generate AI Analysis Report</button>
                             </div>
 
                             {(() => {
@@ -1869,21 +1894,25 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                                 </div>
                                 <p style={{ color: 'rgba(255,255,255,.6)' }}>TAAY!! is generating your comprehensive SEO report...</p>
                             </div>
-                        ) : (
+                        ) : reportData ? (
                             <div>
                                 <h3 style={{ fontSize: '16px', color: 'var(--green-soft)', marginBottom: '8px' }}>Executive Summary</h3>
                                 <p style={{ fontSize: '14px', color: 'rgba(255,255,255,.8)', lineHeight: 1.6, marginBottom: '20px' }}>
-                                    Based on your current Google Business Profile metrics, your response rate is excellent (100%), but your competitor rank indicates room for growth. We recommend focusing heavily on injecting your target SEO keywords into all future review replies to gradually boost local map pack visibility.
+                                    {reportData.summary}
                                 </p>
 
                                 <h3 style={{ fontSize: '16px', color: 'var(--blue-soft)', marginBottom: '8px' }}>Action Items</h3>
                                 <ul style={{ paddingLeft: '20px', fontSize: '14px', color: 'rgba(255,255,255,.8)', lineHeight: 1.6 }}>
-                                    <li>Turn on the AI Auto-Replier to instantly catch positive sentiment.</li>
-                                    <li>Add up to 3 more hyper-local keywords in your AI Brain Settings.</li>
-                                    <li>Schedule at least 1 Google Post per week to signal active management to Google.</li>
+                                    {reportData.action_items.map((item, idx) => (
+                                        <li key={idx} style={{ marginBottom: '6px' }}>{item}</li>
+                                    ))}
                                 </ul>
 
                                 <button className="btn btn-primary btn-block" style={{ marginTop: '24px' }} onClick={() => setShowReportModal(false)}>Got it!</button>
+                            </div>
+                        ) : (
+                            <div style={{ textAlign: 'center', padding: '20px' }}>
+                                <p style={{ color: 'var(--red-soft)' }}>Failed to load report data.</p>
                             </div>
                         )}
                     </div>
