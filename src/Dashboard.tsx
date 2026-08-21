@@ -1855,6 +1855,41 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                 </>
             )}
 
+            {showReportModal && (
+                <div className="modal-backdrop" onClick={() => setShowReportModal(false)}>
+                    <div className="modal-content glass" onClick={e => e.stopPropagation()} style={{ maxWidth: '600px', width: '90%' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                            <h2 style={{ fontSize: '20px', margin: 0 }}>✨ AI Analysis Report</h2>
+                            <button className="btn btn-ghost btn-sm" onClick={() => setShowReportModal(false)}>✕</button>
+                        </div>
+                        {reportGenerating ? (
+                            <div style={{ textAlign: 'center', padding: '40px 0' }}>
+                                <div className="taay-typing-indicator" style={{ justifyContent: 'center', marginBottom: '16px' }}>
+                                    <span></span><span></span><span></span>
+                                </div>
+                                <p style={{ color: 'rgba(255,255,255,.6)' }}>TAAY!! is generating your comprehensive SEO report...</p>
+                            </div>
+                        ) : (
+                            <div>
+                                <h3 style={{ fontSize: '16px', color: 'var(--green-soft)', marginBottom: '8px' }}>Executive Summary</h3>
+                                <p style={{ fontSize: '14px', color: 'rgba(255,255,255,.8)', lineHeight: 1.6, marginBottom: '20px' }}>
+                                    Based on your current Google Business Profile metrics, your response rate is excellent (100%), but your competitor rank indicates room for growth. We recommend focusing heavily on injecting your target SEO keywords into all future review replies to gradually boost local map pack visibility.
+                                </p>
+
+                                <h3 style={{ fontSize: '16px', color: 'var(--blue-soft)', marginBottom: '8px' }}>Action Items</h3>
+                                <ul style={{ paddingLeft: '20px', fontSize: '14px', color: 'rgba(255,255,255,.8)', lineHeight: 1.6 }}>
+                                    <li>Turn on the AI Auto-Replier to instantly catch positive sentiment.</li>
+                                    <li>Add up to 3 more hyper-local keywords in your AI Brain Settings.</li>
+                                    <li>Schedule at least 1 Google Post per week to signal active management to Google.</li>
+                                </ul>
+
+                                <button className="btn btn-primary btn-block" style={{ marginTop: '24px' }} onClick={() => setShowReportModal(false)}>Got it!</button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+
             {toast && (
                 <div style={{
                     position: 'fixed',
