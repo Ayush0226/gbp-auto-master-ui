@@ -1575,11 +1575,22 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                                 </select>
                             </div>
 
+                            <div className="card glass" style={{ marginBottom: '16px' }}>
+                                <label className="field-label">Target SEO Keywords (Comma Separated)</label>
+                                <textarea rows={2} value={targetKeywords.join(', ')} onChange={(e) => setTargetKeywords(e.target.value.split(',').map(s => s.trim()).filter(s => s))} placeholder="e.g. Best Plumber, Emergency Pipe Repair"></textarea>
+                            </div>
+
                             <div className="card glass">
                                 <label className="field-label">Custom Instructions</label>
                                 <textarea rows={3} value={customInstructions} onChange={(e) => setCustomInstructions(e.target.value)} placeholder="e.g. Always mention our 30-day return policy"></textarea>
                                 <button className="btn btn-primary btn-sm" style={{ marginTop: '12px' }} onClick={() => {
-                                    saveUserSettings({ is_ai_active: isAiActive, reply_to_1_star: replyTo1Star, ai_tone: aiTone, custom_instructions: customInstructions });
+                                    saveUserSettings({ 
+                                        is_ai_active: isAiActive, 
+                                        reply_to_1_star: replyTo1Star, 
+                                        ai_tone: aiTone, 
+                                        custom_instructions: customInstructions,
+                                        active_keywords: targetKeywords 
+                                    });
                                     showToast('Settings Saved successfully!', 'success');
                                 }}>Save Settings</button>
                             </div>
