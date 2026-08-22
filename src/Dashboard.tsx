@@ -1116,7 +1116,7 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                             <div className="card glass">
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                                     <div>
-                                        <h3 style={{ fontSize: '15px', margin: 0 }}>Live Review Feed (Latest 15)</h3>
+                                        <h3 style={{ fontSize: '15px', margin: 0 }}>Live Review Feed (Latest 12)</h3>
                                         <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)', margin: '4px 0 0' }}>The AI replies automatically. You can also manually push replies.</p>
                                     </div>
                                     <button 
@@ -1137,7 +1137,7 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                                             <p style={{ fontSize: '13px', color: 'rgba(255,255,255,.5)', margin: 0 }}>Once customers leave reviews, they will appear here.</p>
                                         </div>
                                     ) : (
-                                        liveReviews.slice(0, 4).map((rev, i) => (
+                                        liveReviews.slice(0, 12).map((rev, i) => (
                                             <div key={i} className="card-sm" style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.08)' }}>
                                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
