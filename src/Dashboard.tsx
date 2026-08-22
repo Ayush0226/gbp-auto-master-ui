@@ -133,10 +133,12 @@ export default function MasterDashboardPage() {
     }, []);
 
     const [reportData, setReportData] = useState<{ summary: string; action_items: string[] } | null>(null);
+    const [reportError, setReportError] = useState<string | null>(null);
 
     const generateReport = async () => {
         setShowReportModal(true);
         setReportGenerating(true);
+        setReportError(null);
         try {
             const contextDump = `Live Reviews: ${liveReviews?.length}, Competitors: ${competitors?.length}, Rank: ${activeLocObj?.rank || 'N/A'}`;
             const resp = await fetch('https://gbp-auto-master-backend-us.onrender.com/api/ai/generate-report', {
@@ -148,9 +150,11 @@ export default function MasterDashboardPage() {
             if (data.status === 'success') {
                 setReportData(data.report);
             } else {
+                setReportError(data.detail || data.message || "Unknown server error");
                 showToast("Failed to generate report", "error");
             }
-        } catch (e) {
+        } catch (e: any) {
+            setReportError(e.message || "Network Error");
             showToast("Network Error", "error");
         } finally {
             setReportGenerating(false);
@@ -1343,7 +1347,7 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                                     <h2 style={{ margin: 0 }}>Rank Pusher</h2>
                                     <p style={{ marginTop: '4px' }}>Local ranking performance and AI traffic insights.</p>
                                 </div>
-                                <button className="btn btn-green btn-sm" onClick={generateReport}>✨ Generate AI Analysis Report</button>
+                                <button className="btn btn-green btn-sm" onClick={generateReport}>✨ Detailed Rank Analysis</button>
                             </div>
 
                             {(() => {
@@ -1884,7 +1888,7 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                 <div className="modal-backdrop" onClick={() => setShowReportModal(false)}>
                     <div className="modal-content glass" onClick={e => e.stopPropagation()} style={{ maxWidth: '600px', width: '90%' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                            <h2 style={{ fontSize: '20px', margin: 0 }}>✨ AI Analysis Report</h2>
+                            <h2 style={{ fontSize: '20px', margin: 0 }}>✨ Detailed Rank Analysis</h2>
                             <button className="btn btn-ghost btn-sm" onClick={() => setShowReportModal(false)}>✕</button>
                         </div>
                         {reportGenerating ? (
@@ -1913,6 +1917,7 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                         ) : (
                             <div style={{ textAlign: 'center', padding: '20px' }}>
                                 <p style={{ color: 'var(--red-soft)' }}>Failed to load report data.</p>
+                                {reportError && <p style={{ color: 'rgba(255,255,255,.5)', fontSize: '12px', marginTop: '10px' }}>{reportError}</p>}
                             </div>
                         )}
                     </div>
