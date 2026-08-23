@@ -1479,7 +1479,7 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                                             )}
                                         </div>
 
-                                        <div className="grid grid-2" style={{ marginBottom: '18px' }}>
+                                        <div style={{ marginBottom: '18px' }}>
                                             {/* Review Sentiment */}
                                             <div className="card glass glass-hover">
                                                 <h3 style={{ fontSize: '15px', marginBottom: '16px' }}>Review Sentiment (Based on {totalRevs} tracked reviews)</h3>
@@ -1496,20 +1496,6 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                                                     ) : (
                                                         <p style={{ fontSize: '13px', color: 'rgba(255,255,255,.5)' }}>Not enough reviews to calculate sentiment yet.</p>
                                                     )}
-                                                </div>
-                                            </div>
-
-                                            {/* Response Stats */}
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-                                                <div className="card glass glass-hover" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '100%' }}>
-                                                    <div>
-                                                        <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)' }}>AI Avg Response Time</p>
-                                                        <p style={{ fontSize: '24px', fontWeight: 800, marginTop: '8px' }}>1.2 mins</p>
-                                                    </div>
-                                                    <div style={{ textAlign: 'right' }}>
-                                                        <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)' }}>Response Rate</p>
-                                                        <p style={{ fontSize: '24px', fontWeight: 800, marginTop: '8px', color: 'var(--green-soft)' }}>100%</p>
-                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -1534,10 +1520,9 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                                                             <h3 style={{ fontSize: '18px', margin: 0 }}>Competitor Leaderboard</h3>
                                                             <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)', margin: 0 }}>Last Scanned: {new Date(last_scanned).toLocaleString()}</p>
                                                         </div>
-                                                        <button className="btn btn-green btn-sm" onClick={downloadPdfReport}>📄 Download PDF Report</button>
                                                     </div>
 
-                                                    <div id="pdf-report-container" className="grid grid-2" style={{ alignItems: 'start', padding: '16px', background: 'var(--bg-dark)', borderRadius: '12px' }}>
+                                                    <div className="grid grid-2" style={{ alignItems: 'start', padding: '16px', background: 'var(--bg-dark)', borderRadius: '12px' }}>
                                                         {/* Left: The Leaderboard */}
                                                         <div className="card glass" style={{ padding: 0, overflow: 'hidden' }}>
                                                             <div style={{ padding: '20px', borderBottom: '1px solid rgba(255,255,255,.05)' }}>
@@ -1572,13 +1557,16 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                                                         </div>
 
                                                         {/* Right: Goods and Bads */}
-                                                        <div className="card glass">
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-                                                                <span style={{ fontSize: '24px' }}>🤖</span>
-                                                                <div>
-                                                                    <h3 style={{ fontSize: '15px', margin: 0 }}>Detailed Rank Analysis</h3>
-                                                                    <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)', margin: 0 }}>AI Audit of your GBP vs Competitors</p>
+                                                        <div id="pdf-report-container" className="card glass">
+                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                                    <span style={{ fontSize: '24px' }}>🤖</span>
+                                                                    <div>
+                                                                        <h3 style={{ fontSize: '15px', margin: 0 }}>Detailed Rank Analysis</h3>
+                                                                        <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)', margin: 0 }}>AI Audit of your GBP vs Competitors</p>
+                                                                    </div>
                                                                 </div>
+                                                                <button className="btn btn-green btn-sm" onClick={downloadPdfReport}>📄 Download PDF</button>
                                                             </div>
                                                             
                                                             <div style={{ 
