@@ -1673,23 +1673,25 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                             </div>
 
                             <div className="card glass" style={{ marginBottom: '16px' }}>
-                                <label className="field-label">Target SEO Keywords (Auto-Discovered)</label>
+                                <label className="field-label">Target SEO Keywords</label>
                                 <p style={{ fontSize: '12.5px', color: 'rgba(255,255,255,.5)', margin: '0 0 12px' }}>
-                                    Select the highest trafficked keywords actual people are typing into Google Maps to find this location. AI will naturally inject these into replies.
+                                    Select auto-discovered local keywords or manually type your own separated by commas. AI will organically inject these into review replies.
                                 </p>
-                                <div style={{ 
-                                    maxHeight: '200px', 
-                                    overflowY: 'auto', 
-                                    background: 'rgba(255,255,255,.02)', 
-                                    border: '1px solid rgba(255,255,255,.05)', 
-                                    borderRadius: '8px', 
-                                    padding: '12px',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    gap: '10px'
-                                }}>
-                                    {searchKeywords && searchKeywords.length > 0 ? (
-                                        searchKeywords.map((kw: any, idx: number) => {
+                                
+                                {searchKeywords && searchKeywords.length > 0 && (
+                                    <div style={{ 
+                                        maxHeight: '150px', 
+                                        overflowY: 'auto', 
+                                        background: 'rgba(255,255,255,.02)', 
+                                        border: '1px solid rgba(255,255,255,.05)', 
+                                        borderRadius: '8px', 
+                                        padding: '12px',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        gap: '10px',
+                                        marginBottom: '12px'
+                                    }}>
+                                        {searchKeywords.map((kw: any, idx: number) => {
                                             const isActive = targetKeywords.includes(kw.searchKeyword);
                                             return (
                                                 <div 
@@ -1714,13 +1716,18 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                                                     </div>
                                                 </div>
                                             );
-                                        })
-                                    ) : (
-                                        <p style={{ fontSize: '13px', color: 'rgba(255,255,255,.4)', margin: 0, textAlign: 'center', padding: '20px 0' }}>
-                                            No local keywords discovered yet. Check back later or make sure your GBP is fully connected.
-                                        </p>
-                                    )}
-                                </div>
+                                        })}
+                                    </div>
+                                )}
+                                
+                                <textarea 
+                                    className="input" 
+                                    style={{ width: '100%', padding: '10px' }} 
+                                    rows={2} 
+                                    value={targetKeywords.join(', ')} 
+                                    onChange={(e) => setTargetKeywords(e.target.value.split(',').map(s => s.trim()).filter(s => s))} 
+                                    placeholder="e.g. Preschool in Kalyan, Best Daycare near me"
+                                ></textarea>
                             </div>
 
                             <div className="card glass">
