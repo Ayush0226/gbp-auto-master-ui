@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { supabase } from './lib/supabase';
 import AdminDashboard from './AdminDashboard';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 // Dummy Google Locations for the demo
 const MOCK_LOCATIONS = [
@@ -632,6 +634,50 @@ Analytics: ${JSON.stringify(analyticsData || {})}
         }
     };
 
+    const downloadPdfReport = async () => {
+        const input = document.getElementById('pdf-report-container');
+        if (!input) return;
+        
+        try {
+            showToast("Generating PDF report...", "info");
+            const canvas = await html2canvas(input, { scale: 2, useCORS: true, backgroundColor: '#0a0a0a' });
+            const imgData = canvas.toDataURL('image/png');
+            
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+            
+            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+            pdf.save(`Rank_Analysis_Report.pdf`);
+            showToast("PDF downloaded successfully!", "success");
+        } catch (error) {
+            console.error("PDF generation error:", error);
+            showToast("Failed to generate PDF.", "error");
+        }
+    };
+
+    const downloadDemoPdf = async () => {
+        const input = document.getElementById('demo-pdf-container');
+        if (!input) return;
+        
+        try {
+            showToast("Generating PDF demo report...", "info");
+            const canvas = await html2canvas(input, { scale: 2, useCORS: true, backgroundColor: '#0a0a0a' });
+            const imgData = canvas.toDataURL('image/png');
+            
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+            
+            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+            pdf.save(`AI_Demo_Report.pdf`);
+            showToast("PDF downloaded successfully!", "success");
+        } catch (error) {
+            console.error("PDF generation error:", error);
+            showToast("Failed to generate PDF.", "error");
+        }
+    };
+
     const handleCheckout = async () => {
         try {
             const res = await fetch("https://gbp-auto-master-backend-us.onrender.com/api/payment/create-order", {
@@ -1018,18 +1064,23 @@ Analytics: ${JSON.stringify(analyticsData || {})}
 
                             {appState === 'demo-success' && (
                                 <div className="card glass">
-                                    <span className="badge-pill b-green">✓ Demo complete</span>
-                                    <h3 style={{ fontSize: '18px', margin: '12px 0 16px' }}>The AI just replied to 2 real reviews:</h3>
-                                    <div className="grid grid-2">
-                                        {demoResultNames.map((replyObj, i) => (
-                                            <div key={i} className="card-sm" style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.08)' }}>
-                                                <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.45)', margin: '0 0 4px' }}>Review from</p>
-                                                <p style={{ fontWeight: 600, fontSize: '14px', margin: 0 }}>{replyObj.reviewer}</p>
-                                                <p style={{ fontSize: '12.5px', color: 'rgba(255,255,255,.6)', marginTop: '8px', fontStyle: 'italic', borderLeft: '2px solid rgba(255,255,255,.2)', paddingLeft: '8px' }}>"{replyObj.comment}"</p>
-                                                <p style={{ fontSize: '12px', color: 'var(--green-soft)', marginTop: '12px', marginBottom: '4px', fontWeight: 'bold' }}>AI Auto-Reply live on Google:</p>
-                                                <p style={{ fontSize: '13px', color: 'rgba(255,255,255,.9)', margin: 0, lineHeight: '1.4' }}>"{replyObj.ai_reply}"</p>
-                                            </div>
-                                        ))}
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                                        <span className="badge-pill b-green">✓ Demo complete</span>
+                                        <button className="btn btn-green btn-sm" onClick={downloadDemoPdf}>📄 Download Demo Report</button>
+                                    </div>
+                                    <div id="demo-pdf-container" style={{ background: 'var(--bg-dark)', padding: '24px', borderRadius: '12px' }}>
+                                        <h3 style={{ fontSize: '18px', margin: '0 0 16px' }}>The AI just replied to 2 real reviews:</h3>
+                                        <div className="grid grid-2">
+                                            {demoResultNames.map((replyObj, i) => (
+                                                <div key={i} className="card-sm" style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.08)' }}>
+                                                    <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.45)', margin: '0 0 4px' }}>Review from</p>
+                                                    <p style={{ fontWeight: 600, fontSize: '14px', margin: 0 }}>{replyObj.reviewer}</p>
+                                                    <p style={{ fontSize: '12.5px', color: 'rgba(255,255,255,.6)', marginTop: '8px', fontStyle: 'italic', borderLeft: '2px solid rgba(255,255,255,.2)', paddingLeft: '8px' }}>"{replyObj.comment}"</p>
+                                                    <p style={{ fontSize: '12px', color: 'var(--green-soft)', marginTop: '12px', marginBottom: '4px', fontWeight: 'bold' }}>AI Auto-Reply live on Google:</p>
+                                                    <p style={{ fontSize: '13px', color: 'rgba(255,255,255,.9)', margin: 0, lineHeight: '1.4' }}>"{replyObj.ai_reply}"</p>
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
                                     <button className="btn btn-primary" style={{ marginTop: '20px' }} onClick={() => setAppState('payment')}>Continue to Pricing →</button>
                                 </div>
@@ -1479,11 +1530,14 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                                             return (
                                                 <div style={{ marginTop: '32px' }}>
                                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                                                        <h3 style={{ fontSize: '18px', margin: 0 }}>Competitor Leaderboard</h3>
-                                                        <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)', margin: 0 }}>Last Scanned: {new Date(last_scanned).toLocaleString()}</p>
+                                                        <div>
+                                                            <h3 style={{ fontSize: '18px', margin: 0 }}>Competitor Leaderboard</h3>
+                                                            <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)', margin: 0 }}>Last Scanned: {new Date(last_scanned).toLocaleString()}</p>
+                                                        </div>
+                                                        <button className="btn btn-green btn-sm" onClick={downloadPdfReport}>📄 Download PDF Report</button>
                                                     </div>
 
-                                                    <div className="grid grid-2" style={{ alignItems: 'start' }}>
+                                                    <div id="pdf-report-container" className="grid grid-2" style={{ alignItems: 'start', padding: '16px', background: 'var(--bg-dark)', borderRadius: '12px' }}>
                                                         {/* Left: The Leaderboard */}
                                                         <div className="card glass" style={{ padding: 0, overflow: 'hidden' }}>
                                                             <div style={{ padding: '20px', borderBottom: '1px solid rgba(255,255,255,.05)' }}>
@@ -1522,8 +1576,8 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                                                             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
                                                                 <span style={{ fontSize: '24px' }}>🤖</span>
                                                                 <div>
-                                                                    <h3 style={{ fontSize: '15px', margin: 0 }}>Goods and Bads (Where it lacks)</h3>
-                                                                    <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)', margin: 0 }}>AI Analysis of your GBP vs Competitors</p>
+                                                                    <h3 style={{ fontSize: '15px', margin: 0 }}>Detailed Rank Analysis</h3>
+                                                                    <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)', margin: 0 }}>AI Audit of your GBP vs Competitors</p>
                                                                 </div>
                                                             </div>
                                                             
@@ -1536,9 +1590,14 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                                                                 lineHeight: 1.6,
                                                                 color: 'rgba(255,255,255,.8)'
                                                             }}>
-                                                                {ai_report.split('\n').map((line: string, i: number) => (
-                                                                    <p key={i} style={{ margin: '0 0 12px 0' }}>{line}</p>
-                                                                ))}
+                                                                {ai_report.split('\n').map((line: string, i: number) => {
+                                                                    const text = line.trim();
+                                                                    if (text.startsWith('PROS:')) return <h4 key={i} style={{color: 'var(--green-soft)', marginTop: '10px', marginBottom: '6px'}}>✅ PROS</h4>;
+                                                                    if (text.startsWith('CONS:')) return <h4 key={i} style={{color: 'var(--red-soft)', marginTop: '16px', marginBottom: '6px'}}>❌ CONS</h4>;
+                                                                    if (text.startsWith('ACTION PLAN:')) return <h4 key={i} style={{color: 'var(--blue-soft)', marginTop: '16px', marginBottom: '6px'}}>🚀 ACTION PLAN</h4>;
+                                                                    if (text.length === 0) return null;
+                                                                    return <p key={i} style={{ margin: '0 0 6px 0', paddingLeft: '8px', borderLeft: '2px solid rgba(255,255,255,.1)' }}>{text}</p>;
+                                                                })}
                                                             </div>
                                                         </div>
                                                     </div>
