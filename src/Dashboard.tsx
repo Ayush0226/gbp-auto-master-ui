@@ -1036,9 +1036,36 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                             )}
 
                             {appState === 'payment' && (
-                                <div className="card glass">
-                                    <h3 style={{ fontSize: '16px', marginBottom: '4px' }}>Subscribe for {activeLocationName}</h3>
-                                    <p style={{ fontSize: '13px', color: 'rgba(255,255,255,.6)', marginBottom: '16px' }}>This AI Engine subscription will apply exclusively to this Google Business Profile.</p>
+                                <div className="card glass" style={{ maxWidth: '700px', margin: '0 auto', padding: '32px' }}>
+                                    <h3 style={{ fontSize: '20px', marginBottom: '8px' }}>Activate AI Engine for {activeLocationName}</h3>
+                                    <p style={{ fontSize: '14px', color: 'rgba(255,255,255,.6)', marginBottom: '24px' }}>Choose a plan to instantly automate your Google Business Profile and outrank local competitors.</p>
+
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '28px', background: 'rgba(255,255,255,.02)', border: '1px solid rgba(255,255,255,.05)', borderRadius: '12px', padding: '20px' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                            <span style={{ color: 'var(--green-soft)', fontSize: '16px' }}>✓</span>
+                                            <span style={{ fontSize: '13.5px', color: 'rgba(255,255,255,.8)' }}>24/7 AI Auto-Replier</span>
+                                        </div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                            <span style={{ color: 'var(--green-soft)', fontSize: '16px' }}>✓</span>
+                                            <span style={{ fontSize: '13.5px', color: 'rgba(255,255,255,.8)' }}>Auto SEO Keyword Injection</span>
+                                        </div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                            <span style={{ color: 'var(--green-soft)', fontSize: '16px' }}>✓</span>
+                                            <span style={{ fontSize: '13.5px', color: 'rgba(255,255,255,.8)' }}>Automated Calendar Posts</span>
+                                        </div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                            <span style={{ color: 'var(--green-soft)', fontSize: '16px' }}>✓</span>
+                                            <span style={{ fontSize: '13.5px', color: 'rgba(255,255,255,.8)' }}>Local Competitor Tracking</span>
+                                        </div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                            <span style={{ color: 'var(--green-soft)', fontSize: '16px' }}>✓</span>
+                                            <span style={{ fontSize: '13.5px', color: 'rgba(255,255,255,.8)' }}>Detailed Rank Analysis</span>
+                                        </div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                            <span style={{ color: 'var(--green-soft)', fontSize: '16px' }}>✓</span>
+                                            <span style={{ fontSize: '13.5px', color: 'rgba(255,255,255,.8)' }}>Premium VIP Support</span>
+                                        </div>
+                                    </div>
 
                                     <div className="grid grid-3">
                                         {(Object.keys(PRICING_PLANS) as Array<keyof typeof PRICING_PLANS>).map((key) => (
@@ -1421,21 +1448,9 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                                                 </div>
                                             </div>
 
-                                            {/* Response Stats & Competitors */}
+                                            {/* Response Stats */}
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-                                                <div className="card glass glass-hover">
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                                                        <h3 style={{ fontSize: '15px' }}>Competitor Leaderboard</h3>
-                                                    </div>
-                                                    
-                                                    <div className="card-sm" style={{ background: 'rgba(255,255,255,.03)', border: '1px dashed rgba(255,255,255,.2)', textAlign: 'center', padding: '32px 16px' }}>
-                                                        <span style={{ fontSize: '24px', display: 'block', marginBottom: '8px' }}>🚧</span>
-                                                        <p style={{ fontSize: '14px', fontWeight: 600, color: 'var(--blue-soft)', margin: '0 0 4px' }}>Will be available soon</p>
-                                                        <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)', margin: 0 }}>We are currently upgrading our local rank tracking engine.</p>
-                                                    </div>
-                                                </div>
-
-                                                <div className="card glass glass-hover" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                <div className="card glass glass-hover" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '100%' }}>
                                                     <div>
                                                         <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)' }}>AI Avg Response Time</p>
                                                         <p style={{ fontSize: '24px', fontWeight: 800, marginTop: '8px' }}>1.2 mins</p>
