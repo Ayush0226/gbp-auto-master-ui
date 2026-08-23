@@ -293,37 +293,42 @@ Analytics: ${JSON.stringify(analyticsData || {})}
 
     // Fetch User Settings (Keywords & AI Config)
     useEffect(() => {
-        if (user?.id) {
-            supabase.from('user_settings').select('*').eq('user_id', user.id).single()
-                .then(({ data, error }) => {
-                    if (data && !error) {
-                        setTargetKeywords(data.active_keywords || []);
-                        setIsAiActive(data.is_ai_active ?? true);
-                        setReplyTo1Star(data.reply_to_1_star ?? false);
-                        setAiTone(data.ai_tone || 'Professional');
-                        setCustomInstructions(data.custom_instructions || '');
-                    } else if (error && error.code === 'PGRST116') {
-                        // Settings don't exist yet, we will insert them on first save
-                    }
-                });
+        if (user?.id && activeLocationId) {
+            const allSettings = user.user_metadata?.ai_settings || {};
+            const locSettings = allSettings[activeLocationId] || {};
+            
+            setTargetKeywords(locSettings.active_keywords || []);
+            setIsAiActive(locSettings.is_ai_active ?? true);
+            setReplyTo1Star(locSettings.reply_to_1_star ?? false);
+            setAiTone(locSettings.ai_tone || 'Professional');
+            setCustomInstructions(locSettings.custom_instructions || '');
         }
-    }, [user]);
+    }, [user, activeLocationId]);
 
     const saveUserSettings = async (updates: any) => {
-        if (!user?.id) return;
+        if (!user?.id || !activeLocationId) return;
         
-        // Try to update first
-        const { data, error } = await supabase.from('user_settings')
-            .update(updates)
-            .eq('user_id', user.id)
-            .select();
-            
-        // If update fails because row doesn't exist, insert it
-        if (!data || data.length === 0) {
-            await supabase.from('user_settings').insert({
-                user_id: user.id,
-                ...updates
+        try {
+            const res = await fetch('https://gbp-auto-master-backend-us.onrender.com/api/user/save-ai-settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_id: user.id,
+                    location_id: activeLocationId,
+                    settings: updates
+                })
             });
+            const data = await res.json();
+            if (data.status === 'success') {
+                // Update local user object state so UI doesn't lag
+                const currentSettings = user.user_metadata?.ai_settings || {};
+                currentSettings[activeLocationId] = updates;
+                setUser({ ...user, user_metadata: { ...user.user_metadata, ai_settings: currentSettings } });
+            } else {
+                console.error("Failed to save settings:", data.message);
+            }
+        } catch (e) {
+            console.error("Network error saving settings:", e);
         }
     };
 
@@ -518,7 +523,8 @@ Analytics: ${JSON.stringify(analyticsData || {})}
             const { data, error } = await supabase
                 .from('calendar_posts')
                 .select('*')
-                .eq('user_id', user.id);
+                .eq('user_id', user.id)
+                .eq('location_id', activeLocationId);
                 
             if (data && !error) {
                 const postsByDay: any = {};
@@ -537,7 +543,7 @@ Analytics: ${JSON.stringify(analyticsData || {})}
         if (appState === 'dashboard') {
             fetchCalendar();
         }
-    }, [user, appState, currentMonth, currentYear]);
+    }, [user, appState, currentMonth, currentYear, activeLocationId]);
 
     // Fetch Analytics Data
     useEffect(() => {
@@ -1667,8 +1673,54 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                             </div>
 
                             <div className="card glass" style={{ marginBottom: '16px' }}>
-                                <label className="field-label">Target SEO Keywords (Comma Separated)</label>
-                                <textarea rows={2} value={targetKeywords.join(', ')} onChange={(e) => setTargetKeywords(e.target.value.split(',').map(s => s.trim()).filter(s => s))} placeholder="e.g. Best Plumber, Emergency Pipe Repair"></textarea>
+                                <label className="field-label">Target SEO Keywords (Auto-Discovered)</label>
+                                <p style={{ fontSize: '12.5px', color: 'rgba(255,255,255,.5)', margin: '0 0 12px' }}>
+                                    Select the highest trafficked keywords actual people are typing into Google Maps to find this location. AI will naturally inject these into replies.
+                                </p>
+                                <div style={{ 
+                                    maxHeight: '200px', 
+                                    overflowY: 'auto', 
+                                    background: 'rgba(255,255,255,.02)', 
+                                    border: '1px solid rgba(255,255,255,.05)', 
+                                    borderRadius: '8px', 
+                                    padding: '12px',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: '10px'
+                                }}>
+                                    {searchKeywords && searchKeywords.length > 0 ? (
+                                        searchKeywords.map((kw: any, idx: number) => {
+                                            const isActive = targetKeywords.includes(kw.searchKeyword);
+                                            return (
+                                                <div 
+                                                    key={idx} 
+                                                    style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}
+                                                    onClick={() => {
+                                                        if (isActive) {
+                                                            setTargetKeywords(targetKeywords.filter(k => k !== kw.searchKeyword));
+                                                        } else {
+                                                            setTargetKeywords([...targetKeywords, kw.searchKeyword]);
+                                                        }
+                                                    }}
+                                                >
+                                                    <div className={`checkbox ${isActive ? 'on' : ''}`}>
+                                                        {isActive ? '✓' : ''}
+                                                    </div>
+                                                    <div style={{ flex: 1 }}>
+                                                        <p style={{ margin: 0, fontSize: '14px', color: isActive ? '#fff' : 'rgba(255,255,255,.7)' }}>{kw.searchKeyword}</p>
+                                                    </div>
+                                                    <div style={{ textAlign: 'right' }}>
+                                                        <span style={{ fontSize: '12px', color: 'var(--green-soft)' }}>{kw.monthlyImpressionsValue} views/mo</span>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })
+                                    ) : (
+                                        <p style={{ fontSize: '13px', color: 'rgba(255,255,255,.4)', margin: 0, textAlign: 'center', padding: '20px 0' }}>
+                                            No local keywords discovered yet. Check back later or make sure your GBP is fully connected.
+                                        </p>
+                                    )}
+                                </div>
                             </div>
 
                             <div className="card glass">
