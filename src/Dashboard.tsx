@@ -86,8 +86,8 @@ export default function MasterDashboardPage() {
     const [savingReplyId, setSavingReplyId] = useState<string | null>(null);
 
     // AI Configuration State
-    const [newKeyword, setNewKeyword] = useState('');
     const [targetKeywords, setTargetKeywords] = useState<string[]>([]);
+    const [keywordInputText, setKeywordInputText] = useState('');
     const [competitorKeyword, setCompetitorKeyword] = useState('');
     const [competitors, setCompetitors] = useState<any[]>([]);
     const [loadingCompetitors, setLoadingCompetitors] = useState(false);
@@ -298,6 +298,7 @@ Analytics: ${JSON.stringify(analyticsData || {})}
             const locSettings = allSettings[activeLocationId] || {};
             
             setTargetKeywords(locSettings.active_keywords || []);
+            setKeywordInputText((locSettings.active_keywords || []).join(', '));
             setIsAiActive(locSettings.is_ai_active ?? true);
             setReplyTo1Star(locSettings.reply_to_1_star ?? false);
             setAiTone(locSettings.ai_tone || 'Professional');
@@ -1698,11 +1699,14 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                                                     key={idx} 
                                                     style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}
                                                     onClick={() => {
+                                                        let newKws;
                                                         if (isActive) {
-                                                            setTargetKeywords(targetKeywords.filter(k => k !== kw.searchKeyword));
+                                                            newKws = targetKeywords.filter(k => k !== kw.searchKeyword);
                                                         } else {
-                                                            setTargetKeywords([...targetKeywords, kw.searchKeyword]);
+                                                            newKws = [...targetKeywords, kw.searchKeyword];
                                                         }
+                                                        setTargetKeywords(newKws);
+                                                        setKeywordInputText(newKws.join(', '));
                                                     }}
                                                 >
                                                     <div className={`checkbox ${isActive ? 'on' : ''}`}>
@@ -1724,8 +1728,11 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                                     className="input" 
                                     style={{ width: '100%', padding: '10px' }} 
                                     rows={2} 
-                                    value={targetKeywords.join(', ')} 
-                                    onChange={(e) => setTargetKeywords(e.target.value.split(',').map(s => s.trim()).filter(s => s))} 
+                                    value={keywordInputText} 
+                                    onChange={(e) => {
+                                        setKeywordInputText(e.target.value);
+                                        setTargetKeywords(e.target.value.split(',').map(s => s.trim()).filter(s => s));
+                                    }} 
                                     placeholder="e.g. Preschool in Kalyan, Best Daycare near me"
                                 ></textarea>
                             </div>
