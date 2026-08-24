@@ -966,7 +966,7 @@ Analytics: ${JSON.stringify(analyticsData || {})}
             {sidebarOpen && <div className="sidebar-backdrop" onClick={() => setSidebarOpen(false)}></div>}
             <aside className={`sidebar glass ${sidebarOpen ? 'mobile-open' : ''}`} id="sidebar">
                 <div className="sidebar-logo" style={{ display: 'flex', alignItems: 'center', marginBottom: '30px' }}>
-                    <img src="/logo.jpg" alt="Logo" style={{ height: '42px', marginRight: '14px', borderRadius: '8px' }} />
+                    <img src="/logo.jpeg" alt="Logo" style={{ height: '42px', marginRight: '14px', borderRadius: '8px' }} />
                     <div style={{ lineHeight: '1.2' }}>
                         <div style={{ fontSize: '18px', fontWeight: 'bold', color: 'white' }}>GBP Auto</div>
                         <div className="grad-blue" style={{ fontSize: '14px', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Master</div>
@@ -1014,7 +1014,10 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                     <button className="btn btn-ghost btn-sm" onClick={() => setSidebarOpen(!sidebarOpen)} style={{ padding: '4px 8px', fontSize: '16px', marginRight: '10px', display: 'flex' }}>
                         ☰
                     </button>
-                    <div className="sidebar-logo" style={{ padding: 0, margin: 0 }}>GBP Auto <span className="grad-blue">Master</span></div>
+                    <div className="sidebar-logo" style={{ display: 'flex', alignItems: 'center', padding: 0, margin: 0 }}>
+                        <img src="/logo.jpeg" alt="Logo" style={{ height: '24px', marginRight: '8px', borderRadius: '4px' }} />
+                        <span style={{ fontSize: '14px', fontWeight: 'bold' }}>GBP Auto <span className="grad-blue">Master</span></span>
+                    </div>
                     
                     {appState === 'dashboard' && liveLocations.length > 0 && (
                         <select 
