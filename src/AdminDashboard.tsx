@@ -348,7 +348,7 @@ export default function AdminDashboard({ onBackToApp }: { onBackToApp?: () => vo
             </aside>
 
             {/* Mobile Header */}
-            <div className="mobile-topbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px' }}>
+            <div className="mobile-topbar" style={{ justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px' }}>
                 <button className="btn btn-ghost btn-sm" onClick={() => setSidebarOpen(!sidebarOpen)} style={{ padding: '4px 8px', fontSize: '16px', marginRight: '10px', display: 'flex' }}>
                     ☰
                 </button>
