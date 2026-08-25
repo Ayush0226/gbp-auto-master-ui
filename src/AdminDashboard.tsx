@@ -9,7 +9,9 @@ export default function AdminDashboard({ onBackToApp }: { onBackToApp?: () => vo
     const [searchQuery, setSearchQuery] = useState('');
     const [activeTab, setActiveTab] = useState('clients');
 
-    // Review Queue State
+    const [sidebarOpen, setSidebarOpen] = useState(false);
+
+    // ... (rest of the state declarations) ...
     const [reviewQueueUser, setReviewQueueUser] = useState<any>(null);
     const [loadingDrafts, setLoadingDrafts] = useState(false);
     const [reviewDrafts, setReviewDrafts] = useState<any[]>([]);
@@ -28,6 +30,103 @@ export default function AdminDashboard({ onBackToApp }: { onBackToApp?: () => vo
             } else {
                 window.location.href = path;
             }
+        }
+    };
+
+    const downloadUserReport = async (u: any) => {
+        try {
+            const activeLoc = Object.keys(u.subscriptions || {}).find(loc => u.subscriptions[loc].status === 'active');
+            if (!activeLoc) {
+                showToast("User has no active subscriptions.", "error");
+                return;
+            }
+            const intel = u.user_metadata?.competitor_intel?.[activeLoc];
+            if (!intel) {
+                showToast("No scan data available for this user yet.", "error");
+                return;
+            }
+            
+            showToast(`Generating report for ${u.full_name}...`, "info");
+            
+            const { jsPDF } = await import('jspdf');
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const pageWidth = pdf.internal.pageSize.getWidth();
+            
+            // Header
+            pdf.setFont("helvetica", "bold");
+            pdf.setFontSize(22);
+            pdf.setTextColor(0, 51, 102);
+            pdf.text("Detailed Rank Analysis", 15, 25);
+            
+            pdf.setFont("helvetica", "normal");
+            pdf.setFontSize(11);
+            pdf.setTextColor(100, 100, 100);
+            pdf.text(`Business Name: ${u.full_name}`, 15, 33);
+            pdf.text(`Location: ${activeLoc}`, 15, 39);
+            pdf.text(`Generated on: ${new Date(intel.last_scanned).toLocaleString()}`, 15, 45);
+            
+            // Introduction text (Detailed for customer)
+            pdf.setFont("helvetica", "italic");
+            pdf.setFontSize(10);
+            pdf.setTextColor(80, 80, 80);
+            const introText = "This report provides an AI-driven analysis of your Google Business Profile's local search performance compared to your top competitors. Higher rankings translate directly to more visibility, traffic, and revenue.";
+            const splitIntro = pdf.splitTextToSize(introText, pageWidth - 30);
+            pdf.text(splitIntro, 15, 55);
+
+            pdf.setDrawColor(200, 200, 200);
+            pdf.line(15, 65, pageWidth - 15, 65);
+            
+            pdf.setFont("helvetica", "bold");
+            pdf.setFontSize(16);
+            pdf.setTextColor(0, 0, 0);
+            pdf.text("Competitor Leaderboard", 15, 75);
+            
+            let y = 85;
+            intel.leaderboard.forEach((c: any) => {
+                pdf.setFont("helvetica", "bold");
+                pdf.setTextColor(c.is_user ? 0 : 50, c.is_user ? 100 : 50, c.is_user ? 200 : 50);
+                pdf.text(`#${c.rank}  ${c.name}`, 15, y);
+                
+                pdf.setFont("helvetica", "normal");
+                pdf.setTextColor(100, 100, 100);
+                pdf.text(`${c.rating} Stars | ${c.reviews} Reviews`, pageWidth - 60, y);
+                y += 10;
+            });
+            
+            y += 5;
+            pdf.setDrawColor(200, 200, 200);
+            pdf.line(15, y, pageWidth - 15, y);
+            y += 12;
+            
+            pdf.setFont("helvetica", "bold");
+            pdf.setFontSize(16);
+            pdf.setTextColor(0, 0, 0);
+            pdf.text("AI Strategy Report", 15, y);
+            y += 8;
+            
+            pdf.setFont("helvetica", "normal");
+            pdf.setFontSize(11);
+            pdf.setTextColor(40, 40, 40);
+            
+            const rawText = intel.ai_report || "No AI report generated.";
+            // Simple markdown-to-text parser for PDF
+            const cleanText = rawText.replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1').replace(/#/g, '');
+            const paragraphs = cleanText.split('\n\n');
+            
+            paragraphs.forEach((p: string) => {
+                const lines = pdf.splitTextToSize(p.trim(), pageWidth - 30);
+                if (y + (lines.length * 6) > 280) {
+                    pdf.addPage();
+                    y = 20;
+                }
+                pdf.text(lines, 15, y);
+                y += (lines.length * 6) + 4;
+            });
+            
+            pdf.save(`Rank_Analysis_${u.full_name}.pdf`);
+            showToast("PDF downloaded successfully!", "success");
+        } catch (e: any) {
+            showToast("PDF Error: " + e.message, 'error');
         }
     };
 
@@ -217,7 +316,8 @@ export default function AdminDashboard({ onBackToApp }: { onBackToApp?: () => vo
             <div className="noise"></div>
 
             {/* Admin Sidebar */}
-            <aside className="sidebar glass" id="sidebar">
+            {sidebarOpen && <div className="sidebar-backdrop" onClick={() => setSidebarOpen(false)}></div>}
+            <aside className={`sidebar glass ${sidebarOpen ? 'mobile-open' : ''}`} id="sidebar">
                 <div className="sidebar-logo" style={{ display: 'flex', alignItems: 'center', marginBottom: '30px' }}>
                     <div style={{ lineHeight: '1.2' }}>
                         <div style={{ fontSize: '18px', fontWeight: 'bold', color: 'white' }}>Master <span className="grad-blue">Admin</span></div>
@@ -226,13 +326,13 @@ export default function AdminDashboard({ onBackToApp }: { onBackToApp?: () => vo
                 </div>
 
                 <nav>
-                    <div className={`nav-item ${activeTab === 'clients' ? 'active' : ''}`} onClick={() => setActiveTab('clients')}>
+                    <div className={`nav-item ${activeTab === 'clients' ? 'active' : ''}`} onClick={() => { setActiveTab('clients'); setSidebarOpen(false); }}>
                         <span className="ic">👥</span> Client Database
                     </div>
-                    <div className={`nav-item ${activeTab === 'revenue' ? 'active' : ''}`} onClick={() => setActiveTab('revenue')}>
+                    <div className={`nav-item ${activeTab === 'revenue' ? 'active' : ''}`} onClick={() => { setActiveTab('revenue'); setSidebarOpen(false); }}>
                         <span className="ic">📈</span> Revenue Metrics
                     </div>
-                    <div className={`nav-item ${activeTab === 'system' ? 'active' : ''}`} onClick={() => setActiveTab('system')}>
+                    <div className={`nav-item ${activeTab === 'system' ? 'active' : ''}`} onClick={() => { setActiveTab('system'); setSidebarOpen(false); }}>
                         <span className="ic">⚙️</span> System Actions
                     </div>
                 </nav>
@@ -248,16 +348,19 @@ export default function AdminDashboard({ onBackToApp }: { onBackToApp?: () => vo
             </aside>
 
             {/* Mobile Header */}
-            <div className="mobile-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 20px', background: 'rgba(5,5,5,0.8)', backdropFilter: 'blur(10px)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                <div style={{ fontWeight: 'bold', fontSize: '18px' }}>Master Admin</div>
-                <button className="btn btn-ghost btn-sm" style={{ padding: '6px 12px', color: 'var(--red-soft)' }} onClick={async () => { await supabase.auth.signOut(); window.location.href='/'; }}>Sign Out</button>
+            <div className="mobile-topbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px' }}>
+                <button className="btn btn-ghost btn-sm" onClick={() => setSidebarOpen(!sidebarOpen)} style={{ padding: '4px 8px', fontSize: '16px', marginRight: '10px', display: 'flex' }}>
+                    ☰
+                </button>
+                <div style={{ fontWeight: 'bold', fontSize: '16px' }}>Master <span className="grad-blue">Admin</span></div>
+                <button className="btn btn-ghost btn-sm" style={{ padding: '6px 12px', color: 'var(--red-soft)', fontSize: '11px', background: 'rgba(239, 68, 68, .1)', border: '1px solid rgba(239, 68, 68, .2)' }} onClick={async () => { await supabase.auth.signOut(); window.location.href='/'; }}>Sign Out</button>
             </div>
 
             {/* Main Content */}
             <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-                <main className="main" style={{ padding: '40px' }}>
+                <main className="main">
                     
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', flexWrap: 'wrap', gap: '16px' }}>
                         <div>
                             <h2 style={{ fontSize: '28px', margin: '0 0 8px' }}>Admin Overview</h2>
                             <p style={{ color: 'rgba(255,255,255,.5)', margin: 0 }}>Monitor business health and manage client accounts.</p>
@@ -291,7 +394,7 @@ export default function AdminDashboard({ onBackToApp }: { onBackToApp?: () => vo
                     </div>
 
                     <div className="card glass" style={{ padding: 0, overflow: 'hidden' }}>
-                        <div style={{ padding: '20px 24px', borderBottom: '1px solid rgba(255,255,255,.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ padding: '20px 24px', borderBottom: '1px solid rgba(255,255,255,.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
                             <h3 style={{ margin: 0, fontSize: '18px' }}>Client Database</h3>
                             <input 
                                 type="text" 
@@ -299,7 +402,7 @@ export default function AdminDashboard({ onBackToApp }: { onBackToApp?: () => vo
                                 placeholder="Search by name or email..." 
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                style={{ width: '300px', padding: '8px 16px', background: 'rgba(0,0,0,.2)' }}
+                                style={{ width: '100%', maxWidth: '300px', padding: '8px 16px', background: 'rgba(0,0,0,.2)' }}
                             />
                         </div>
                         
@@ -310,7 +413,7 @@ export default function AdminDashboard({ onBackToApp }: { onBackToApp?: () => vo
                         )}
 
                         <div style={{ overflowX: 'auto' }}>
-                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13.5px', textAlign: 'left' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13.5px', textAlign: 'left', minWidth: '800px' }}>
                                 <thead>
                                     <tr style={{ background: 'rgba(255,255,255,.02)' }}>
                                         <th style={{ padding: '16px 24px', fontWeight: 600, color: 'rgba(255,255,255,.5)', borderBottom: '1px solid rgba(255,255,255,.08)' }}>Client Details</th>
@@ -365,7 +468,7 @@ export default function AdminDashboard({ onBackToApp }: { onBackToApp?: () => vo
                                             <td style={{ padding: '16px 24px' }}>
                                                 <div style={{ display: 'flex', gap: '8px' }}>
                                                     <button className="btn btn-ghost btn-sm" style={{ padding: '6px 10px' }} onClick={() => openReviewQueue(u)}>Reviews</button>
-                                                    <button className="btn btn-ghost btn-sm" style={{ padding: '6px 10px' }} onClick={() => alert("Calendar for " + u.full_name)}>Calendar</button>
+                                                    <button className="btn btn-ghost btn-sm" style={{ padding: '6px 10px' }} onClick={() => downloadUserReport(u)}>Rank PDF</button>
                                                 </div>
                                             </td>
                                         </tr>

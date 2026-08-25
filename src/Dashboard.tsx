@@ -666,17 +666,25 @@ Analytics: ${JSON.stringify(analyticsData || {})}
             pdf.text(`Location: ${activeLocationName}`, 15, 33);
             pdf.text(`Generated on: ${new Date(intel.last_scanned).toLocaleString()}`, 15, 39);
             
+            // Introduction text (Detailed for customer)
+            pdf.setFont("helvetica", "italic");
+            pdf.setFontSize(10);
+            pdf.setTextColor(80, 80, 80);
+            const introText = "This report provides an AI-driven analysis of your Google Business Profile's local search performance compared to your top competitors. Higher rankings translate directly to more visibility, traffic, and revenue.";
+            const splitIntro = pdf.splitTextToSize(introText, pageWidth - 30);
+            pdf.text(splitIntro, 15, 49);
+
             // Line separator
             pdf.setDrawColor(200, 200, 200);
-            pdf.line(15, 45, pageWidth - 15, 45);
+            pdf.line(15, 59, pageWidth - 15, 59);
             
             // Leaderboard
             pdf.setFont("helvetica", "bold");
             pdf.setFontSize(16);
             pdf.setTextColor(0, 0, 0);
-            pdf.text("Competitor Leaderboard", 15, 55);
+            pdf.text("Competitor Leaderboard", 15, 69);
             
-            let y = 65;
+            let y = 79;
             intel.leaderboard.forEach((c: any) => {
                 if (c.is_user) {
                     pdf.setFont("helvetica", "bold");
@@ -1528,7 +1536,7 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                                     <h2 style={{ margin: 0 }}>Rank Pusher</h2>
                                     <p style={{ marginTop: '4px' }}>Local ranking performance and AI traffic insights.</p>
                                 </div>
-                                <button className="btn btn-green btn-sm" onClick={generateReport}>✨ Detailed Rank Analysis</button>
+                                <button className="btn btn-green btn-sm" onClick={downloadPdfReport}>✨ Detailed Rank Analysis</button>
                             </div>
 
                             {(() => {
