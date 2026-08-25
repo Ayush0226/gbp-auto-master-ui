@@ -642,20 +642,113 @@ Analytics: ${JSON.stringify(analyticsData || {})}
     };
 
     const downloadPdfReport = async () => {
-        const input = document.getElementById('pdf-report-container');
-        if (!input) return;
-        
         try {
-            showToast("Generating PDF report...", "info");
-            const canvas = await html2canvas(input, { scale: 2, useCORS: true, backgroundColor: '#0a0a0a' });
-            const imgData = canvas.toDataURL('image/png');
+            showToast("Generating professional PDF report...", "info");
+            
+            const intel = user?.user_metadata?.competitor_intel?.[activeLocationId];
+            if (!intel) {
+                showToast("No scan data available.", "error");
+                return;
+            }
             
             const pdf = new jsPDF('p', 'mm', 'a4');
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+            const pageWidth = pdf.internal.pageSize.getWidth();
             
-            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-            pdf.save(`Rank_Analysis_Report.pdf`);
+            // Header
+            pdf.setFont("helvetica", "bold");
+            pdf.setFontSize(22);
+            pdf.setTextColor(0, 51, 102); // Dark blue
+            pdf.text("Detailed Rank Analysis", 15, 25);
+            
+            pdf.setFont("helvetica", "normal");
+            pdf.setFontSize(11);
+            pdf.setTextColor(100, 100, 100);
+            pdf.text(`Location: ${activeLocationName}`, 15, 33);
+            pdf.text(`Generated on: ${new Date(intel.last_scanned).toLocaleString()}`, 15, 39);
+            
+            // Line separator
+            pdf.setDrawColor(200, 200, 200);
+            pdf.line(15, 45, pageWidth - 15, 45);
+            
+            // Leaderboard
+            pdf.setFont("helvetica", "bold");
+            pdf.setFontSize(16);
+            pdf.setTextColor(0, 0, 0);
+            pdf.text("Competitor Leaderboard", 15, 55);
+            
+            let y = 65;
+            intel.leaderboard.forEach((c: any) => {
+                if (c.is_user) {
+                    pdf.setFont("helvetica", "bold");
+                    pdf.setTextColor(0, 102, 204); // Highlight user
+                } else {
+                    pdf.setFont("helvetica", "normal");
+                    pdf.setTextColor(50, 50, 50);
+                }
+                
+                pdf.setFontSize(11);
+                pdf.text(`#${c.rank}  ${c.name}`, 15, y);
+                
+                pdf.setFont("helvetica", "normal");
+                pdf.setTextColor(100, 100, 100);
+                pdf.text(`${c.rating.toFixed(1)} Stars (${c.reviews} Reviews)`, pageWidth - 15, y, { align: 'right' });
+                y += 8;
+            });
+            
+            // Line separator
+            y += 5;
+            pdf.setDrawColor(200, 200, 200);
+            pdf.line(15, y, pageWidth - 15, y);
+            y += 12;
+            
+            // AI Action Plan
+            pdf.setFont("helvetica", "bold");
+            pdf.setFontSize(16);
+            pdf.setTextColor(0, 0, 0);
+            pdf.text("AI Strategy Report", 15, y);
+            y += 10;
+            
+            pdf.setFont("helvetica", "normal");
+            pdf.setFontSize(11);
+            pdf.setTextColor(30, 30, 30);
+            
+            const reportLines = intel.ai_report.split('\n');
+            reportLines.forEach((line: string) => {
+                let text = line.trim();
+                if (text.length === 0) return;
+                
+                if (text.startsWith('PROS:')) {
+                    y += 4;
+                    pdf.setFont("helvetica", "bold");
+                    pdf.setTextColor(0, 128, 0);
+                } else if (text.startsWith('CONS:')) {
+                    y += 4;
+                    pdf.setFont("helvetica", "bold");
+                    pdf.setTextColor(200, 0, 0);
+                } else if (text.startsWith('ACTION PLAN:')) {
+                    y += 4;
+                    pdf.setFont("helvetica", "bold");
+                    pdf.setTextColor(0, 51, 153);
+                } else {
+                    pdf.setFont("helvetica", "normal");
+                    pdf.setTextColor(50, 50, 50);
+                    // Add slight indent for bullet points/body text
+                    text = "  " + text;
+                }
+                
+                const splitText = pdf.splitTextToSize(text, pageWidth - 30);
+                
+                // Page break check
+                if (y + (splitText.length * 6) > pdf.internal.pageSize.getHeight() - 20) {
+                    pdf.addPage();
+                    y = 20;
+                }
+                
+                pdf.text(splitText, 15, y);
+                y += splitText.length * 6;
+            });
+            
+            pdf.save(`Rank_Analysis_${activeLocationName}.pdf`);
             showToast("PDF downloaded successfully!", "success");
         } catch (error) {
             console.error("PDF generation error:", error);

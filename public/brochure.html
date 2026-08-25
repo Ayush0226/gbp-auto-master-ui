@@ -3,344 +3,223 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GBP AutoMaster - Detailed Brochure</title>
+    <title>GBP AutoMaster Panorama Brochure</title>
     <style>
-        :root {
-            --obsidian: #0f1115;
-            --blue: #3b82f6;
-            --green: #34a853;
-            --blue-soft: #60a5fa;
-            --green-soft: #4ade80;
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+
         body {
             margin: 0;
             padding: 0;
-            background-color: var(--obsidian);
+            background: #050505;
+            font-family: 'Inter', sans-serif;
             color: #ffffff;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: auto;
         }
-        .page {
-            width: 210mm;
-            min-height: 297mm;
-            padding: 20mm;
-            margin: 10mm auto;
-            background: #0f1115;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+
+        .canvas {
+            width: 3240px;
+            height: 1080px;
+            background: radial-gradient(circle at 50% 50%, #0a0a0a 0%, #000000 100%);
             position: relative;
             overflow: hidden;
-            box-sizing: border-box;
+            flex-shrink: 0;
+            box-shadow: 0 0 50px rgba(255,255,255,0.1);
         }
-        .glow-blue {
+
+        /* The glowing trail */
+        .trail-svg {
             position: absolute;
-            top: -100px;
-            right: -100px;
-            width: 400px;
-            height: 400px;
-            background: radial-gradient(circle, rgba(59,130,246,0.15) 0%, rgba(59,130,246,0) 70%);
-            border-radius: 50%;
-            z-index: 0;
-        }
-        .glow-green {
-            position: absolute;
-            bottom: -100px;
-            left: -100px;
-            width: 400px;
-            height: 400px;
-            background: radial-gradient(circle, rgba(52,168,83,0.15) 0%, rgba(52,168,83,0) 70%);
-            border-radius: 50%;
-            z-index: 0;
-        }
-        .content {
-            position: relative;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             z-index: 1;
         }
-        .header {
-            display: flex;
-            align-items: center;
-            margin-bottom: 30px;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            padding-bottom: 20px;
+
+        .path {
+            fill: transparent;
+            stroke: #3b82f6;
+            stroke-width: 6px;
+            filter: drop-shadow(0 0 15px #3b82f6) drop-shadow(0 0 30px #3b82f6);
         }
-        .logo-img {
+
+        /* Grid lines to show where the posts split */
+        .split-line {
+            position: absolute;
+            top: 0;
+            width: 2px;
+            height: 100%;
+            background: rgba(255,255,255,0.05);
+            z-index: 0;
+            border-left: 1px dashed rgba(255,255,255,0.2);
+        }
+        .split-1 { left: 1080px; }
+        .split-2 { left: 2160px; }
+
+        .content {
+            position: absolute;
+            z-index: 10;
+        }
+
+        /* TAAY AI Orb */
+        .taay-orb {
+            position: absolute;
+            left: 200px;
+            top: 510px;
+            width: 60px;
             height: 60px;
-            border-radius: 12px;
-            margin-right: 20px;
-            border: 2px solid rgba(255,255,255,0.1);
+            background: #fff;
+            border-radius: 50%;
+            box-shadow: 0 0 40px #fff, 0 0 80px #3b82f6;
+            z-index: 10;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #000;
+            font-weight: 900;
+            font-size: 14px;
         }
-        .title h1 {
-            margin: 0;
-            font-size: 32px;
-            letter-spacing: 1px;
+
+        /* Feature Boxes */
+        .feature {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 40px 50px;
+            border-radius: 24px;
+            width: 450px;
         }
-        .grad-text {
-            background: linear-gradient(to right, var(--blue-soft), var(--green-soft));
+
+        .feature h2 {
+            margin: 0 0 15px 0;
+            font-size: 42px;
+            font-weight: 900;
+            background: linear-gradient(90deg, #fff, #94a3b8);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
-        .tagline {
-            font-size: 16px;
-            color: rgba(255,255,255,0.7);
-            margin-top: 5px;
-        }
-        .section {
-            margin-bottom: 30px;
-        }
-        .section h2 {
-            font-size: 20px;
-            color: var(--blue-soft);
-            margin-bottom: 12px;
-            border-left: 3px solid var(--blue);
-            padding-left: 10px;
-        }
-        .card-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-        }
-        .card {
-            background: rgba(255,255,255,0.03);
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 12px;
-            padding: 16px;
-        }
-        .card h3 {
-            margin: 0 0 8px 0;
-            font-size: 16px;
-            color: var(--green-soft);
-        }
-        .card p {
+
+        .feature p {
             margin: 0;
-            font-size: 13px;
-            color: rgba(255,255,255,0.7);
+            font-size: 24px;
+            color: #94a3b8;
             line-height: 1.5;
         }
-        .card ul {
-            margin: 8px 0 0 0;
-            padding-left: 20px;
-            font-size: 12.5px;
-            color: rgba(255,255,255,0.8);
+
+        /* Positioning the features along the path */
+        .feat-1 { left: 300px; top: 150px; }
+        .feat-2 { left: 500px; top: 680px; }
+        
+        .feat-3 { left: 1350px; top: 150px; }
+        .feat-4 { left: 1550px; top: 680px; }
+        
+        .feat-5 { left: 2400px; top: 150px; }
+        .feat-6 { left: 2600px; top: 680px; }
+
+        /* End Logo */
+        .logo-end {
+            position: absolute;
+            right: 150px;
+            top: 480px;
+            font-size: 64px;
+            font-weight: 900;
+            text-align: right;
+            line-height: 1.1;
         }
-        .card ul li {
-            margin-bottom: 4px;
+        .logo-end .grad {
+            color: #3b82f6;
+            text-transform: uppercase;
+            letter-spacing: 4px;
         }
-        .step-box {
-            display: flex;
-            align-items: center;
-            background: linear-gradient(90deg, rgba(59,130,246,0.1) 0%, transparent 100%);
-            border-left: 2px solid var(--blue);
-            padding: 10px 15px;
-            margin-bottom: 10px;
-            border-radius: 0 8px 8px 0;
+
+        /* Decorative dots on the path */
+        .dot {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            background: #000;
+            border: 6px solid #3b82f6;
+            border-radius: 50%;
+            z-index: 5;
+            box-shadow: 0 0 20px #3b82f6;
         }
-        .step-num {
-            font-size: 20px;
+        
+        .dot-1 { left: 400px; top: 528px; }
+        .dot-2 { left: 1400px; top: 528px; }
+        .dot-3 { left: 2400px; top: 528px; }
+
+        .instructions {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #fff;
+            color: #000;
+            padding: 15px 30px;
+            border-radius: 50px;
             font-weight: bold;
-            color: var(--blue-soft);
-            margin-right: 15px;
-        }
-        .step-text {
-            font-size: 13.5px;
-            color: rgba(255,255,255,0.8);
-            line-height: 1.4;
-        }
-        .comparison {
-            display: flex;
-            gap: 15px;
-            margin-top: 15px;
-        }
-        .comp-box {
-            flex: 1;
-            padding: 16px;
-            border-radius: 12px;
-        }
-        .comp-bad {
-            background: rgba(239, 68, 68, 0.05);
-            border: 1px solid rgba(239, 68, 68, 0.2);
-        }
-        .comp-good {
-            background: rgba(52, 168, 83, 0.05);
-            border: 1px solid rgba(52, 168, 83, 0.2);
-        }
-        .comp-box h4 {
-            margin: 0 0 12px 0;
-            font-size: 15px;
-        }
-        .comp-bad h4 { color: #ef4444; }
-        .comp-good h4 { color: var(--green-soft); }
-        .comp-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-        .comp-list li {
-            font-size: 12.5px;
-            margin-bottom: 8px;
-            display: flex;
-            gap: 8px;
-            color: rgba(255,255,255,0.8);
-        }
-        .pricing {
-            display: flex;
-            gap: 15px;
-        }
-        .price-card {
-            flex: 1;
-            background: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%);
-            border: 1px solid rgba(59,130,246,0.3);
-            border-radius: 12px;
-            padding: 20px;
-            text-align: center;
-        }
-        .price-card h3 {
-            margin: 0;
-            font-size: 16px;
-            color: rgba(255,255,255,0.8);
-        }
-        .price {
-            font-size: 32px;
-            font-weight: bold;
-            margin: 10px 0 5px 0;
-            color: white;
-        }
-        .price span {
-            font-size: 14px;
-            color: rgba(255,255,255,0.5);
-        }
-        .strike {
-            text-decoration: line-through;
-            color: rgba(255,255,255,0.4);
-            font-size: 14px;
-        }
-        @media print {
-            body { background: #0f1115; }
-            .page { margin: 0; box-shadow: none; width: 100%; height: 100%; }
-            .glow-blue, .glow-green { display: none; }
+            z-index: 100;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
     </style>
 </head>
 <body>
-    <div class="page">
-        <div class="glow-blue"></div>
-        <div class="glow-green"></div>
-        
-        <div class="content">
-            <div class="header">
-                <img src="logo.jpg" alt="GBP AutoMaster Logo" class="logo-img" onerror="this.src='https://placehold.co/60x60/3b82f6/white?text=GBP'" />
-                <div class="title">
-                    <h1>GBP Auto<span class="grad-text">Master</span></h1>
-                    <div class="tagline">The Ultimate AI Autopilot for Google Business Profiles</div>
-                </div>
-            </div>
+    <div class="canvas">
+        <!-- Vertical guides for the 3 posts -->
+        <div class="split-line split-1"></div>
+        <div class="split-line split-2"></div>
 
-            <div class="section">
-                <h2>The Power of Total Automation</h2>
-                <p style="color: rgba(255,255,255,0.8); line-height: 1.5; font-size: 14px; margin: 0;">
-                    Google's algorithm heavily rewards businesses that actively engage with their customers and post regular updates. However, managing a Google Business Profile (GBP) manually takes hours of effort every week. <b>GBP AutoMaster</b> puts your entire local SEO strategy on autopilot using advanced Artificial Intelligence. It secures your spot in the coveted Google "Map Pack" by ensuring 100% response rates and consistent profile activity.
-                </p>
-            </div>
+        <!-- The Glowing Trail -->
+        <svg class="trail-svg" viewBox="0 0 3240 1080">
+            <!-- Winding path that goes through the middle -->
+            <path class="path" d="M -50 540 L 3300 540" />
+        </svg>
 
-            <div class="section">
-                <h2>Deep-Dive: Core Capabilities</h2>
-                <div class="card-grid">
-                    <div class="card">
-                        <h3>🤖 Contextual AI Auto-Replies</h3>
-                        <p>Our proprietary AI engine doesn't just say "Thank you." It analyzes the sentiment of the review and writes personalized, professional responses.</p>
-                        <ul>
-                            <li><b>Keyword Injection:</b> Automatically weaves local SEO keywords (e.g. "plumber in Rohini") into replies to boost indexing.</li>
-                            <li><b>Crisis Management:</b> Custom handles 1-star reviews with empathy and redirects them to customer support.</li>
-                        </ul>
-                    </div>
-                    <div class="card">
-                        <h3>📅 Automated Content Calendar</h3>
-                        <p>Keep your profile fresh without the daily hassle. Google favors profiles that post weekly updates and photos.</p>
-                        <ul>
-                            <li>Schedule Google posts, promotional offers, and photo gallery uploads months in advance.</li>
-                            <li>Visual calendar interface to plan out your entire local marketing strategy in minutes.</li>
-                        </ul>
-                    </div>
-                    <div class="card">
-                        <h3>📈 Local SEO Analytics Engine</h3>
-                        <p>Stop guessing if your marketing works. Get crystal clear data directly from Google's backend APIs.</p>
-                        <ul>
-                            <li>Track exact profile visitors, map views, and direct calls generated.</li>
-                            <li>Analyze overall customer sentiment ratios across all tracked reviews.</li>
-                        </ul>
-                    </div>
-                    <div class="card">
-                        <h3>⚡ Master Autopilot Control</h3>
-                        <p>Full control over your AI. Personalize exactly how the AI speaks to your customers.</p>
-                        <ul>
-                            <li>Select the AI's Tone: Professional, Casual, or Friendly.</li>
-                            <li>Add custom instructions (e.g., "Always mention our 30-day money-back guarantee").</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
+        <!-- TAAY AI Orb at the start -->
+        <div class="taay-orb">TAAY</div>
 
-            <div class="section">
-                <h2>How It Works</h2>
-                <div class="step-box">
-                    <div class="step-num">1</div>
-                    <div class="step-text"><b>Secure Connection:</b> Connect your Google Account safely via OAuth in 1 click. We instantly fetch your locations.</div>
-                </div>
-                <div class="step-box">
-                    <div class="step-num">2</div>
-                    <div class="step-text"><b>AI Configuration:</b> Toggle the "Master Autopilot" switch, set your brand's tone of voice, and add custom instructions.</div>
-                </div>
-                <div class="step-box">
-                    <div class="step-num">3</div>
-                    <div class="step-text"><b>Hands-Free Growth:</b> Sit back as the AI monitors your profile 24/7, replies to reviews instantly, and publishes scheduled updates.</div>
-                </div>
-            </div>
+        <!-- Path Dots -->
+        <div class="dot dot-1"></div>
+        <div class="dot dot-2"></div>
+        <div class="dot dot-3"></div>
 
-            <div class="section">
-                <h2>The Cost of Doing Nothing vs. The Advantage</h2>
-                <div class="comparison">
-                    <div class="comp-box comp-bad">
-                        <h4>❌ Without GBP AutoMaster</h4>
-                        <ul class="comp-list">
-                            <li><span>⚠️</span> Unanswered reviews severely hurt your local ranking.</li>
-                            <li><span>⚠️</span> Competitors outrank you by posting updates more frequently.</li>
-                            <li><span>⚠️</span> Customers see a "dead" profile and choose other businesses.</li>
-                            <li><span>⚠️</span> You waste 5+ hours a week logging into Google to manage it manually.</li>
-                        </ul>
-                    </div>
-                    <div class="comp-box comp-good">
-                        <h4>✅ With GBP AutoMaster</h4>
-                        <ul class="comp-list">
-                            <li><span>✓</span> 100% Response rate actively boosts your Map Pack ranking.</li>
-                            <li><span>✓</span> AI injects targeted SEO keywords into every reply automatically.</li>
-                            <li><span>✓</span> Consistent profile activity signals deep trust to Google's algorithm.</li>
-                            <li><span>✓</span> Complete hands-off automation. Reclaim your time to focus on your business.</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
+        <!-- POST 3 (Far Left) -->
+        <div class="content feature feat-1">
+            <h2>24/7 Auto Replies</h2>
+            <p>TAAY AI instantly replies to every Google review, keeping your profile active while you sleep.</p>
+        </div>
+        <div class="content feature feat-2">
+            <h2>Sentiment Analysis</h2>
+            <p>Automatically detects 5-star praise and 1-star complaints, adjusting its tone instantly.</p>
+        </div>
 
-            <div class="section">
-                <h2>Simple, Transparent Pricing</h2>
-                <div class="pricing">
-                    <div class="price-card">
-                        <h3>Half-Yearly Plan</h3>
-                        <div class="strike">₹2,999</div>
-                        <div class="price">₹1,999<span> / 6 mos</span></div>
-                        <p style="color: var(--blue-soft); font-size: 13px; margin-top: 6px;">Perfect for getting started</p>
-                    </div>
-                    <div class="price-card" style="border-color: var(--green-soft); background: linear-gradient(180deg, rgba(52,168,83,0.1) 0%, rgba(255,255,255,0.01) 100%);">
-                        <div style="background: var(--green); color: #fff; font-size: 11px; font-weight: bold; padding: 3px 8px; border-radius: 20px; display: inline-block; margin-bottom: 6px;">BEST VALUE</div>
-                        <h3>Yearly Plan</h3>
-                        <div class="strike">₹5,500</div>
-                        <div class="price">₹3,999<span> / yr</span></div>
-                        <p style="color: var(--green-soft); font-size: 13px; margin-top: 6px;">Save over 25% instantly</p>
-                    </div>
-                </div>
-            </div>
-            
-            <div style="text-align: center; margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px; color: rgba(255,255,255,0.4); font-size: 11px;">
-                Securely powered by Google APIs and advanced AI Models.
-            </div>
+        <!-- POST 2 (Center) -->
+        <div class="content feature feat-3">
+            <h2>SEO Keyword Injection</h2>
+            <p>Discovers the exact search terms your customers use and weaves them into replies to boost ranking.</p>
+        </div>
+        <div class="content feature feat-4">
+            <h2>Local Competitor Radar</h2>
+            <p>Scans the businesses around you and generates AI Action Plans to steal the #1 spot.</p>
+        </div>
+
+        <!-- POST 1 (Far Right) -->
+        <div class="content feature feat-5">
+            <h2>Multi-Location Calendar</h2>
+            <p>Schedule a month of photo posts across unlimited client profiles in just a few minutes.</p>
+        </div>
+        <div class="content feature feat-6">
+            <h2>Automated Rank Pushing</h2>
+            <p>Turn local Google Maps traffic into consistent, paying customers on absolute autopilot.</p>
+        </div>
+
+        <div class="content logo-end">
+            <div>GBP Auto</div>
+            <div class="grad">Master</div>
         </div>
     </div>
 </body>

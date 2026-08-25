@@ -237,12 +237,21 @@ export default function AdminDashboard({ onBackToApp }: { onBackToApp?: () => vo
                     </div>
                 </nav>
 
-                <div className="sidebar-foot" style={{ marginTop: 'auto' }}>
+                <div className="sidebar-foot" style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     <button className="btn btn-ghost" style={{ width: '100%', display: 'flex', gap: '10px', justifyContent: 'center', border: '1px solid rgba(255,255,255,.1)' }} onClick={() => router.push('/dashboard')}>
                         <span>←</span> Back to App
                     </button>
+                    <button className="btn btn-ghost" style={{ width: '100%', display: 'flex', gap: '10px', justifyContent: 'center', color: 'var(--red-soft)' }} onClick={async () => { await supabase.auth.signOut(); window.location.href='/'; }}>
+                        <span>👋</span> Sign Out
+                    </button>
                 </div>
             </aside>
+
+            {/* Mobile Header */}
+            <div className="mobile-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 20px', background: 'rgba(5,5,5,0.8)', backdropFilter: 'blur(10px)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                <div style={{ fontWeight: 'bold', fontSize: '18px' }}>Master Admin</div>
+                <button className="btn btn-ghost btn-sm" style={{ padding: '6px 12px', color: 'var(--red-soft)' }} onClick={async () => { await supabase.auth.signOut(); window.location.href='/'; }}>Sign Out</button>
+            </div>
 
             {/* Main Content */}
             <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
