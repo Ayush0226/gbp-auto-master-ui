@@ -11,10 +11,17 @@ export default function AdminDashboard({ onBackToApp }: { onBackToApp?: () => vo
 
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
-    // ... (rest of the state declarations) ...
     const [reviewQueueUser, setReviewQueueUser] = useState<any>(null);
     const [loadingDrafts, setLoadingDrafts] = useState(false);
     const [reviewDrafts, setReviewDrafts] = useState<any[]>([]);
+
+    const [seoModalUser, setSeoModalUser] = useState<any>(null);
+    const [seoKeywords, setSeoKeywords] = useState<string>('');
+    const [savingSeo, setSavingSeo] = useState(false);
+
+    const [calendarModalUser, setCalendarModalUser] = useState<any>(null);
+    const [userPosts, setUserPosts] = useState<any[]>([]);
+    const [loadingPosts, setLoadingPosts] = useState(false);
 
     const [toast, setToast] = useState<{message: string, type: 'success' | 'error' | 'info'} | null>(null);
 
@@ -306,6 +313,71 @@ export default function AdminDashboard({ onBackToApp }: { onBackToApp?: () => vo
         }
     };
 
+    const openSeoModal = (user: any) => {
+        setSeoModalUser(user);
+        const activeLoc = Object.keys(user.subscriptions || {}).find(loc => user.subscriptions[loc].status === 'active');
+        if (activeLoc && user.user_metadata?.ai_settings?.[activeLoc]?.active_keywords) {
+            setSeoKeywords(user.user_metadata.ai_settings[activeLoc].active_keywords.join(', '));
+        } else {
+            setSeoKeywords('');
+        }
+    };
+
+    const saveSeoSettings = async () => {
+        if (!seoModalUser) return;
+        setSavingSeo(true);
+        try {
+            const activeLoc = Object.keys(seoModalUser.subscriptions || {}).find(loc => seoModalUser.subscriptions[loc].status === 'active') || 'loc1';
+            const keywordsArray = seoKeywords.split(',').map(k => k.trim()).filter(k => k);
+            
+            const currentSettings = seoModalUser.user_metadata?.ai_settings?.[activeLoc] || {};
+            const newSettings = { ...currentSettings, active_keywords: keywordsArray };
+            
+            const res = await fetch('https://gbp-auto-master-backend-us.onrender.com/api/user/save-ai-settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_id: seoModalUser.id,
+                    location_id: activeLoc,
+                    settings: newSettings
+                })
+            });
+            
+            if (res.ok) {
+                showToast("SEO Keywords updated for user!", "success");
+                setSeoModalUser(null);
+                fetchUsers(adminUser.email); // refresh
+            } else {
+                showToast("Failed to save settings", "error");
+            }
+        } catch (e: any) {
+            showToast(e.message, "error");
+        } finally {
+            setSavingSeo(false);
+        }
+    };
+
+    const openCalendarModal = async (user: any) => {
+        setCalendarModalUser(user);
+        setLoadingPosts(true);
+        setUserPosts([]);
+        try {
+            const res = await fetch('https://gbp-auto-master-backend-us.onrender.com/api/admin/calendar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ admin_email: adminUser.email, target_user_id: user.id })
+            });
+            const data = await res.json();
+            if (data.status === 'success') {
+                setUserPosts(data.posts);
+            }
+        } catch (e: any) {
+            showToast("Failed to fetch calendar", "error");
+        } finally {
+            setLoadingPosts(false);
+        }
+    };
+
     const filteredUsers = users.filter(u => 
         (u.full_name?.toLowerCase() || '').includes(searchQuery.toLowerCase()) || 
         (u.email?.toLowerCase() || '').includes(searchQuery.toLowerCase())
@@ -466,9 +538,11 @@ export default function AdminDashboard({ onBackToApp }: { onBackToApp?: () => vo
                                                 )}
                                             </td>
                                             <td style={{ padding: '16px 24px' }}>
-                                                <div style={{ display: 'flex', gap: '8px' }}>
+                                                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                                                     <button className="btn btn-ghost btn-sm" style={{ padding: '6px 10px' }} onClick={() => openReviewQueue(u)}>Reviews</button>
                                                     <button className="btn btn-ghost btn-sm" style={{ padding: '6px 10px' }} onClick={() => downloadUserReport(u)}>Rank PDF</button>
+                                                    <button className="btn btn-ghost btn-sm" style={{ padding: '6px 10px' }} onClick={() => openSeoModal(u)}>SEO</button>
+                                                    <button className="btn btn-ghost btn-sm" style={{ padding: '6px 10px' }} onClick={() => openCalendarModal(u)}>Calendar</button>
                                                 </div>
                                             </td>
                                         </tr>
@@ -546,6 +620,60 @@ export default function AdminDashboard({ onBackToApp }: { onBackToApp?: () => vo
                                 <p style={{ fontSize: '12px', marginTop: '8px' }}>Any unreplied reviews left unattended will automatically post at midnight.</p>
                             </div>
                         )}
+                    </div>
+                </div>
+            )}
+            {/* SEO Modal */}
+            {seoModalUser && (
+                <div style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+                    <div className="card glass" style={{ width: '100%', maxWidth: '500px', background: 'var(--obsidian)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                            <h3 style={{ margin: 0, fontSize: '18px' }}>SEO Keywords: {seoModalUser.full_name}</h3>
+                            <button className="btn btn-ghost btn-sm" onClick={() => setSeoModalUser(null)}>✕</button>
+                        </div>
+                        <label className="field-label">Target Keywords (comma separated)</label>
+                        <textarea 
+                            className="input" 
+                            rows={3}
+                            value={seoKeywords} 
+                            onChange={(e) => setSeoKeywords(e.target.value)} 
+                            placeholder="e.g. Best Cafe in Delhi, Affordable Cafe"
+                        />
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
+                            <button className="btn btn-ghost" onClick={() => setSeoModalUser(null)}>Cancel</button>
+                            <button className="btn btn-green" onClick={saveSeoSettings} disabled={savingSeo}>{savingSeo ? 'Saving...' : 'Save Keywords'}</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Calendar Modal */}
+            {calendarModalUser && (
+                <div style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+                    <div className="card glass" style={{ width: '100%', maxWidth: '600px', background: 'var(--obsidian)', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                            <h3 style={{ margin: 0, fontSize: '18px' }}>Content Calendar: {calendarModalUser.full_name}</h3>
+                            <button className="btn btn-ghost btn-sm" onClick={() => setCalendarModalUser(null)}>✕</button>
+                        </div>
+                        
+                        <div style={{ overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                            {loadingPosts ? (
+                                <p style={{ color: 'rgba(255,255,255,.5)' }}>Loading calendar...</p>
+                            ) : userPosts.length === 0 ? (
+                                <p style={{ color: 'rgba(255,255,255,.5)' }}>No posts scheduled or published.</p>
+                            ) : (
+                                userPosts.map((p, idx) => (
+                                    <div key={idx} style={{ padding: '12px', background: 'rgba(255,255,255,.05)', borderRadius: '12px', border: '1px solid rgba(255,255,255,.1)' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                            <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--blue-soft)' }}>{new Date(p.post_date).toLocaleDateString()}</span>
+                                            <span className={`badge-pill ${p.status === 'published' ? 'b-green' : 'b-orange'}`}>{p.status.toUpperCase()}</span>
+                                        </div>
+                                        {p.image_url && <img src={p.image_url} alt="post" style={{ width: '100%', maxHeight: '150px', objectFit: 'cover', borderRadius: '8px', marginBottom: '10px' }} />}
+                                        <p style={{ fontSize: '13px', color: 'rgba(255,255,255,.8)', margin: 0, whiteSpace: 'pre-wrap' }}>{p.caption}</p>
+                                    </div>
+                                ))
+                            )}
+                        </div>
                     </div>
                 </div>
             )}
