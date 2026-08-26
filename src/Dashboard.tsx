@@ -1659,8 +1659,8 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                                                                             </p>
                                                                         </div>
                                                                         <div style={{ textAlign: 'right' }}>
-                                                                            <p style={{ margin: 0, fontWeight: 'bold', color: '#fbbf24', fontSize: '14px' }}>★ {comp.rating.toFixed(1)}</p>
-                                                                            <p style={{ margin: 0, fontSize: '11px', color: 'rgba(255,255,255,.5)' }}>{comp.reviews} reviews</p>
+                                                                            <p style={{ margin: 0, fontWeight: 'bold', color: '#fbbf24', fontSize: '14px' }}>★ {typeof comp.rating === 'number' ? comp.rating.toFixed(1) : comp.rating}</p>
+                                                                            <p style={{ margin: 0, fontSize: '11px', color: 'rgba(255,255,255,.5)' }}>{comp.reviews} {comp.reviews === 'N/A' ? '' : 'reviews'}</p>
                                                                         </div>
                                                                     </div>
                                                                 ))}
