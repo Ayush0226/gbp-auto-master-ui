@@ -419,17 +419,17 @@ export default function AdminDashboard({ onBackToApp }: { onBackToApp?: () => vo
                 </div>
             </aside>
 
-            {/* Mobile Header */}
-            <div className="mobile-topbar" style={{ justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px' }}>
-                <button className="btn btn-ghost btn-sm" onClick={() => setSidebarOpen(!sidebarOpen)} style={{ padding: '4px 8px', fontSize: '16px', marginRight: '10px', display: 'flex' }}>
-                    ☰
-                </button>
-                <div style={{ fontWeight: 'bold', fontSize: '16px' }}>Master <span className="grad-blue">Admin</span></div>
-                <button className="btn btn-ghost btn-sm" style={{ padding: '6px 12px', color: 'var(--red-soft)', fontSize: '11px', background: 'rgba(239, 68, 68, .1)', border: '1px solid rgba(239, 68, 68, .2)' }} onClick={async () => { await supabase.auth.signOut(); window.location.href='/'; }}>Sign Out</button>
-            </div>
-
             {/* Main Content */}
             <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+                {/* Mobile Header */}
+                <div className="mobile-topbar" style={{ justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px' }}>
+                    <button className="btn btn-ghost btn-sm" onClick={() => setSidebarOpen(!sidebarOpen)} style={{ padding: '4px 8px', fontSize: '16px', marginRight: '10px', display: 'flex' }}>
+                        ☰
+                    </button>
+                    <div style={{ fontWeight: 'bold', fontSize: '16px' }}>Master <span className="grad-blue">Admin</span></div>
+                    <button className="btn btn-ghost btn-sm" style={{ padding: '6px 12px', color: 'var(--red-soft)', fontSize: '11px', background: 'rgba(239, 68, 68, .1)', border: '1px solid rgba(239, 68, 68, .2)' }} onClick={async () => { await supabase.auth.signOut(); window.location.href='/'; }}>Sign Out</button>
+                </div>
+
                 <main className="main">
                     
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', flexWrap: 'wrap', gap: '16px' }}>
