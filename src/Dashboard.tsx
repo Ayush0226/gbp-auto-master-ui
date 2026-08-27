@@ -549,62 +549,37 @@ Analytics: ${JSON.stringify(analyticsData || {})}
     // Fetch Analytics Data
     useEffect(() => {
         if (appState === 'dashboard' && activeView === 'analytics' && providerToken && activeLocationId) {
-            if (activeLocationId === 'loc1') {
-                // Pitch-ready dummy data
-                setAnalyticsData({
-                    multiDailyMetricTimeSeries: [
-                        { dailyMetric: 'BUSINESS_IMPRESSIONS_DESKTOP_SEARCH', timeSeries: { datedValues: [{value: 3200}] } },
-                        { dailyMetric: 'BUSINESS_IMPRESSIONS_MOBILE_SEARCH', timeSeries: { datedValues: [{value: 9500}] } },
-                        { dailyMetric: 'BUSINESS_IMPRESSIONS_DESKTOP_MAPS', timeSeries: { datedValues: [{value: 8400}] } },
-                        { dailyMetric: 'BUSINESS_IMPRESSIONS_MOBILE_MAPS', timeSeries: { datedValues: [{value: 24200}] } },
-                        { dailyMetric: 'WEBSITE_CLICKS', timeSeries: { datedValues: [{value: 842}] } },
-                        { dailyMetric: 'CALL_CLICKS', timeSeries: { datedValues: [{value: 120}] } },
-                        { dailyMetric: 'BUSINESS_DIRECTION_REQUESTS', timeSeries: { datedValues: [{value: 36}] } },
-                        { dailyMetric: 'BUSINESS_CONVERSATIONS', timeSeries: { datedValues: [{value: 34}] } },
-                        { dailyMetric: 'BUSINESS_BOOKINGS', timeSeries: { datedValues: [{value: 12}] } },
-                        { dailyMetric: 'FOOD_ORDERS', timeSeries: { datedValues: [{value: 8}] } }
-                    ]
-                });
-                setSearchKeywords([
-                    { searchKeyword: 'plumber near me', monthlyImpressionsValue: 4500 },
-                    { searchKeyword: 'ac repair rohini', monthlyImpressionsValue: 3200 },
-                    { searchKeyword: 'geyser installation', monthlyImpressionsValue: 1800 },
-                    { searchKeyword: 'emergency plumber delhi', monthlyImpressionsValue: 950 },
-                    { searchKeyword: 'water leak repair', monthlyImpressionsValue: 620 }
-                ]);
-            } else {
-                fetch('https://gbp-auto-master-backend-us.onrender.com/api/google/analytics', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ user_id: user.id, provider_token: providerToken, location_id: activeLocationId })
-                })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        setAnalyticsData(data.analytics);
-                    } else {
-                        console.error("Analytics Backend Error:", data);
-                        // Silently handle analytics errors (e.g. 403 API not enabled) instead of spamming toast
-                    }
-                })
-                .catch(err => {
-                    console.error("Analytics Fetch Error:", err);
-                    showToast(`Network Error fetching analytics.`, 'error');
-                });
-                
-                fetch('https://gbp-auto-master-backend-us.onrender.com/api/google/search-keywords', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ user_id: user?.id, provider_token: providerToken, location_id: activeLocationId })
-                })
-                .then(res => res.json())
+            fetch('https://gbp-auto-master-backend-us.onrender.com/api/google/analytics', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: user.id, provider_token: providerToken, location_id: activeLocationId })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    setAnalyticsData(data.analytics);
+                } else {
+                    console.error("Analytics Backend Error:", data);
+                    // Silently handle analytics errors (e.g. 403 API not enabled) instead of spamming toast
+                }
+            })
+            .catch(err => {
+                console.error("Analytics Fetch Error:", err);
+                showToast(`Network Error fetching analytics.`, 'error');
+            });
+            
+            fetch('https://gbp-auto-master-backend-us.onrender.com/api/google/search-keywords', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: user?.id, provider_token: providerToken, location_id: activeLocationId })
+            })
+            .then(res => res.json())
                 .then(data => {
                     if (data.status === 'success') {
                         setSearchKeywords(data.keywords || []);
                     }
                 })
                 .catch(err => console.error(err));
-            }
         }
     }, [appState, activeView, activeLocationId, providerToken, user]);
 
@@ -705,6 +680,40 @@ Analytics: ${JSON.stringify(analyticsData || {})}
             
             // Line separator
             y += 5;
+            pdf.setDrawColor(200, 200, 200);
+            pdf.line(15, y, pageWidth - 15, y);
+            y += 12;
+
+            // Real Google Performance Analytics
+            pdf.setFont("helvetica", "bold");
+            pdf.setFontSize(16);
+            pdf.setTextColor(0, 0, 0);
+            pdf.text("Google Profile Performance", 15, y);
+            y += 10;
+            
+            const getMetricTotal = (metricName: string) => {
+                if (!analyticsData || !analyticsData.multiDailyMetricTimeSeries) return 0;
+                const series = analyticsData.multiDailyMetricTimeSeries.find((s: any) => s.dailyMetric === metricName);
+                if (!series || !series.timeSeries || !series.timeSeries.datedValues) return 0;
+                return series.timeSeries.datedValues.reduce((acc: number, val: any) => acc + parseInt(val.value || 0), 0);
+            };
+
+            pdf.setFont("helvetica", "normal");
+            pdf.setFontSize(11);
+            pdf.setTextColor(50, 50, 50);
+            pdf.text(`Direction Requests: ${getMetricTotal('BUSINESS_DIRECTION_REQUESTS').toLocaleString()}`, 15, y);
+            y += 6;
+            pdf.text(`Website Clicks: ${getMetricTotal('WEBSITE_CLICKS').toLocaleString()}`, 15, y);
+            y += 6;
+            pdf.text(`Call Clicks: ${getMetricTotal('CALL_CLICKS').toLocaleString()}`, 15, y);
+            y += 6;
+            pdf.text(`Messages: ${getMetricTotal('BUSINESS_CONVERSATIONS').toLocaleString()}`, 15, y);
+            y += 6;
+            pdf.text(`Search Impressions (Desktop): ${getMetricTotal('BUSINESS_IMPRESSIONS_DESKTOP_SEARCH').toLocaleString()}`, 15, y);
+            y += 6;
+            pdf.text(`Map Impressions (Mobile): ${getMetricTotal('BUSINESS_IMPRESSIONS_MOBILE_MAPS').toLocaleString()}`, 15, y);
+            y += 10;
+
             pdf.setDrawColor(200, 200, 200);
             pdf.line(15, y, pageWidth - 15, y);
             y += 12;
