@@ -516,6 +516,35 @@ Analytics: ${JSON.stringify(analyticsData || {})}
         }
     };
 
+    const handleDeleteReply = async (reviewId: string) => {
+        const confirmed = window.confirm("Are you sure you want to delete this reply? The AI will generate a new SEO-optimized reply on the next sync.");
+        if (!confirmed) return;
+        
+        setSavingReplyId(reviewId);
+        try {
+            const res = await fetch('https://gbp-auto-master-backend-us.onrender.com/api/google/delete-reply', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    provider_token: providerToken,
+                    review_id: reviewId
+                })
+            });
+            const data = await res.json();
+            if (data.status === 'success') {
+                showToast("Reply deleted successfully!", "success");
+                setLiveReviews(prev => prev.map(r => r.id === reviewId ? { ...r, has_reply: false, reply_comment: '' } : r));
+                setEditingReviewId(null);
+            } else {
+                showToast("Failed to delete: " + data.message, "error");
+            }
+        } catch (e: any) {
+            showToast("Network Error: " + e.message, "error");
+        } finally {
+            setSavingReplyId(null);
+        }
+    };
+
     // Fetch Calendar Posts from Supabase
     useEffect(() => {
         const fetchCalendar = async () => {
@@ -1393,16 +1422,28 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                                                     </p>
                                                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                                                         {editingReviewId !== rev.id && (
-                                                            <button 
-                                                                className="btn btn-ghost btn-sm" 
-                                                                style={{ padding: '2px 8px', fontSize: '10px' }}
-                                                                onClick={() => {
-                                                                    setEditingReviewId(rev.id);
-                                                                    setEditReplyText(rev.reply_comment || '');
-                                                                }}
-                                                            >
-                                                                ✎ Edit Reply
-                                                            </button>
+                                                            <>
+                                                                {rev.has_reply && (
+                                                                    <button 
+                                                                        className="btn btn-ghost btn-sm" 
+                                                                        style={{ padding: '2px 8px', fontSize: '10px', color: 'var(--red-soft)', borderColor: 'rgba(239, 68, 68, 0.3)' }}
+                                                                        onClick={() => handleDeleteReply(rev.id)}
+                                                                        disabled={savingReplyId === rev.id}
+                                                                    >
+                                                                        {savingReplyId === rev.id ? '...' : '🗑️ Delete Reply'}
+                                                                    </button>
+                                                                )}
+                                                                <button 
+                                                                    className="btn btn-ghost btn-sm" 
+                                                                    style={{ padding: '2px 8px', fontSize: '10px' }}
+                                                                    onClick={() => {
+                                                                        setEditingReviewId(rev.id);
+                                                                        setEditReplyText(rev.reply_comment || '');
+                                                                    }}
+                                                                >
+                                                                    ✎ {rev.has_reply ? 'Edit Reply' : 'Add Reply'}
+                                                                </button>
+                                                            </>
                                                         )}
                                                         {rev.has_reply ? (
                                                             <span className="badge-pill b-green" style={{ padding: '2px 8px', fontSize: '10px' }}>✓ Replied</span>
