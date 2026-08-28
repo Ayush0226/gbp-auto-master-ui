@@ -92,7 +92,8 @@ export default function AdminDashboard({ onBackToApp }: { onBackToApp?: () => vo
             intel.leaderboard.forEach((c: any) => {
                 pdf.setFont("helvetica", "bold");
                 pdf.setTextColor(c.is_user ? 0 : 50, c.is_user ? 100 : 50, c.is_user ? 200 : 50);
-                pdf.text(`#${c.rank}  ${c.name}`, 15, y);
+                const displayName = c.name.length > 55 ? c.name.substring(0, 55) + '...' : c.name;
+                pdf.text(`#${c.rank}  ${displayName}`, 15, y);
                 
                 pdf.setFont("helvetica", "normal");
                 pdf.setTextColor(100, 100, 100);
