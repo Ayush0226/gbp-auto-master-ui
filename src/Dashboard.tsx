@@ -577,7 +577,7 @@ Analytics: ${JSON.stringify(analyticsData || {})}
 
     // Fetch Analytics Data
     useEffect(() => {
-        if (appState === 'dashboard' && activeView === 'analytics' && providerToken && activeLocationId) {
+        if (appState === 'dashboard' && providerToken && activeLocationId) {
             fetch('https://gbp-auto-master-backend-us.onrender.com/api/google/analytics', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -667,7 +667,8 @@ Analytics: ${JSON.stringify(analyticsData || {})}
             pdf.setFont("helvetica", "normal");
             pdf.setFontSize(11);
             pdf.setTextColor(100, 100, 100);
-            pdf.text(`Location: ${activeLocationName}`, 15, 33);
+            const displayLoc = activeLocationName.length > 80 ? activeLocationName.substring(0, 80) + "..." : activeLocationName;
+            pdf.text(`Location: ${displayLoc}`, 15, 33);
             pdf.text(`Generated on: ${new Date(intel.last_scanned).toLocaleString()}`, 15, 39);
             
             // Introduction text (Detailed for customer)
@@ -676,19 +677,23 @@ Analytics: ${JSON.stringify(analyticsData || {})}
             pdf.setTextColor(80, 80, 80);
             const introText = "This report provides an AI-driven analysis of your Google Business Profile's local search performance compared to your top competitors. Higher rankings translate directly to more visibility, traffic, and revenue.";
             const splitIntro = pdf.splitTextToSize(introText, pageWidth - 30);
-            pdf.text(splitIntro, 15, 49);
+            let introY = 49;
+            splitIntro.forEach((line: string) => {
+                pdf.text(line, 15, introY);
+                introY += 5;
+            });
 
             // Line separator
             pdf.setDrawColor(200, 200, 200);
-            pdf.line(15, 59, pageWidth - 15, 59);
+            pdf.line(15, introY + 5, pageWidth - 15, introY + 5);
             
             // Leaderboard
             pdf.setFont("helvetica", "bold");
             pdf.setFontSize(16);
             pdf.setTextColor(0, 0, 0);
-            pdf.text("Competitor Leaderboard", 15, 69);
+            pdf.text("Competitor Leaderboard", 15, introY + 15);
             
-            let y = 79;
+            let y = introY + 25;
             intel.leaderboard.forEach((c: any) => {
                 if (c.is_user) {
                     pdf.setFont("helvetica", "bold");
@@ -785,14 +790,14 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                 
                 const splitText = pdf.splitTextToSize(text, pageWidth - 30);
                 
-                // Page break check
-                if (y + (splitText.length * 6) > pdf.internal.pageSize.getHeight() - 20) {
-                    pdf.addPage();
-                    y = 20;
-                }
-                
-                pdf.text(splitText, 15, y);
-                y += splitText.length * 6;
+                splitText.forEach((lineText: string) => {
+                    if (y > pdf.internal.pageSize.getHeight() - 20) {
+                        pdf.addPage();
+                        y = 20;
+                    }
+                    pdf.text(lineText, 15, y);
+                    y += 6;
+                });
             });
             
             pdf.save(`Rank_Analysis_${activeLocationName}.pdf`);

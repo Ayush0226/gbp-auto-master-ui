@@ -69,7 +69,8 @@ export default function AdminDashboard({ onBackToApp }: { onBackToApp?: () => vo
             pdf.setFontSize(11);
             pdf.setTextColor(100, 100, 100);
             pdf.text(`Business Name: ${u.full_name}`, 15, 33);
-            pdf.text(`Location: ${activeLoc}`, 15, 39);
+            const displayLoc = activeLoc.length > 80 ? activeLoc.substring(0, 80) + "..." : activeLoc;
+            pdf.text(`Location: ${displayLoc}`, 15, 39);
             pdf.text(`Generated on: ${new Date(intel.last_scanned).toLocaleString()}`, 15, 45);
             
             // Introduction text (Detailed for customer)
@@ -78,17 +79,21 @@ export default function AdminDashboard({ onBackToApp }: { onBackToApp?: () => vo
             pdf.setTextColor(80, 80, 80);
             const introText = "This report provides an AI-driven analysis of your Google Business Profile's local search performance compared to your top competitors. Higher rankings translate directly to more visibility, traffic, and revenue.";
             const splitIntro = pdf.splitTextToSize(introText, pageWidth - 30);
-            pdf.text(splitIntro, 15, 55);
+            let introY = 55;
+            splitIntro.forEach((line: string) => {
+                pdf.text(line, 15, introY);
+                introY += 5;
+            });
 
             pdf.setDrawColor(200, 200, 200);
-            pdf.line(15, 65, pageWidth - 15, 65);
+            pdf.line(15, introY + 5, pageWidth - 15, introY + 5);
             
             pdf.setFont("helvetica", "bold");
             pdf.setFontSize(16);
             pdf.setTextColor(0, 0, 0);
-            pdf.text("Competitor Leaderboard", 15, 75);
+            pdf.text("Competitor Leaderboard", 15, introY + 15);
             
-            let y = 85;
+            let y = introY + 25;
             intel.leaderboard.forEach((c: any) => {
                 pdf.setFont("helvetica", "bold");
                 pdf.setTextColor(c.is_user ? 0 : 50, c.is_user ? 100 : 50, c.is_user ? 200 : 50);
@@ -123,12 +128,15 @@ export default function AdminDashboard({ onBackToApp }: { onBackToApp?: () => vo
             
             paragraphs.forEach((p: string) => {
                 const lines = pdf.splitTextToSize(p.trim(), pageWidth - 30);
-                if (y + (lines.length * 6) > 280) {
-                    pdf.addPage();
-                    y = 20;
-                }
-                pdf.text(lines, 15, y);
-                y += (lines.length * 6) + 4;
+                lines.forEach((lineText: string) => {
+                    if (y > 280) {
+                        pdf.addPage();
+                        y = 20;
+                    }
+                    pdf.text(lineText, 15, y);
+                    y += 6;
+                });
+                y += 4; // Extra space between paragraphs
             });
             
             pdf.save(`Rank_Analysis_${u.full_name}.pdf`);
