@@ -122,8 +122,10 @@ export default function AdminDashboard({ onBackToApp }: { onBackToApp?: () => vo
             pdf.setTextColor(40, 40, 40);
             
             const rawText = intel.ai_report || "No AI report generated.";
+            // Filter out <think> blocks
+            const noThinkText = rawText.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
             // Simple markdown-to-text parser for PDF
-            const cleanText = rawText.replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1').replace(/#/g, '');
+            const cleanText = noThinkText.replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1').replace(/#/g, '');
             const paragraphs = cleanText.split('\n\n');
             
             paragraphs.forEach((p: string) => {

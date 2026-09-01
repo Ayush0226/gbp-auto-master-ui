@@ -764,7 +764,9 @@ Analytics: ${JSON.stringify(analyticsData || {})}
             pdf.setFontSize(11);
             pdf.setTextColor(30, 30, 30);
             
-            const reportLines = intel.ai_report.split('\n');
+            // Filter out <think> blocks
+            const cleanReport = intel.ai_report.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+            const reportLines = cleanReport.split('\n');
             reportLines.forEach((line: string) => {
                 let text = line.trim();
                 if (text.length === 0) return;
