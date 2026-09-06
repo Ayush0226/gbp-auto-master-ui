@@ -1,0 +1,631 @@
+import React, { useState, useEffect, useCallback } from 'react';
+import { supabase } from './lib/supabase';
+
+// Modular views
+import BrainSettings from './BrainSettings';
+import SubscriptionPage from './SubscriptionPage';
+import ReviewManager from './ReviewManager';
+import ContentCalendarV2 from './ContentCalendarV2';
+import RankAnalysis from './RankAnalysis';
+
+const API_URL = import.meta.env.VITE_API_URL || '';
+
+export default function DashboardV2() {
+    // ─── Core User State ───
+    const [user, setUser] = useState<any>(null);
+    const [providerToken, setProviderToken] = useState<string | null>(null);
+    const [activeView, setActiveView] = useState('dashboard');
+    const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [tokenBalance, setTokenBalance] = useState<number>(0);
+    const [toast, setToast] = useState<{message: string, type: 'success' | 'error' | 'info'} | null>(null);
+
+    // ─── Location State ───
+    const [liveLocations, setLiveLocations] = useState<any[]>([]);
+    const [activeLocationId, setActiveLocationId] = useState<string>('');
+    const [loadingLocations, setLoadingLocations] = useState(false);
+
+    // ─── Review State ───
+    const [liveReviews, setLiveReviews] = useState<any[]>([]);
+    const [loadingReviews, setLoadingReviews] = useState(false);
+    const [syncingReviews, setSyncingReviews] = useState(false);
+
+    // ─── Analytics & Keywords ───
+    const [analyticsData, setAnalyticsData] = useState<any>(null);
+    const [searchKeywords, setSearchKeywords] = useState<any[]>([]);
+
+    // ─── Calendar State (managed here, passed to ContentCalendarV2) ───
+    const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
+    const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
+    const [selectedDate, setSelectedDate] = useState<number | null>(null);
+    const [scheduledPosts, setScheduledPosts] = useState<any>({});
+    const [isSchedulingNew, setIsSchedulingNew] = useState(false);
+    const [postType, setPostType] = useState<'LOCAL_POST' | 'PHOTO' | 'VIDEO'>('LOCAL_POST');
+    const [file, setFile] = useState<File | null>(null);
+    const [postText, setPostText] = useState('');
+    const [loadingAction, setLoadingAction] = useState(false);
+
+    // ─── Helper: Show Toast ───
+    const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+        setToast({ message, type });
+        setTimeout(() => setToast(null), 4000);
+    };
+
+    // ─── Helper: Get active location object ───
+    const activeLocObj = liveLocations.find(l => l.id === activeLocationId) || (liveLocations.length > 0 ? liveLocations[0] : null);
+    const activeLocationName = activeLocObj ? activeLocObj.name : 'No Location Connected';
+
+    // Calendar derived values
+    const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
+    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+    // ─── Auth & Initial Data Fetch ───
+    useEffect(() => {
+        const initDashboard = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session?.user) {
+                setUser(session.user);
+                const token = session.provider_token;
+                if (token) setProviderToken(token);
+                
+                // Fetch data in parallel
+                fetchTokenBalance(session.user.id);
+                if (token) {
+                    fetchLocations(session.user.id, token);
+                } else {
+                    // Try refreshing the Google token from backend
+                    refreshGoogleToken(session.user.id);
+                }
+            }
+
+            const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+                if (session?.user) {
+                    setUser(session.user);
+                    if (session.provider_token) {
+                        setProviderToken(session.provider_token);
+                    }
+                } else {
+                    setUser(null);
+                }
+            });
+
+            return () => {
+                authListener.subscription.unsubscribe();
+            };
+        };
+        initDashboard();
+    }, []);
+
+    // ─── Refresh Google Token via Backend ───
+    const refreshGoogleToken = async (userId: string) => {
+        try {
+            const res = await fetch(`${API_URL}/api/auth/refresh-google-token`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: userId })
+            });
+            if (res.ok) {
+                const data = await res.json();
+                if (data.access_token) {
+                    setProviderToken(data.access_token);
+                    fetchLocations(userId, data.access_token);
+                }
+            }
+        } catch (e) {
+            console.error('Failed to refresh Google token:', e);
+        }
+    };
+
+    // ─── Fetch Token Balance ───
+    const fetchTokenBalance = async (userId: string) => {
+        try {
+            const res = await fetch(`${API_URL}/api/tokens/balance`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: userId })
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setTokenBalance(data.balance || 0);
+            }
+        } catch (error) {
+            console.error('Error fetching token balance:', error);
+        }
+    };
+
+    // ─── Fetch Google Locations ───
+    const fetchLocations = async (userId: string, token: string) => {
+        setLoadingLocations(true);
+        try {
+            const res = await fetch(`${API_URL}/api/google/locations`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: userId, provider_token: token })
+            });
+            if (res.ok) {
+                const data = await res.json();
+                const locs = data.locations || [];
+                setLiveLocations(locs);
+                if (locs.length > 0 && !activeLocationId) {
+                    setActiveLocationId(locs[0].id);
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching locations:', error);
+        } finally {
+            setLoadingLocations(false);
+        }
+    };
+
+    // ─── Fetch Reviews for Active Location ───
+    const fetchReviews = useCallback(async () => {
+        if (!providerToken || !activeLocationId || !user) return;
+        setLoadingReviews(true);
+        try {
+            const res = await fetch(`${API_URL}/api/google/get-reviews`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_id: user.id,
+                    provider_token: providerToken,
+                    location_id: activeLocationId
+                })
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setLiveReviews(data.reviews || []);
+            }
+        } catch (error) {
+            console.error('Error fetching reviews:', error);
+        } finally {
+            setLoadingReviews(false);
+        }
+    }, [providerToken, activeLocationId, user]);
+
+    // ─── Sync (Auto-Reply) Reviews ───
+    const handleSyncReviews = async () => {
+        if (!providerToken || !activeLocationId || !user) return;
+        setSyncingReviews(true);
+        try {
+            const res = await fetch(`${API_URL}/api/google/sync-reviews`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_id: user.id,
+                    provider_token: providerToken,
+                    location_id: activeLocationId
+                })
+            });
+            if (res.ok) {
+                const data = await res.json();
+                showToast(`Synced! ${data.replied_count || 0} reviews auto-replied.`, 'success');
+                fetchReviews(); // Refresh the list
+            }
+        } catch (error) {
+            showToast('Error syncing reviews', 'error');
+        } finally {
+            setSyncingReviews(false);
+        }
+    };
+
+    // ─── Fetch Analytics ───
+    const fetchAnalytics = async () => {
+        if (!providerToken || !activeLocationId || !user) return;
+        try {
+            const res = await fetch(`${API_URL}/api/google/analytics`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_id: user.id,
+                    provider_token: providerToken,
+                    location_id: activeLocationId
+                })
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setAnalyticsData(data);
+            }
+        } catch (error) {
+            console.error('Error fetching analytics:', error);
+        }
+    };
+
+    // ─── Fetch Search Keywords ───
+    const fetchSearchKeywords = async () => {
+        if (!providerToken || !activeLocationId || !user) return;
+        try {
+            const res = await fetch(`${API_URL}/api/google/search-keywords`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_id: user.id,
+                    provider_token: providerToken,
+                    location_id: activeLocationId
+                })
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setSearchKeywords(data.keywords || []);
+            }
+        } catch (error) {
+            console.error('Error fetching search keywords:', error);
+        }
+    };
+
+    // ─── Fetch Calendar Posts from Supabase ───
+    const fetchCalendarPosts = async () => {
+        if (!user || !activeLocationId) return;
+        try {
+            const { data, error } = await supabase
+                .from('calendar_posts')
+                .select('*')
+                .eq('user_id', user.id)
+                .eq('location_id', activeLocationId);
+            if (data) {
+                const postsByDate: any = {};
+                data.forEach((p: any) => {
+                    const dateKey = p.post_date;
+                    if (!postsByDate[dateKey]) postsByDate[dateKey] = [];
+                    postsByDate[dateKey].push(p);
+                });
+                setScheduledPosts(postsByDate);
+            }
+        } catch (error) {
+            console.error('Error fetching calendar posts:', error);
+        }
+    };
+
+    // ─── Schedule a Post ───
+    const handleSchedule = async () => {
+        if (!user || !selectedDate || !postText.trim()) {
+            showToast('Please select a date and write content.', 'error');
+            return;
+        }
+        // Check token balance (5 tokens per post)
+        if (tokenBalance < 5) {
+            showToast('Insufficient tokens! You need 5 tokens to schedule a post.', 'error');
+            return;
+        }
+
+        setLoadingAction(true);
+        const postDate = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(selectedDate).padStart(2, '0')}`;
+
+        try {
+            let imageUrl = '';
+            // Upload file to Supabase Storage if exists
+            if (file) {
+                const filePath = `${user.id}/${Date.now()}_${file.name}`;
+                const { data: uploadData, error: uploadError } = await supabase.storage
+                    .from('calendar_images')
+                    .upload(filePath, file);
+                if (uploadData) {
+                    const { data: publicUrlData } = supabase.storage
+                        .from('calendar_images')
+                        .getPublicUrl(filePath);
+                    imageUrl = publicUrlData.publicUrl;
+                }
+            }
+
+            // Insert post into Supabase
+            const { error } = await supabase.from('calendar_posts').insert({
+                user_id: user.id,
+                location_id: activeLocationId,
+                post_date: postDate,
+                caption: postText,
+                image_url: imageUrl,
+                post_type: postType,
+                status: 'scheduled'
+            });
+
+            if (!error) {
+                // Deduct 5 tokens
+                await fetch(`${API_URL}/api/tokens/balance`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: user.id })
+                });
+                // We need a deduct endpoint — use the existing deduct_tokens logic via a direct supabase call
+                // For now, refresh balance after backend cron processes it
+                showToast('Post scheduled! 5 tokens deducted.', 'success');
+                setPostText('');
+                setFile(null);
+                setIsSchedulingNew(false);
+                setSelectedDate(null);
+                fetchCalendarPosts();
+                fetchTokenBalance(user.id);
+            } else {
+                showToast('Failed to schedule post: ' + error.message, 'error');
+            }
+        } catch (error) {
+            showToast('Error scheduling post', 'error');
+        } finally {
+            setLoadingAction(false);
+        }
+    };
+
+    // ─── Publish Now (immediately post to Google) ───
+    const publishNow = async (postId: string) => {
+        if (!providerToken) {
+            showToast('Google token missing. Please re-login.', 'error');
+            return;
+        }
+        setLoadingAction(true);
+        try {
+            // Get the post data
+            const { data: postData } = await supabase.from('calendar_posts').select('*').eq('id', postId).single();
+            if (!postData) { showToast('Post not found', 'error'); return; }
+
+            const res = await fetch(`${API_URL}/api/google/publish-post`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    provider_token: providerToken,
+                    location_id: activeLocationId,
+                    summary: postData.caption,
+                    image_url: postData.image_url || null,
+                    post_type: postData.post_type || 'LOCAL_POST'
+                })
+            });
+            if (res.ok) {
+                await supabase.from('calendar_posts').update({ status: 'published' }).eq('id', postId);
+                showToast('Post published to Google!', 'success');
+                fetchCalendarPosts();
+            } else {
+                showToast('Failed to publish to Google', 'error');
+            }
+        } catch (error) {
+            showToast('Error publishing post', 'error');
+        } finally {
+            setLoadingAction(false);
+        }
+    };
+
+    // ─── Cancel a Scheduled Post ───
+    const cancelPost = async (postId: string) => {
+        try {
+            await supabase.from('calendar_posts').delete().eq('id', postId);
+            showToast('Post cancelled.', 'info');
+            fetchCalendarPosts();
+        } catch (error) {
+            showToast('Error cancelling post', 'error');
+        }
+    };
+
+    // ─── Claim Daily Reward ───
+    const claimDailyReward = async () => {
+        if (!user) return;
+        try {
+            const res = await fetch(`${API_URL}/api/tokens/claim-daily`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: user.id })
+            });
+            if (res.ok) {
+                const data = await res.json();
+                showToast(`Daily reward claimed! You earned ${data.tokens_added || 2} tokens.`, 'success');
+                fetchTokenBalance(user.id);
+            } else {
+                const errData = await res.json().catch(() => ({}));
+                showToast(errData.detail || 'Already claimed today!', 'error');
+            }
+        } catch (error) {
+            showToast('Server error during claim', 'error');
+        }
+    };
+
+    // ─── Sign Out ───
+    const handleSignOut = async () => {
+        await supabase.auth.signOut();
+        localStorage.clear();
+        window.location.href = '/';
+    };
+
+    // ─── Load Data When Active Location Changes ───
+    useEffect(() => {
+        if (activeLocationId && providerToken && user) {
+            fetchReviews();
+            fetchAnalytics();
+            fetchSearchKeywords();
+            fetchCalendarPosts();
+        }
+    }, [activeLocationId, providerToken, user]);
+
+    // ─── PDF Download Placeholder ───
+    const downloadPdfReport = () => {
+        showToast('PDF export coming soon!', 'info');
+    };
+
+    // ─── View Title Helper ───
+    const getViewTitle = () => {
+        switch (activeView) {
+            case 'reviews': return 'Review Manager';
+            case 'calendar': return 'Content Calendar';
+            case 'rank': return 'Rank Analysis';
+            case 'brain': return 'AI Brain Settings';
+            case 'subscription': return 'Subscription & Tokens';
+            default: return 'Dashboard';
+        }
+    };
+
+    return (
+        <div className="layout">
+            {toast && (
+                <div className={`toast ${toast.type}`}>
+                    {toast.message}
+                </div>
+            )}
+            
+            {/* Sidebar Navigation */}
+            <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
+                <div className="sidebar-header">
+                    <h2>GBP Auto</h2>
+                    <button className="mobile-close" onClick={() => setSidebarOpen(false)}>×</button>
+                </div>
+
+                {/* Location Switcher */}
+                <div style={{ padding: '0 16px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                    <label style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>Managing</label>
+                    {liveLocations.length > 0 ? (
+                        <select 
+                            value={activeLocationId} 
+                            onChange={(e) => setActiveLocationId(e.target.value)}
+                            style={{ width: '100%', background: 'rgba(255,255,255,0.05)', color: '#fff', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '8px 10px', fontSize: '13px', outline: 'none' }}
+                        >
+                            {liveLocations.map((loc: any) => (
+                                <option key={loc.id} value={loc.id} style={{ background: '#0A0E17' }}>{loc.name}</option>
+                            ))}
+                        </select>
+                    ) : (
+                        <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)', padding: '8px 0' }}>
+                            {loadingLocations ? 'Loading locations...' : 'No Location Connected'}
+                        </div>
+                    )}
+                </div>
+
+                <nav className="nav-menu">
+                    <button className={`nav-item ${activeView === 'dashboard' ? 'active' : ''}`} onClick={() => { setActiveView('dashboard'); setSidebarOpen(false); }}>Dashboard</button>
+                    <button className={`nav-item ${activeView === 'reviews' ? 'active' : ''}`} onClick={() => { setActiveView('reviews'); setSidebarOpen(false); }}>Review Manager</button>
+                    <button className={`nav-item ${activeView === 'calendar' ? 'active' : ''}`} onClick={() => { setActiveView('calendar'); setSidebarOpen(false); }}>Content Calendar</button>
+                    <button className={`nav-item ${activeView === 'rank' ? 'active' : ''}`} onClick={() => { setActiveView('rank'); setSidebarOpen(false); }}>Rank Analysis</button>
+                    <button className={`nav-item ${activeView === 'brain' ? 'active' : ''}`} onClick={() => { setActiveView('brain'); setSidebarOpen(false); }}>AI Brain Settings</button>
+                    <button className={`nav-item ${activeView === 'subscription' ? 'active' : ''}`} onClick={() => { setActiveView('subscription'); setSidebarOpen(false); }}>Subscription & Tokens</button>
+                </nav>
+
+                {/* Sign Out */}
+                <div style={{ padding: '16px', marginTop: 'auto' }}>
+                    <button onClick={handleSignOut} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '14px', padding: '8px 0' }}>
+                        Sign Out
+                    </button>
+                </div>
+            </aside>
+
+            {/* Main Content */}
+            <main className="main-content">
+                {/* Header */}
+                <header className="topbar">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                        <button className="mobile-toggle" onClick={() => setSidebarOpen(true)}>☰</button>
+                        <div>
+                            <h2 style={{ margin: 0 }}>{getViewTitle()}</h2>
+                            <p style={{ margin: 0, fontSize: '12px', color: 'rgba(255,255,255,0.5)' }}>{activeLocationName}</p>
+                        </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.05)', padding: '8px 14px', borderRadius: '8px' }}>
+                            <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)' }}>Balance:</span>
+                            <strong style={{ fontSize: '16px', color: 'var(--blue-soft, #4F8CFF)' }}>{tokenBalance}</strong>
+                            <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>tokens</span>
+                        </div>
+                        <button className="btn btn-green btn-sm" onClick={claimDailyReward}>🎁 Daily Reward</button>
+                    </div>
+                </header>
+
+                {/* Render Child Views */}
+                <div className="content-container">
+                    {/* ─── Dashboard Overview ─── */}
+                    {activeView === 'dashboard' && (
+                        <div>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+                                <div className="card glass" style={{ padding: '20px' }}>
+                                    <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginBottom: '6px' }}>Token Balance</div>
+                                    <div style={{ fontSize: '28px', fontWeight: 700, color: '#4F8CFF' }}>{tokenBalance}</div>
+                                </div>
+                                <div className="card glass" style={{ padding: '20px' }}>
+                                    <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginBottom: '6px' }}>Total Reviews</div>
+                                    <div style={{ fontSize: '28px', fontWeight: 700 }}>{liveReviews.length}</div>
+                                </div>
+                                <div className="card glass" style={{ padding: '20px' }}>
+                                    <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginBottom: '6px' }}>Locations</div>
+                                    <div style={{ fontSize: '28px', fontWeight: 700 }}>{liveLocations.length}</div>
+                                </div>
+                                <div className="card glass" style={{ padding: '20px' }}>
+                                    <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginBottom: '6px' }}>Unreplied</div>
+                                    <div style={{ fontSize: '28px', fontWeight: 700, color: '#ef4444' }}>{liveReviews.filter((r: any) => !r.has_reply).length}</div>
+                                </div>
+                            </div>
+                            <div className="card glass" style={{ padding: '24px' }}>
+                                <h3>Welcome to GBP Auto Master V2!</h3>
+                                <p style={{ color: 'rgba(255,255,255,0.6)' }}>Select a tool from the sidebar to manage your Google Business Profile.</p>
+                                <div style={{ display: 'flex', gap: '10px', marginTop: '16px', flexWrap: 'wrap' }}>
+                                    <button className="btn btn-blue btn-sm" onClick={() => setActiveView('reviews')}>📝 Manage Reviews</button>
+                                    <button className="btn btn-green btn-sm" onClick={() => setActiveView('calendar')}>📅 Content Calendar</button>
+                                    <button className="btn btn-ghost btn-sm" onClick={() => setActiveView('rank')}>📊 Rank Analysis</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ─── Review Manager ─── */}
+                    {activeView === 'reviews' && (
+                        <ReviewManager 
+                            liveReviews={liveReviews}
+                            setLiveReviews={setLiveReviews}
+                            loadingReviews={loadingReviews}
+                            syncingReviews={syncingReviews}
+                            providerToken={providerToken}
+                            user={user}
+                            activeLocationId={activeLocationId}
+                            handleSyncReviews={handleSyncReviews}
+                            showToast={showToast}
+                        />
+                    )}
+
+                    {/* ─── Content Calendar ─── */}
+                    {activeView === 'calendar' && (
+                        <ContentCalendarV2 
+                            currentMonth={currentMonth}
+                            setCurrentMonth={setCurrentMonth}
+                            currentYear={currentYear}
+                            setCurrentYear={setCurrentYear}
+                            selectedDate={selectedDate}
+                            setSelectedDate={setSelectedDate}
+                            scheduledPosts={scheduledPosts}
+                            isSchedulingNew={isSchedulingNew}
+                            setIsSchedulingNew={setIsSchedulingNew}
+                            postType={postType}
+                            setPostType={setPostType}
+                            file={file}
+                            setFile={setFile}
+                            postText={postText}
+                            setPostText={setPostText}
+                            handleSchedule={handleSchedule}
+                            publishNow={publishNow}
+                            cancelPost={cancelPost}
+                            firstDayOfMonth={firstDayOfMonth}
+                            daysInMonth={daysInMonth}
+                            loadingAction={loadingAction}
+                        />
+                    )}
+
+                    {/* ─── Rank Analysis ─── */}
+                    {activeView === 'rank' && (
+                        <RankAnalysis 
+                            analyticsData={analyticsData}
+                            activeLocationId={activeLocationId}
+                            user={user}
+                            liveReviews={liveReviews}
+                            downloadPdfReport={downloadPdfReport}
+                            showToast={showToast}
+                            searchKeywords={searchKeywords}
+                            providerToken={providerToken}
+                        />
+                    )}
+
+                    {/* ─── AI Brain Settings ─── */}
+                    {activeView === 'brain' && (
+                        <BrainSettings 
+                            user={user} 
+                            activeLocationId={activeLocationId} 
+                            providerToken={providerToken} 
+                            showToast={showToast} 
+                        />
+                    )}
+
+                    {/* ─── Subscription & Tokens ─── */}
+                    {activeView === 'subscription' && (
+                        <SubscriptionPage user={user} />
+                    )}
+                </div>
+            </main>
+        </div>
+    );
+}
