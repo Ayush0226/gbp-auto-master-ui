@@ -447,22 +447,27 @@ export default function DashboardV2() {
     };
 
     return (
-        <div className="layout">
+        <div className="app-shell">
+            <div className="noise"></div>
             {toast && (
                 <div className={`toast ${toast.type}`}>
                     {toast.message}
                 </div>
             )}
             
-            {/* Sidebar Navigation */}
-            <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
-                <div className="sidebar-header">
-                    <h2>GBP Auto</h2>
-                    <button className="mobile-close" onClick={() => setSidebarOpen(false)}>×</button>
+            {/* SIDEBAR */}
+            {sidebarOpen && <div className="sidebar-backdrop" onClick={() => setSidebarOpen(false)}></div>}
+            <aside className={`sidebar glass ${sidebarOpen ? 'mobile-open' : ''}`}>
+                <div className="sidebar-logo" style={{ display: 'flex', alignItems: 'center', marginBottom: '20px' }}>
+                    <img src="/logo.jpeg" alt="Logo" style={{ height: '36px', marginRight: '12px', borderRadius: '8px' }} />
+                    <div style={{ lineHeight: '1.2' }}>
+                        <div style={{ fontSize: '16px', fontWeight: 'bold', color: 'white' }}>GBP Auto</div>
+                        <div className="grad-blue" style={{ fontSize: '12px', letterSpacing: '1px', textTransform: 'uppercase' }}>Master</div>
+                    </div>
                 </div>
 
                 {/* Location Switcher */}
-                <div style={{ padding: '0 16px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                <div style={{ padding: '0 4px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)', marginBottom: '12px' }}>
                     <label style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '1px', display: 'block', marginBottom: '6px' }}>Managing</label>
                     {liveLocations.length > 0 ? (
                         <select 
@@ -481,7 +486,7 @@ export default function DashboardV2() {
                     )}
                 </div>
 
-                <nav className="nav-menu">
+                <nav className="nav-menu" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     <button className={`nav-item ${activeView === 'dashboard' ? 'active' : ''}`} onClick={() => { setActiveView('dashboard'); setSidebarOpen(false); }}>Dashboard</button>
                     <button className={`nav-item ${activeView === 'reviews' ? 'active' : ''}`} onClick={() => { setActiveView('reviews'); setSidebarOpen(false); }}>Review Manager</button>
                     <button className={`nav-item ${activeView === 'calendar' ? 'active' : ''}`} onClick={() => { setActiveView('calendar'); setSidebarOpen(false); }}>Content Calendar</button>
@@ -491,39 +496,50 @@ export default function DashboardV2() {
                 </nav>
 
                 {/* Sign Out */}
-                <div style={{ padding: '16px', marginTop: 'auto' }}>
-                    <button onClick={handleSignOut} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '14px', padding: '8px 0' }}>
+                <div className="sidebar-foot" style={{ marginTop: 'auto', paddingTop: '16px' }}>
+                    <button onClick={handleSignOut} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '14px', padding: '8px 0', width: '100%', textAlign: 'left' }}>
                         Sign Out
                     </button>
                 </div>
             </aside>
 
-            {/* Main Content */}
-            <main className="main-content">
-                {/* Header */}
-                <header className="topbar">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                        <button className="mobile-toggle" onClick={() => setSidebarOpen(true)}>☰</button>
-                        <div>
-                            <h2 style={{ margin: 0 }}>{getViewTitle()}</h2>
-                            <p style={{ margin: 0, fontSize: '12px', color: 'rgba(255,255,255,0.5)' }}>{activeLocationName}</p>
-                        </div>
+            {/* Main Content Area */}
+            <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+                {/* Mobile Topbar */}
+                <div className="mobile-topbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <button className="btn btn-ghost btn-sm" onClick={() => setSidebarOpen(true)} style={{ padding: '4px 8px', fontSize: '16px', marginRight: '10px' }}>
+                            ☰
+                        </button>
+                        <span style={{ fontWeight: 'bold' }}>{getViewTitle()}</span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.05)', padding: '8px 14px', borderRadius: '8px' }}>
-                            <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)' }}>Balance:</span>
-                            <strong style={{ fontSize: '16px', color: 'var(--blue-soft, #4F8CFF)' }}>{tokenBalance}</strong>
-                            <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>tokens</span>
-                        </div>
-                        <button className="btn btn-green btn-sm" onClick={claimDailyReward}>🎁 Daily Reward</button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <strong style={{ fontSize: '14px', color: 'var(--blue-soft, #4F8CFF)' }}>{tokenBalance} 🪙</strong>
                     </div>
-                </header>
+                </div>
 
-                {/* Render Child Views */}
-                <div className="content-container">
+                <main className="main">
+                    {/* Desktop Header (Hidden on Mobile usually, or just part of main) */}
+                    <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
+                        <div className="desktop-only-title">
+                            <h2 style={{ margin: 0 }}>{getViewTitle()}</h2>
+                            <p style={{ margin: 0, fontSize: '13px', color: 'rgba(255,255,255,0.5)' }}>{activeLocationName}</p>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.05)', padding: '8px 14px', borderRadius: '8px' }}>
+                                <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)' }}>Balance:</span>
+                                <strong style={{ fontSize: '16px', color: 'var(--blue-soft, #4F8CFF)' }}>{tokenBalance}</strong>
+                                <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>tokens</span>
+                            </div>
+                            <button className="btn btn-green btn-sm" onClick={claimDailyReward}>🎁 Daily Reward</button>
+                        </div>
+                    </header>
+
+                    {/* Render Child Views */}
+                    <div className="content-container">
                     {/* ─── Dashboard Overview ─── */}
                     {activeView === 'dashboard' && (
-                        <div>
+                        <section className="page active">
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
                                 <div className="card glass" style={{ padding: '20px' }}>
                                     <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginBottom: '6px' }}>Token Balance</div>
@@ -551,7 +567,7 @@ export default function DashboardV2() {
                                     <button className="btn btn-ghost btn-sm" onClick={() => setActiveView('rank')}>📊 Rank Analysis</button>
                                 </div>
                             </div>
-                        </div>
+                        </section>
                     )}
 
                     {/* ─── Review Manager ─── */}
@@ -626,6 +642,7 @@ export default function DashboardV2() {
                     )}
                 </div>
             </main>
+            </div>
         </div>
     );
 }
