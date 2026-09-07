@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const API_URL = import.meta.env.VITE_API_URL || '';
+const API_URL = import.meta.env.VITE_API_URL || 'https://gbp-auto-master-backend-us.onrender.com';
 
 export default function SubscriptionPage({ user }: { user: any }) {
     const [selectedPlan, setSelectedPlan] = useState<string>('monthly');

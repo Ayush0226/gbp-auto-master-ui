@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 export default function RankAnalysis({
     analyticsData, activeLocationId, user, liveReviews, showToast, searchKeywords, providerToken
 }: any) {
-    const API_URL = import.meta.env.VITE_API_URL || '';
+    const API_URL = import.meta.env.VITE_API_URL || 'https://gbp-auto-master-backend-us.onrender.com';
     const [generatingReport, setGeneratingReport] = useState(false);
     const [seoKeywords, setSeoKeywords] = useState<any[]>([]);
     const [planType, setPlanType] = useState<string>('');

@@ -8,7 +8,7 @@ import ReviewManager from './ReviewManager';
 import ContentCalendarV2 from './ContentCalendarV2';
 import RankAnalysis from './RankAnalysis';
 
-const API_URL = import.meta.env.VITE_API_URL || '';
+const API_URL = import.meta.env.VITE_API_URL || 'https://gbp-auto-master-backend-us.onrender.com';
 
 export default function DashboardV2() {
     // ─── Core User State ───
@@ -66,6 +66,13 @@ export default function DashboardV2() {
                 setUser(session.user);
                 const token = session.provider_token;
                 if (token) setProviderToken(token);
+
+                // Save refresh token to user metadata if it exists
+                if (session.provider_refresh_token) {
+                    await supabase.auth.updateUser({
+                        data: { google_refresh_token: session.provider_refresh_token }
+                    });
+                }
                 
                 // Fetch data in parallel
                 fetchTokenBalance(session.user.id);
@@ -77,11 +84,16 @@ export default function DashboardV2() {
                 }
             }
 
-            const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+            const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
                 if (session?.user) {
                     setUser(session.user);
                     if (session.provider_token) {
                         setProviderToken(session.provider_token);
+                    }
+                    if (session.provider_refresh_token) {
+                        await supabase.auth.updateUser({
+                            data: { google_refresh_token: session.provider_refresh_token }
+                        });
                     }
                 } else {
                     setUser(null);
@@ -105,9 +117,9 @@ export default function DashboardV2() {
             });
             if (res.ok) {
                 const data = await res.json();
-                if (data.access_token) {
-                    setProviderToken(data.access_token);
-                    fetchLocations(userId, data.access_token);
+                if (data.provider_token) {
+                    setProviderToken(data.provider_token);
+                    fetchLocations(userId, data.provider_token);
                 }
             }
         } catch (e) {
@@ -143,6 +155,16 @@ export default function DashboardV2() {
             });
             if (res.ok) {
                 const data = await res.json();
+                if (data.status === 'error') {
+                    console.error('Google API Error:', data.message);
+                    if (data.message.includes('401') || data.message.includes('unauthorized')) {
+                        // Token might be expired, try refreshing
+                        refreshGoogleToken(userId);
+                    } else {
+                        // We need a way to show toast here, but showToast is not in scope.
+                        // For now we'll rely on the default behavior (empty locations).
+                    }
+                }
                 const locs = data.locations || [];
                 setLiveLocations(locs);
                 if (locs.length > 0 && !activeLocationId) {

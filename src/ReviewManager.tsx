@@ -11,7 +11,7 @@ export default function ReviewManager({
     handleSyncReviews, 
     showToast 
 }: any) {
-    const API_URL = import.meta.env.VITE_API_URL || '';
+    const API_URL = import.meta.env.VITE_API_URL || 'https://gbp-auto-master-backend-us.onrender.com';
     const [editingReviewId, setEditingReviewId] = useState<string | null>(null);
     const [editReplyText, setEditReplyText] = useState('');
     const [savingReplyId, setSavingReplyId] = useState<string | null>(null);

@@ -13,7 +13,7 @@ export default function BrainSettings({
     providerToken, 
     showToast 
 }: BrainSettingsProps) {
-    const API_URL = import.meta.env.VITE_API_URL || '';
+    const API_URL = import.meta.env.VITE_API_URL || 'https://gbp-auto-master-backend-us.onrender.com';
 
     const [isAiActive, setIsAiActive] = useState(true);
     const [replyTo1Star, setReplyTo1Star] = useState(false);
