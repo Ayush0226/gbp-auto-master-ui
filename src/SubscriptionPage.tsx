@@ -59,7 +59,7 @@ export default function SubscriptionPage({ user }: { user: any }) {
             if (res.ok) {
                 const data = await res.json();
                 setTokenBalance(data.balance || 0);
-                setLedgerHistory(data.ledger || []);
+                setLedgerHistory(data.history || []);
             }
         } catch (error) {
             console.error("Error fetching token balance", error);
