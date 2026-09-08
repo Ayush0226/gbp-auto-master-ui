@@ -33,6 +33,8 @@ export default function DashboardV2() {
     const [analyticsData, setAnalyticsData] = useState<any>(null);
     const [searchKeywords, setSearchKeywords] = useState<any[]>([]);
     const [seoKeywords, setSeoKeywords] = useState<string[]>([]);
+    const [totalReviewCount, setTotalReviewCount] = useState<number>(0);
+    const [averageRating, setAverageRating] = useState<number>(0);
 
     // ─── Calendar State (managed here, passed to ContentCalendarV2) ───
     const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
@@ -196,6 +198,8 @@ export default function DashboardV2() {
             if (res.ok) {
                 const data = await res.json();
                 setLiveReviews(data.reviews || []);
+                if (data.totalReviewCount !== undefined) setTotalReviewCount(data.totalReviewCount);
+                if (data.averageRating !== undefined) setAverageRating(data.averageRating);
             }
         } catch (error) {
             console.error('Error fetching reviews:', error);
@@ -450,17 +454,19 @@ export default function DashboardV2() {
             fetchSearchKeywords();
             fetchCalendarPosts();
         }
-        if (user) {
-            // Fetch user's configured SEO keywords
-            fetch(`${API_URL}/api/user/profile`, {
+        if (user && activeLocationId) {
+            // Fetch user's configured SEO keywords for this location
+            fetch(`${API_URL}/api/user/get-ai-settings`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user_id: user.id })
+                body: JSON.stringify({ user_id: user.id, location_id: activeLocationId })
             })
             .then(res => res.json())
             .then(data => {
-                if (data.seo_keywords && Array.isArray(data.seo_keywords)) {
-                    setSeoKeywords(data.seo_keywords);
+                if (data.active_keywords && Array.isArray(data.active_keywords)) {
+                    setSeoKeywords(data.active_keywords);
+                } else {
+                    setSeoKeywords([]); // Reset if none
                 }
             })
             .catch(() => {});
@@ -580,12 +586,13 @@ export default function DashboardV2() {
                         // Calculate dashboard stats
                         const unrepliedCount = liveReviews.filter((r: any) => !r.has_reply && !r.reviewReply).length;
                         const repliedReviews = liveReviews.filter((r: any) => r.has_reply || r.reviewReply);
-                        const avgRating = liveReviews.length > 0
+                        const displayAvgRating = averageRating > 0 ? averageRating.toFixed(1) : (liveReviews.length > 0
                             ? (liveReviews.reduce((sum: number, r: any) => {
                                 const ratingMap: any = { 'ONE': 1, 'TWO': 2, 'THREE': 3, 'FOUR': 4, 'FIVE': 5 };
                                 return sum + (ratingMap[r.starRating || r.rating] || 0);
                             }, 0) / liveReviews.length).toFixed(1)
-                            : '—';
+                            : '—');
+                        const displayTotalReviews = totalReviewCount > 0 ? totalReviewCount : liveReviews.length;
                         const upcomingPosts = Object.values(scheduledPosts).filter((p: any) => p?.status === 'scheduled').length;
 
                         // Rating distribution
@@ -625,7 +632,7 @@ export default function DashboardV2() {
                                     <div className="stat-card">
                                         <div className="stat-icon">⭐</div>
                                         <div className="stat-label">Total Reviews</div>
-                                        <div className="stat-value">{liveReviews.length}</div>
+                                        <div className="stat-value">{displayTotalReviews}</div>
                                         <div className="stat-sub">Across all time</div>
                                     </div>
                                     <div className="stat-card">
@@ -637,8 +644,8 @@ export default function DashboardV2() {
                                     <div className="stat-card">
                                         <div className="stat-icon">📊</div>
                                         <div className="stat-label">Avg Rating</div>
-                                        <div className="stat-value" style={{ color: '#FBBF24' }}>{avgRating}</div>
-                                        <div className="stat-sub">{liveReviews.length > 0 ? `From ${liveReviews.length} reviews` : 'No reviews yet'}</div>
+                                        <div className="stat-value" style={{ color: '#FBBF24' }}>{displayAvgRating}</div>
+                                        <div className="stat-sub">{displayTotalReviews > 0 ? `From ${displayTotalReviews} reviews` : 'No reviews yet'}</div>
                                     </div>
                                     <div className="stat-card">
                                         <div className="stat-icon">📍</div>
@@ -675,7 +682,7 @@ export default function DashboardV2() {
                                                     );
                                                 })}
                                                 <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(255,255,255,.03)', borderRadius: '10px', textAlign: 'center' }}>
-                                                    <span style={{ fontSize: '32px', fontWeight: 800, color: '#FBBF24' }}>{avgRating}</span>
+                                                    <span style={{ fontSize: '32px', fontWeight: 800, color: '#FBBF24' }}>{displayAvgRating}</span>
                                                     <span style={{ fontSize: '13px', color: 'rgba(255,255,255,.5)', marginLeft: '6px' }}>/ 5.0</span>
                                                 </div>
                                             </div>
@@ -819,6 +826,7 @@ export default function DashboardV2() {
                             showToast={showToast}
                             searchKeywords={searchKeywords}
                             providerToken={providerToken}
+                            refreshTokens={() => fetchTokenBalance(user.id)}
                         />
                     )}
 
@@ -834,7 +842,7 @@ export default function DashboardV2() {
 
                     {/* ─── Subscription & Tokens ─── */}
                     {activeView === 'subscription' && (
-                        <SubscriptionPage user={user} />
+                        <SubscriptionPage user={user} refreshTokens={() => fetchTokenBalance(user.id)} />
                     )}
                 </div>
             </main>

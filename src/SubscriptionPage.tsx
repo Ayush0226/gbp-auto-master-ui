@@ -2,7 +2,12 @@ import React, { useState, useEffect } from 'react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://gbp-auto-master-backend-us.onrender.com';
 
-export default function SubscriptionPage({ user }: { user: any }) {
+interface SubscriptionPageProps {
+    user: any;
+    refreshTokens?: () => void;
+}
+
+export default function SubscriptionPage({ user, refreshTokens }: SubscriptionPageProps) {
     const [selectedPlan, setSelectedPlan] = useState<string>('monthly');
     const [discountApplied, setDiscountApplied] = useState<string>('none');
     const [promoCode, setPromoCode] = useState('');
@@ -65,6 +70,7 @@ export default function SubscriptionPage({ user }: { user: any }) {
     };
 
     const fetchTokenBalance = async () => {
+        if (!user) return;
         try {
             const res = await fetch(`${API_URL}/api/tokens/balance`, {
                 method: 'POST',
@@ -75,6 +81,7 @@ export default function SubscriptionPage({ user }: { user: any }) {
                 const data = await res.json();
                 setTokenBalance(data.balance || 0);
                 setLedgerHistory(data.history || []);
+                if (refreshTokens) refreshTokens();
             }
         } catch (error) {
             console.error("Error fetching token balance", error);

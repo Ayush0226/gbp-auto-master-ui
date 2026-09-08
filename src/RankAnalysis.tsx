@@ -1,8 +1,19 @@
 import React, { useState } from 'react';
 
+interface RankAnalysisProps {
+    analyticsData: any;
+    activeLocationId: string;
+    user: any;
+    liveReviews: any[];
+    showToast: (msg: string, type: 'success' | 'error' | 'info') => void;
+    searchKeywords: any[];
+    providerToken: string;
+    refreshTokens?: () => void;
+}
+
 export default function RankAnalysis({
-    analyticsData, activeLocationId, user, liveReviews, showToast, searchKeywords, providerToken
-}: any) {
+    analyticsData, activeLocationId, user, liveReviews, showToast, searchKeywords, providerToken, refreshTokens
+}: RankAnalysisProps) {
     const API_URL = import.meta.env.VITE_API_URL || 'https://gbp-auto-master-backend-us.onrender.com';
     const [generatingReport, setGeneratingReport] = useState(false);
     const [seoKeywords, setSeoKeywords] = useState<any[]>([]);
@@ -129,6 +140,7 @@ export default function RankAnalysis({
 
     React.useEffect(() => {
         if (user?.id) {
+            // Fetch plan type
             fetch(`${API_URL}/api/user/profile`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -136,16 +148,31 @@ export default function RankAnalysis({
             })
             .then(res => res.json())
             .then(data => {
-                if (data.seo_keywords) {
-                    setSeoKeywords(data.seo_keywords);
-                }
                 if (data.plan_type) {
                     setPlanType(data.plan_type);
                 }
             })
             .catch(e => console.error("Failed to fetch profile", e));
         }
-    }, [user?.id, API_URL]);
+
+        if (user?.id && activeLocationId) {
+            // Fetch location-specific SEO keywords
+            fetch(`${API_URL}/api/user/get-ai-settings`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: user.id, location_id: activeLocationId })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.active_keywords && Array.isArray(data.active_keywords)) {
+                    setSeoKeywords(data.active_keywords);
+                } else {
+                    setSeoKeywords([]);
+                }
+            })
+            .catch(e => console.error("Failed to fetch settings", e));
+        }
+    }, [user?.id, activeLocationId, API_URL]);
 
     const handleGenerateReport = async (keyword: string = 'general') => {
         try {
@@ -178,9 +205,10 @@ export default function RankAnalysis({
                 })
             });
             const data = await res.json();
-            if (res.ok) {
-                showToast("Report generated successfully!", "success");
-                setReportResults(prev => ({ ...prev, [keyword]: data }));
+            if (data.status === 'success') {
+                showToast(`Report generated successfully for "${keyword}"!`, 'success');
+                setReportResults(prev => ({ ...prev, [keyword]: data.report }));
+                if (refreshTokens) refreshTokens();
             } else {
                 showToast("Failed to generate report", "error");
             }

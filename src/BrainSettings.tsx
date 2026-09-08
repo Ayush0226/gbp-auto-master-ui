@@ -26,19 +26,29 @@ export default function BrainSettings({
     const [maxSeoKeywords, setMaxSeoKeywords] = useState(5);
 
     useEffect(() => {
-        const fetchProfile = async () => {
-            if (!user) return;
+        const fetchSettings = async () => {
+            if (!user || !activeLocationId) return;
+            
             try {
-                const res = await fetch(`${API_URL}/api/user/profile`, {
+                // Get max keywords from profile
+                const profRes = await fetch(`${API_URL}/api/user/profile`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ user_id: user?.id })
                 });
+                if(profRes.ok) {
+                    const profData = await profRes.json();
+                    if (profData.max_seo_keywords) setMaxSeoKeywords(profData.max_seo_keywords);
+                }
+
+                // Get AI settings for specific location
+                const res = await fetch(`${API_URL}/api/user/get-ai-settings`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: user?.id, location_id: activeLocationId })
+                });
                 if(res.ok) {
                     const data = await res.json();
-                    if (data.max_seo_keywords) {
-                        setMaxSeoKeywords(data.max_seo_keywords);
-                    }
                     if (data.is_ai_active !== undefined) setIsAiActive(data.is_ai_active);
                     if (data.reply_to_1_star !== undefined) setReplyTo1Star(data.reply_to_1_star);
                     if (data.ai_tone !== undefined) setAiTone(data.ai_tone);
@@ -50,11 +60,11 @@ export default function BrainSettings({
                     if (data.search_keywords !== undefined) setSearchKeywords(data.search_keywords);
                 }
             } catch (err) {
-                console.error("Failed to fetch profile", err);
+                console.error("Failed to fetch settings", err);
             }
         };
-        fetchProfile();
-    }, [user, API_URL]);
+        fetchSettings();
+    }, [user, activeLocationId, API_URL]);
 
     const saveUserSettings = async (settings: any) => {
         try {
