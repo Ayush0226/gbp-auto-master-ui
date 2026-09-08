@@ -168,9 +168,6 @@ export const LandingV2: React.FC = () => {
           </nav>
 
           <div className="lv2-nav-cta">
-            <a href="/dashboard" className="lv2-btn lv2-btn-ghost">
-              Dashboard
-            </a>
             <button
               onClick={handleGoogleLogin}
               disabled={loadingLogin}
@@ -576,12 +573,11 @@ export const LandingV2: React.FC = () => {
 
           <div>
             <h5>Product</h5>
-            <ul>
-              <li><a href="#features">Features</a></li>
-              <li><a href="#how-it-works">How It Works</a></li>
-              <li><a href="#pricing">Pricing</a></li>
-              <li><a href="/dashboard">Dashboard</a></li>
-            </ul>
+              <ul className="lv2-footer-links">
+                <li><a href="#features">Features</a></li>
+                <li><a href="#how-it-works">How It Works</a></li>
+                <li><a href="#pricing">Pricing</a></li>
+              </ul>
           </div>
 
           <div>
