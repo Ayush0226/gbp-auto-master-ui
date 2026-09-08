@@ -27,9 +27,9 @@ export default function SubscriptionPage({ user, refreshTokens }: SubscriptionPa
 
     const PRICING_PLANS: any = {
         free: { name: 'Free Forever', price: 0, tokens: 60, keywords: 2, competitor: false },
-        monthly: { name: 'Monthly Starter', price: 999, tokens: 350, keywords: 5, competitor: false },
-        half_yearly: { name: 'Half-Yearly Growth', price: 4000, tokens: 600, keywords: 10, competitor: false },
-        yearly: { name: 'Yearly Domination', price: 8500, tokens: 750, keywords: 15, competitor: true },
+        monthly: { name: 'Monthly Starter', price: 600, tokens: 350, keywords: 5, competitor: false },
+        half_yearly: { name: 'Half-Yearly Growth', price: 3200, tokens: 600, keywords: 10, competitor: true },
+        yearly: { name: 'Yearly Domination', price: 6000, tokens: 750, keywords: 15, competitor: true },
     };
 
     const planTiers: any = {

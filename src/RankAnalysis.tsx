@@ -58,85 +58,77 @@ export default function RankAnalysis({
         }
     };
 
-    const downloadKeywordPdf = async (keyword: string) => {
+    const downloadKeywordPdf = async (keyword: string, reportText?: string, competitors?: any[]) => {
         showToast(`Generating PDF for ${keyword}...`, 'info');
         try {
             const jsPDF = (await import('jspdf')).default;
             const pdf = new jsPDF('p', 'mm', 'a4');
             
-            pdf.setFontSize(18);
-            pdf.text(`Rank Analysis Report: ${keyword}`, 14, 22);
+            pdf.setFont("helvetica", "bold");
+            pdf.setFontSize(22);
+            pdf.text(`Rank Analysis & Competitor Report`, 14, 22);
             
-            pdf.setFontSize(12);
-            pdf.text(`Date Generated: ${new Date().toLocaleDateString()}`, 14, 32);
+            pdf.setFontSize(14);
+            pdf.setFont("helvetica", "normal");
+            pdf.text(`Target Keyword: "${keyword}"`, 14, 32);
+            pdf.text(`Date Generated: ${new Date().toLocaleDateString()}`, 14, 40);
 
+            let yPos = 55;
+
+            // Usage Stats
             const usageCount = liveReviews ? liveReviews.filter((r: any) => r.reviewReply?.comment?.toLowerCase().includes(keyword.toLowerCase())).length : 0;
             const totalReplies = liveReviews ? liveReviews.filter((r: any) => r.reviewReply?.comment).length : 0;
-            const usagePct = totalReplies > 0 ? (usageCount / totalReplies) * 100 : 0;
-            pdf.text(`AI Usage: ${usageCount} times in replies (${usagePct.toFixed(1)}%)`, 14, 42);
+            pdf.setFont("helvetica", "bold");
+            pdf.text(`Your Business Setup:`, 14, yPos);
+            yPos += 8;
+            pdf.setFont("helvetica", "normal");
+            pdf.text(`AI Reply Usage: Weaved ${usageCount} times across ${totalReplies} replies.`, 14, yPos);
+            yPos += 15;
 
-            pdf.text(`Review Sentiment (Total: ${totalRevs}):`, 14, 52);
-            pdf.text(`Positive (4-5 stars): ${positive} (${posPct}%)`, 14, 60);
-            pdf.text(`Neutral (3 stars): ${neutral} (${neuPct}%)`, 14, 68);
-            pdf.text(`Negative (1-2 stars): ${negative} (${negPct}%)`, 14, 76);
-
-            let impressionsText = "Not found";
-            if (searchKeywords) {
-                const kwData = searchKeywords.find((k: any) => k.searchKeyword?.toLowerCase() === keyword.toLowerCase());
-                if (kwData) {
-                    impressionsText = `${kwData.monthlyImpressionsValue || 0} views/mo`;
-                }
-            }
-            pdf.text(`Google Search Impressions: ${impressionsText}`, 14, 86);
-
-            let yPos = 96;
-            const report = reportResults[keyword];
-            if (report) {
-                pdf.text('AI Rank Report:', 14, yPos);
+            // Competitors
+            if (competitors && competitors.length > 0) {
+                pdf.setFont("helvetica", "bold");
+                pdf.text(`Local Top 10 Competitors for "${keyword}"`, 14, yPos);
+                yPos += 8;
+                pdf.setFont("helvetica", "normal");
+                competitors.forEach((c: any, idx: number) => {
+                    if (yPos > 270) { pdf.addPage(); yPos = 20; }
+                    pdf.text(`#${idx + 1} - ${c.name} (Rating: ${c.rating}, Reviews: ${c.reviews})`, 14, yPos);
+                    yPos += 8;
+                });
                 yPos += 10;
-                pdf.setFontSize(10);
-                
-                const reportText = typeof report === 'string' ? report : (report.report || report.ai_report || JSON.stringify(report));
-                const lines = pdf.splitTextToSize(reportText, 180);
-                pdf.text(lines, 14, yPos);
             }
-            
-            pdf.save(`${keyword}-rank-report.pdf`);
-            showToast('PDF downloaded!', 'success');
+
+            // AI Report
+            if (reportText) {
+                if (yPos > 250) { pdf.addPage(); yPos = 20; }
+                pdf.setFont("helvetica", "bold");
+                pdf.text(`AI Intelligence Analysis`, 14, yPos);
+                yPos += 10;
+                pdf.setFont("helvetica", "normal");
+                
+                const splitText = pdf.splitTextToSize(reportText, 180);
+                splitText.forEach((line: string) => {
+                    if (yPos > 280) {
+                        pdf.addPage();
+                        yPos = 20;
+                    }
+                    pdf.text(line, 14, yPos);
+                    yPos += 7;
+                });
+            } else {
+                pdf.text("No AI analysis report available. Use the 'Generate Report' button.", 14, yPos);
+            }
+
+            pdf.save(`Rank_Report_${keyword.replace(/[^a-z0-9]/gi, '_')}.pdf`);
+            showToast("PDF downloaded successfully!", "success");
         } catch (e) {
-            showToast('PDF generation failed: ' + e, 'error');
+            console.error(e);
+            showToast("Failed to generate PDF", "error");
         }
     };
 
-    const handleScanCompetitors = async () => {
-        if (!searchKeyword) {
-            showToast("Please enter a keyword", "error");
-            return;
-        }
-        setScanningCompetitors(true);
-        try {
-            const res = await fetch(`${API_URL}/api/google/competitors`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    user_id: user?.id,
-                    location_name: activeLocationId,
-                    keyword: searchKeyword
-                })
-            });
-            const data = await res.json();
-            if (res.ok && data.results) {
-                setCompetitorResults(data.results);
-                showToast("Scan complete!", "success");
-            } else {
-                showToast("Failed to scan competitors", "error");
-            }
-        } catch (e: any) {
-            showToast("Error scanning competitors", "error");
-        } finally {
-            setScanningCompetitors(false);
-        }
-    };
+
 
     React.useEffect(() => {
         if (user?.id) {
@@ -174,7 +166,12 @@ export default function RankAnalysis({
         }
     }, [user?.id, activeLocationId, API_URL]);
 
-    const handleGenerateReport = async (keyword: string = 'general') => {
+    const handleGenerateReport = async (keyword: string) => {
+        if (planType === 'free') {
+            showToast("Competitor Rank Reports are only available on paid plans.", "error");
+            return;
+        }
+
         try {
             const balRes = await fetch(`${API_URL}/api/tokens/balance`, {
                 method: 'POST',
@@ -182,8 +179,8 @@ export default function RankAnalysis({
                 body: JSON.stringify({ user_id: user?.id })
             });
             const balData = await balRes.json();
-            if (balData.balance < 15) {
-                showToast("Insufficient tokens (need 15)", "error");
+            if (balData.balance < 10) {
+                showToast("Insufficient tokens (need 10)", "error");
                 return;
             }
         } catch (e: any) {
@@ -192,7 +189,7 @@ export default function RankAnalysis({
         }
 
         setGeneratingReport(true);
-        showToast("Using 15 tokens to generate report...", "info");
+        showToast("Generating report...", "info");
         try {
             const res = await fetch(`${API_URL}/api/rank/generate-report`, {
                 method: 'POST',
@@ -206,13 +203,13 @@ export default function RankAnalysis({
             });
             const data = await res.json();
             if (data.status === 'success') {
-                showToast(`Report generated successfully for "${keyword}"!`, 'success');
-                setReportResults(prev => ({ ...prev, [keyword]: data.report }));
+                showToast(`Report generated successfully for "${keyword}"! Downloading...`, 'success');
+                downloadKeywordPdf(keyword, data.report, data.competitors);
                 if (refreshTokens) refreshTokens();
             } else {
-                showToast("Failed to generate report", "error");
+                showToast(data.detail || data.message || "Failed to generate report", "error");
             }
-        } catch (e: any) {
+        } catch (e) {
             showToast("Error generating report", "error");
         } finally {
             setGeneratingReport(false);
@@ -309,99 +306,7 @@ export default function RankAnalysis({
                 )}
             </div>
 
-            {/* Competitor Intel Section */}
-            {(() => {
-                const intel = user?.user_metadata?.competitor_intel?.[activeLocationId];
-                if (!intel) {
-                    return (
-                        <div className="card glass" style={{ textAlign: 'center', padding: '60px 20px', marginTop: '24px' }}>
-                            <div style={{ fontSize: '40px', margin: '0 0 16px' }}>🏆</div>
-                            <h3 style={{ fontSize: '18px', margin: '0 0 8px' }}>Waiting for Weekly Scan</h3>
-                            <p style={{ color: 'rgba(255,255,255,.5)', maxWidth: '400px', margin: '0 auto' }}>Your local competitor leaderboard is generated every week by the admin. Check back later.</p>
-                        </div>
-                    );
-                }
-
-                const { leaderboard, ai_report, last_scanned } = intel;
-                return (
-                    <div style={{ marginTop: '32px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                            <div>
-                                <h3 style={{ fontSize: '18px', margin: 0 }}>Competitor Leaderboard</h3>
-                                <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)', margin: 0 }}>Last Scanned: {new Date(last_scanned).toLocaleString()}</p>
-                            </div>
-                        </div>
-
-                        <div className="grid grid-2" style={{ alignItems: 'start', padding: '16px', background: 'var(--bg-dark)', borderRadius: '12px' }}>
-                            {/* Left: The Leaderboard */}
-                            <div className="card glass" style={{ padding: 0, overflow: 'hidden' }}>
-                                <div style={{ padding: '20px', borderBottom: '1px solid rgba(255,255,255,.05)' }}>
-                                    <h3 style={{ fontSize: '15px', margin: 0 }}>Local Top 10 Scoreboard</h3>
-                                </div>
-                                <div style={{ padding: '10px' }}>
-                                    {leaderboard.map((comp: any, idx: number) => (
-                                        <div key={idx} style={{ 
-                                            display: 'flex', 
-                                            alignItems: 'center', 
-                                            padding: '12px 16px', 
-                                            marginBottom: '8px',
-                                            borderRadius: '8px',
-                                            background: comp.is_user ? 'rgba(59,130,246,.15)' : 'rgba(255,255,255,.02)',
-                                            border: comp.is_user ? '1px solid rgba(59,130,246,.4)' : '1px solid rgba(255,255,255,.05)'
-                                        }}>
-                                            <div style={{ width: '30px', fontWeight: 'bold', color: comp.rank <= 3 ? 'var(--orange-soft)' : 'rgba(255,255,255,.5)' }}>
-                                                #{comp.rank}
-                                            </div>
-                                            <div style={{ flex: 1 }}>
-                                                <p style={{ margin: 0, fontWeight: 600, fontSize: '14px', color: comp.is_user ? 'var(--blue-soft)' : '#fff' }}>
-                                                    {comp.name}
-                                                </p>
-                                            </div>
-                                            <div style={{ textAlign: 'right' }}>
-                                                <p style={{ margin: 0, fontWeight: 'bold', color: '#fbbf24', fontSize: '14px' }}>★ {typeof comp.rating === 'number' ? comp.rating.toFixed(1) : comp.rating}</p>
-                                                <p style={{ margin: 0, fontSize: '11px', color: 'rgba(255,255,255,.5)' }}>{comp.reviews} {comp.reviews === 'N/A' ? '' : 'reviews'}</p>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Right: Goods and Bads */}
-                            <div id="pdf-report-container" className="card glass">
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                        <span style={{ fontSize: '24px' }}>🤖</span>
-                                        <div>
-                                            <h3 style={{ fontSize: '15px', margin: 0 }}>Detailed Rank Analysis</h3>
-                                            <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)', margin: 0 }}>AI Audit of your GBP vs Competitors</p>
-                                        </div>
-                                    </div>
-                                    <button className="btn btn-green btn-sm" onClick={handleDownloadPdf}>📄 Download PDF</button>
-                                </div>
-                                
-                                <div style={{ 
-                                    background: 'rgba(255,255,255,.03)', 
-                                    border: '1px dashed rgba(255,255,255,.1)', 
-                                    padding: '20px', 
-                                    borderRadius: '8px',
-                                    fontSize: '14px',
-                                    lineHeight: 1.6,
-                                    color: 'rgba(255,255,255,.8)'
-                                }}>
-                                    {ai_report.split('\n').map((line: string, i: number) => {
-                                        const text = line.trim();
-                                        if (text.startsWith('PROS:')) return <h4 key={i} style={{color: 'var(--green-soft)', marginTop: '10px', marginBottom: '6px'}}>✅ PROS</h4>;
-                                        if (text.startsWith('CONS:')) return <h4 key={i} style={{color: 'var(--red-soft)', marginTop: '16px', marginBottom: '6px'}}>❌ CONS</h4>;
-                                        if (text.startsWith('ACTION PLAN:')) return <h4 key={i} style={{color: 'var(--blue-soft)', marginTop: '16px', marginBottom: '6px'}}>🚀 ACTION PLAN</h4>;
-                                        if (text.length === 0) return null;
-                                        return <p key={i} style={{ margin: '0 0 6px 0', paddingLeft: '8px', borderLeft: '2px solid rgba(255,255,255,.1)' }}>{text}</p>;
-                                    })}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                );
-            })()}
+            </div>
 
             {/* User SEO Keywords Section */}
             <div className="card glass" style={{ marginTop: '24px' }}>
@@ -425,25 +330,13 @@ export default function RankAnalysis({
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                         <button 
                                             className="btn btn-ghost btn-sm" 
-                                            onClick={() => downloadKeywordPdf(kw)}
-                                            style={{ width: '100%' }}
-                                        >
-                                            📄 Download Rank Report
-                                        </button>
-                                        <button 
-                                            className="btn btn-ghost btn-sm" 
                                             onClick={() => handleGenerateReport(kw)}
                                             disabled={generatingReport}
-                                            style={{ width: '100%' }}
+                                            style={{ width: '100%', background: 'rgba(255,255,255,.05)' }}
                                         >
-                                            {generatingReport ? 'Generating...' : '📊 Generate Report (15 tokens)'}
+                                            {generatingReport ? 'Scanning Competitors...' : 'dY"S Generate Report (10 tokens)'}
                                         </button>
                                     </div>
-                                    {reportResults[kw] && (
-                                        <div style={{ marginTop: '12px', padding: '12px', background: 'rgba(0,0,0,0.2)', borderRadius: '6px', fontSize: '12px', color: 'rgba(255,255,255,0.8)' }}>
-                                            {typeof reportResults[kw] === 'string' ? reportResults[kw] : (reportResults[kw].report || reportResults[kw].ai_report || JSON.stringify(reportResults[kw]))}
-                                        </div>
-                                    )}
                                 </div>
                             );
                         })}
@@ -453,70 +346,6 @@ export default function RankAnalysis({
                 )}
             </div>
 
-            {/* Competitor Leaderboard (Yearly Only) */}
-            <div className="card glass" style={{ marginTop: '24px' }}>
-                <h3 style={{ fontSize: '15px', marginBottom: '16px' }}>On-Demand Competitor Leaderboard</h3>
-                {planType === 'yearly' ? (
-                    <div>
-                        <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
-                            <input 
-                                type="text" 
-                                className="input" 
-                                placeholder="Enter keyword (e.g., AC repair near me)" 
-                                value={searchKeyword}
-                                onChange={(e) => setSearchKeyword(e.target.value)}
-                                style={{ flex: 1 }}
-                            />
-                            <button 
-                                className="btn btn-green" 
-                                onClick={handleScanCompetitors}
-                                disabled={scanningCompetitors}
-                            >
-                                {scanningCompetitors ? 'Scanning...' : 'Scan Competitors'}
-                            </button>
-                        </div>
-
-                        {competitorResults.length > 0 && (
-                            <div style={{ background: 'var(--bg-dark)', borderRadius: '8px', padding: '12px' }}>
-                                {competitorResults.map((comp: any, idx: number) => (
-                                    <div key={idx} style={{ 
-                                        display: 'flex', 
-                                        alignItems: 'center', 
-                                        padding: '12px 16px', 
-                                        marginBottom: '8px',
-                                        borderRadius: '8px',
-                                        background: 'rgba(255,255,255,.02)',
-                                        border: '1px solid rgba(255,255,255,.05)'
-                                    }}>
-                                        <div style={{ width: '30px', fontWeight: 'bold', color: 'var(--orange-soft)' }}>
-                                            #{comp.rank || (idx + 1)}
-                                        </div>
-                                        <div style={{ flex: 1 }}>
-                                            <p style={{ margin: 0, fontWeight: 600, fontSize: '14px', color: '#fff' }}>
-                                                {comp.name || comp.business_name}
-                                            </p>
-                                        </div>
-                                        <div style={{ textAlign: 'right' }}>
-                                            <p style={{ margin: 0, fontWeight: 'bold', color: '#fbbf24', fontSize: '14px' }}>
-                                                ★ {typeof comp.rating === 'number' ? comp.rating.toFixed(1) : comp.rating}
-                                            </p>
-                                            <p style={{ margin: 0, fontSize: '11px', color: 'rgba(255,255,255,.5)' }}>
-                                                {comp.reviews} reviews
-                                            </p>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                ) : (
-                    <div style={{ textAlign: 'center', padding: '30px 20px', background: 'rgba(255,255,255,.02)', borderRadius: '8px', border: '1px dashed rgba(255,255,255,.1)' }}>
-                        <div style={{ fontSize: '32px', marginBottom: '12px' }}>🔒</div>
-                        <h4 style={{ margin: '0 0 8px 0', fontSize: '16px' }}>Locked Feature</h4>
-                        <p style={{ color: 'rgba(255,255,255,.5)', fontSize: '14px', margin: 0 }}>Upgrade to Yearly plan to unlock On-Demand Competitor Leaderboard</p>
-                    </div>
-                )}
-            </div>
         </section>
     );
 }

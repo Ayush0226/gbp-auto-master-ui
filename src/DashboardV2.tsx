@@ -704,7 +704,11 @@ export default function DashboardV2() {
                                                     const stars = ratingMap[rev.starRating || rev.rating] || 0;
                                                     const hasReply = !!(rev.has_reply || rev.reviewReply);
                                                     const comment = rev.comment || rev.text || '';
-                                                    const reviewer = rev.reviewer?.displayName || 'Anonymous';
+                                                    const reviewerObj = rev.reviewer;
+                                                    const reviewer = typeof reviewerObj === 'string' 
+                                                        ? reviewerObj 
+                                                        : (reviewerObj?.displayName || rev.authorName || rev.name || 'Anonymous');
+                                                    
                                                     return (
                                                         <div key={idx} style={{ padding: '14px', background: 'rgba(255,255,255,.03)', borderRadius: '12px', border: '1px solid rgba(255,255,255,.06)' }}>
                                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
