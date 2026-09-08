@@ -10,6 +10,22 @@ export default function RankAnalysis({
     const [searchKeyword, setSearchKeyword] = useState('');
     const [scanningCompetitors, setScanningCompetitors] = useState(false);
     const [competitorResults, setCompetitorResults] = useState<any[]>([]);
+    const [reportResults, setReportResults] = useState<Record<string, any>>({});
+
+    let positive = 0;
+    let neutral = 0;
+    let negative = 0;
+    if (liveReviews && liveReviews.length > 0) {
+        liveReviews.forEach((rev: any) => {
+            if (rev.rating === 'FIVE' || rev.rating === 'FOUR') positive++;
+            else if (rev.rating === 'THREE') neutral++;
+            else negative++;
+        });
+    }
+    const totalRevs = positive + neutral + negative;
+    const posPct = totalRevs > 0 ? Math.round((positive / totalRevs) * 100) : 0;
+    const neuPct = totalRevs > 0 ? Math.round((neutral / totalRevs) * 100) : 0;
+    const negPct = totalRevs > 0 ? 100 - posPct - neuPct : 0;
 
     const handleDownloadPdf = async () => {
         showToast('Generating PDF...', 'info');
@@ -25,6 +41,56 @@ export default function RankAnalysis({
             const imgHeight = (canvas.height * imgWidth) / canvas.width;
             pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
             pdf.save('rank-analysis-report.pdf');
+            showToast('PDF downloaded!', 'success');
+        } catch (e) {
+            showToast('PDF generation failed: ' + e, 'error');
+        }
+    };
+
+    const downloadKeywordPdf = async (keyword: string) => {
+        showToast(`Generating PDF for ${keyword}...`, 'info');
+        try {
+            const jsPDF = (await import('jspdf')).default;
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            
+            pdf.setFontSize(18);
+            pdf.text(`Rank Analysis Report: ${keyword}`, 14, 22);
+            
+            pdf.setFontSize(12);
+            pdf.text(`Date Generated: ${new Date().toLocaleDateString()}`, 14, 32);
+
+            const usageCount = liveReviews ? liveReviews.filter((r: any) => r.reviewReply?.comment?.toLowerCase().includes(keyword.toLowerCase())).length : 0;
+            const totalReplies = liveReviews ? liveReviews.filter((r: any) => r.reviewReply?.comment).length : 0;
+            const usagePct = totalReplies > 0 ? (usageCount / totalReplies) * 100 : 0;
+            pdf.text(`AI Usage: ${usageCount} times in replies (${usagePct.toFixed(1)}%)`, 14, 42);
+
+            pdf.text(`Review Sentiment (Total: ${totalRevs}):`, 14, 52);
+            pdf.text(`Positive (4-5 stars): ${positive} (${posPct}%)`, 14, 60);
+            pdf.text(`Neutral (3 stars): ${neutral} (${neuPct}%)`, 14, 68);
+            pdf.text(`Negative (1-2 stars): ${negative} (${negPct}%)`, 14, 76);
+
+            let impressionsText = "Not found";
+            if (searchKeywords) {
+                const kwData = searchKeywords.find((k: any) => k.searchKeyword?.toLowerCase() === keyword.toLowerCase());
+                if (kwData) {
+                    impressionsText = `${kwData.monthlyImpressionsValue || 0} views/mo`;
+                }
+            }
+            pdf.text(`Google Search Impressions: ${impressionsText}`, 14, 86);
+
+            let yPos = 96;
+            const report = reportResults[keyword];
+            if (report) {
+                pdf.text('AI Rank Report:', 14, yPos);
+                yPos += 10;
+                pdf.setFontSize(10);
+                
+                const reportText = typeof report === 'string' ? report : (report.report || report.ai_report || JSON.stringify(report));
+                const lines = pdf.splitTextToSize(reportText, 180);
+                pdf.text(lines, 14, yPos);
+            }
+            
+            pdf.save(`${keyword}-rank-report.pdf`);
             showToast('PDF downloaded!', 'success');
         } catch (e) {
             showToast('PDF generation failed: ' + e, 'error');
@@ -114,6 +180,7 @@ export default function RankAnalysis({
             const data = await res.json();
             if (res.ok) {
                 showToast("Report generated successfully!", "success");
+                setReportResults(prev => ({ ...prev, [keyword]: data }));
             } else {
                 showToast("Failed to generate report", "error");
             }
@@ -134,21 +201,6 @@ export default function RankAnalysis({
     const messages = getMetricTotal('BUSINESS_CONVERSATIONS');
     const bookings = getMetricTotal('BUSINESS_BOOKINGS');
     const foodOrders = getMetricTotal('FOOD_ORDERS');
-
-    let positive = 0;
-    let neutral = 0;
-    let negative = 0;
-    if (liveReviews && liveReviews.length > 0) {
-        liveReviews.forEach((rev: any) => {
-            if (rev.rating === 'FIVE' || rev.rating === 'FOUR') positive++;
-            else if (rev.rating === 'THREE') neutral++;
-            else negative++;
-        });
-    }
-    const totalRevs = positive + neutral + negative;
-    const posPct = totalRevs > 0 ? Math.round((positive / totalRevs) * 100) : 0;
-    const neuPct = totalRevs > 0 ? Math.round((neutral / totalRevs) * 100) : 0;
-    const negPct = totalRevs > 0 ? 100 - posPct - neuPct : 0;
 
     return (
         <section className="page active" id="rank-analysis-content">
@@ -328,19 +380,45 @@ export default function RankAnalysis({
                 <h3 style={{ fontSize: '15px', marginBottom: '16px' }}>Your SEO Keywords</h3>
                 {seoKeywords.length > 0 ? (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '16px' }}>
-                        {seoKeywords.map((kw, idx) => (
-                            <div key={idx} style={{ background: 'rgba(255,255,255,.05)', padding: '16px', borderRadius: '8px', border: '1px solid rgba(255,255,255,.1)' }}>
-                                <p style={{ fontSize: '16px', fontWeight: 'bold', margin: '0 0 12px', color: '#fff' }}>{kw}</p>
-                                <button 
-                                    className="btn btn-ghost btn-sm" 
-                                    onClick={() => handleGenerateReport(kw)}
-                                    disabled={generatingReport}
-                                    style={{ width: '100%' }}
-                                >
-                                    {generatingReport ? 'Generating...' : 'Generate Report (15 tokens)'}
-                                </button>
-                            </div>
-                        ))}
+                        {seoKeywords.map((kw, idx) => {
+                            const usageCount = liveReviews ? liveReviews.filter((r: any) => r.reviewReply?.comment?.toLowerCase().includes(kw.toLowerCase())).length : 0;
+                            const totalReplies = liveReviews ? liveReviews.filter((r: any) => r.reviewReply?.comment).length : 0;
+                            const usagePct = totalReplies > 0 ? (usageCount / totalReplies) * 100 : 0;
+                            
+                            return (
+                                <div key={idx} className="keyword-card" style={{ background: 'rgba(255,255,255,.05)', padding: '16px', borderRadius: '8px', border: '1px solid rgba(255,255,255,.1)' }}>
+                                    <p className="kw-name" style={{ fontSize: '16px', fontWeight: 'bold', margin: '0 0 8px', color: '#fff' }}>{kw}</p>
+                                    <p className="kw-stat" style={{ fontSize: '13px', margin: '0 0 8px', color: 'rgba(255,255,255,.7)' }}>
+                                        AI Usage: {usageCount} times in replies
+                                    </p>
+                                    <div className="kw-usage-bar" style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,.1)', borderRadius: '3px', overflow: 'hidden', marginBottom: '16px' }}>
+                                        <div className="kw-usage-fill" style={{ width: `${usagePct}%`, height: '100%', background: 'var(--green)' }}></div>
+                                    </div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                        <button 
+                                            className="btn btn-ghost btn-sm" 
+                                            onClick={() => downloadKeywordPdf(kw)}
+                                            style={{ width: '100%' }}
+                                        >
+                                            📄 Download Rank Report
+                                        </button>
+                                        <button 
+                                            className="btn btn-ghost btn-sm" 
+                                            onClick={() => handleGenerateReport(kw)}
+                                            disabled={generatingReport}
+                                            style={{ width: '100%' }}
+                                        >
+                                            {generatingReport ? 'Generating...' : '📊 Generate Report (15 tokens)'}
+                                        </button>
+                                    </div>
+                                    {reportResults[kw] && (
+                                        <div style={{ marginTop: '12px', padding: '12px', background: 'rgba(0,0,0,0.2)', borderRadius: '6px', fontSize: '12px', color: 'rgba(255,255,255,0.8)' }}>
+                                            {typeof reportResults[kw] === 'string' ? reportResults[kw] : (reportResults[kw].report || reportResults[kw].ai_report || JSON.stringify(reportResults[kw]))}
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
                     </div>
                 ) : (
                     <p style={{ fontSize: '13px', color: 'rgba(255,255,255,.5)' }}>No SEO keywords found in your profile.</p>

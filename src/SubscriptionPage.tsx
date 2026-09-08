@@ -10,6 +10,7 @@ export default function SubscriptionPage({ user }: { user: any }) {
     const [tokenBalance, setTokenBalance] = useState<number>(0);
     const [ledgerHistory, setLedgerHistory] = useState<any[]>([]);
     const [currentPlanData, setCurrentPlanData] = useState<any>(null);
+    const [statusMsg, setStatusMsg] = useState<{ text: string, type: 'success' | 'error' | 'info' } | null>(null);
 
     useEffect(() => {
         const script = document.createElement('script');
@@ -26,12 +27,26 @@ export default function SubscriptionPage({ user }: { user: any }) {
         yearly: { name: 'Yearly Domination', price: 8500, tokens: 750, keywords: 15, competitor: true },
     };
 
+    const planTiers: any = {
+        free: 0,
+        monthly: 1,
+        half_yearly: 2,
+        yearly: 3
+    };
+
+    const currentTier = currentPlanData?.plan_type ? (planTiers[currentPlanData.plan_type] ?? -1) : -1;
+
     useEffect(() => {
         if (user) {
             fetchTokenBalance();
             fetchUserProfile();
         }
     }, [user]);
+
+    const showStatus = (text: string, type: 'success' | 'error' | 'info' = 'info') => {
+        setStatusMsg({ text, type });
+        setTimeout(() => setStatusMsg(null), 5000);
+    };
 
     const fetchUserProfile = async () => {
         try {
@@ -82,20 +97,23 @@ export default function SubscriptionPage({ user }: { user: any }) {
             if (res.ok && data.valid) {
                 setDiscountApplied(promoCode);
                 setPromoDiscount(data.discount_percentage || 0);
-                alert(`Promo code applied! ${data.discount_percentage}% discount.`);
+                showStatus(`Promo code applied! ${data.discount_percentage}% discount.`, 'success');
             } else {
                 setDiscountApplied('none');
                 setPromoDiscount(0);
-                alert('Invalid promo code');
+                showStatus('Invalid promo code', 'error');
             }
         } catch (error) {
             console.error('Error validating promo code:', error);
-            alert('Failed to validate promo code');
+            showStatus('Failed to validate promo code', 'error');
         }
     };
 
     const handleCheckout = async (planId: string) => {
         try {
+            const planPrice = PRICING_PLANS[planId]?.price || 0;
+            const finalPrice = Math.max(0, planPrice * (1 - promoDiscount / 100));
+
             // 1. Create order on backend
             const orderRes = await fetch(`${API_URL}/api/payment/create-order`, {
                 method: 'POST',
@@ -103,7 +121,18 @@ export default function SubscriptionPage({ user }: { user: any }) {
                 body: JSON.stringify({ plan_id: planId, promo_code: discountApplied !== 'none' ? discountApplied : '', user_id: user?.id })
             });
             const orderData = await orderRes.json();
-            if (!orderData.order_id) { alert('Failed to create order'); return; }
+            
+            if (finalPrice === 0) {
+                if (orderData.status === 'success' || (!orderData.order_id && orderData.status === 'success')) {
+                    showStatus('Plan activated successfully!', 'success');
+                    setTimeout(() => window.location.reload(), 1500);
+                } else {
+                    showStatus('Failed to activate free plan', 'error');
+                }
+                return;
+            }
+
+            if (!orderData.order_id) { showStatus('Failed to create order', 'error'); return; }
 
             // 2. Get Razorpay key
             const keyRes = await fetch(`${API_URL}/api/payment/key`);
@@ -131,8 +160,8 @@ export default function SubscriptionPage({ user }: { user: any }) {
                         })
                     });
                     if (verifyRes.ok) {
-                        alert('Payment successful! Plan upgraded.');
-                        window.location.reload();
+                        showStatus('Payment successful! Plan upgraded.', 'success');
+                        setTimeout(() => window.location.reload(), 1500);
                     }
                 },
                 prefill: { email: user?.email },
@@ -141,7 +170,7 @@ export default function SubscriptionPage({ user }: { user: any }) {
             const rzp = new (window as any).Razorpay(options);
             rzp.open();
         } catch (e) {
-            alert('Payment error: ' + e);
+            showStatus('Payment error: ' + e, 'error');
         }
     };
 
@@ -153,7 +182,7 @@ export default function SubscriptionPage({ user }: { user: any }) {
                 body: JSON.stringify({ user_id: user?.id, pack_id: packId, promo_code: discountApplied !== 'none' ? discountApplied : '' })
             });
             const orderData = await orderRes.json();
-            if (!orderData.order_id) { alert('Failed to create order'); return; }
+            if (!orderData.order_id) { showStatus('Failed to create order', 'error'); return; }
 
             const keyRes = await fetch(`${API_URL}/api/payment/key`);
             const keyData = await keyRes.json();
@@ -178,7 +207,7 @@ export default function SubscriptionPage({ user }: { user: any }) {
                         })
                     });
                     if (verifyRes.ok) {
-                        alert('Top-up successful!');
+                        showStatus('Top-up successful!', 'success');
                         fetchTokenBalance();
                     }
                 },
@@ -188,7 +217,7 @@ export default function SubscriptionPage({ user }: { user: any }) {
             const rzp = new (window as any).Razorpay(options);
             rzp.open();
         } catch (e) {
-            alert('Payment error: ' + e);
+            showStatus('Payment error: ' + e, 'error');
         }
     };
 
@@ -198,6 +227,20 @@ export default function SubscriptionPage({ user }: { user: any }) {
                 <h2>Subscription & Tokens</h2>
                 <p>Manage your billing and AI tokens.</p>
             </div>
+
+            {statusMsg && (
+                <div style={{
+                    padding: '12px 16px',
+                    marginBottom: '16px',
+                    borderRadius: '8px',
+                    background: statusMsg.type === 'error' ? 'rgba(239, 68, 68, 0.1)' : statusMsg.type === 'success' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(59, 130, 246, 0.1)',
+                    border: `1px solid ${statusMsg.type === 'error' ? 'var(--red-soft)' : statusMsg.type === 'success' ? 'var(--green-soft)' : 'var(--blue-soft)'}`,
+                    color: '#fff',
+                    maxWidth: '700px'
+                }}>
+                    {statusMsg.text}
+                </div>
+            )}
 
             {currentPlanData && (
                 <div className="card glass" style={{ maxWidth: '700px', margin: '0 0 32px 0', padding: '32px' }}>
@@ -294,21 +337,28 @@ export default function SubscriptionPage({ user }: { user: any }) {
                     </div>
                 </div>
 
-                <div className="grid grid-3">
-                    {Object.keys(PRICING_PLANS).map((key) => (
-                        <div key={key} className="card-sm glass glass-hover" onClick={() => setSelectedPlan(key)} style={{ cursor: 'pointer', border: selectedPlan === key ? '1px solid rgba(59,130,246,.4)' : '' }}>
-                            <p style={{ fontSize: '12px', color: selectedPlan === key ? 'var(--blue-soft)' : 'rgba(255,255,255,.5)' }}>{PRICING_PLANS[key].name}</p>
-                            <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginTop: '4px' }}>
-                                <p style={{ fontWeight: 700, fontSize: '20px', margin: 0 }}>₹{PRICING_PLANS[key].price}</p>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '16px' }}>
+                    {Object.keys(PRICING_PLANS).map((key) => {
+                        const tier = planTiers[key];
+                        return (
+                            <div key={key} className="card-sm glass glass-hover" onClick={() => setSelectedPlan(key)} style={{ cursor: 'pointer', border: selectedPlan === key ? '1px solid rgba(59,130,246,.4)' : '' }}>
+                                <p style={{ fontSize: '12px', color: selectedPlan === key ? 'var(--blue-soft)' : 'rgba(255,255,255,.5)' }}>{PRICING_PLANS[key].name}</p>
+                                <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginTop: '4px' }}>
+                                    <p style={{ fontWeight: 700, fontSize: '20px', margin: 0 }}>₹{PRICING_PLANS[key].price}</p>
+                                </div>
+                                <div style={{ marginTop: '8px', fontSize: '11px', color: 'rgba(255,255,255,0.6)' }}>
+                                    <div>{PRICING_PLANS[key].tokens} Tokens</div>
+                                    <div>{PRICING_PLANS[key].keywords} Keywords</div>
+                                    {PRICING_PLANS[key].competitor && <div>Competitor Tracking</div>}
+                                </div>
+                                {tier === currentTier ? (
+                                    <div style={{ marginTop: '16px', padding: '6px 0', textAlign: 'center', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', fontSize: '12px', fontWeight: 'bold', color: 'var(--blue-soft)' }}>Current Plan</div>
+                                ) : tier > currentTier ? (
+                                    <button className="btn btn-sm btn-primary" style={{ marginTop: '16px', width: '100%' }} onClick={(e) => { e.stopPropagation(); handleCheckout(key); }}>Upgrade</button>
+                                ) : null}
                             </div>
-                            <div style={{ marginTop: '8px', fontSize: '11px', color: 'rgba(255,255,255,0.6)' }}>
-                                <div>{PRICING_PLANS[key].tokens} Tokens</div>
-                                <div>{PRICING_PLANS[key].keywords} Keywords</div>
-                                {PRICING_PLANS[key].competitor && <div>Competitor Tracking</div>}
-                            </div>
-                            <button className="btn btn-sm btn-primary" style={{ marginTop: '16px', width: '100%' }} onClick={(e) => { e.stopPropagation(); handleCheckout(key); }}>Upgrade</button>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
 
                 <div style={{ marginTop: '20px' }}>
@@ -329,9 +379,11 @@ export default function SubscriptionPage({ user }: { user: any }) {
                     </p>
                 </div>
 
-                <button className="btn btn-green btn-block" style={{ marginTop: '18px' }} onClick={() => handleCheckout(selectedPlan)}>
-                    {promoDiscount === 100 ? 'Activate Free Trial' : 'Pay with Razorpay'}
-                </button>
+                {selectedPlan !== 'free' && (
+                    <button className="btn btn-green btn-block" style={{ marginTop: '18px' }} onClick={() => handleCheckout(selectedPlan)}>
+                        {promoDiscount === 100 ? 'Activate Free Trial' : 'Pay with Razorpay'}
+                    </button>
+                )}
             </div>
         </section>
     );

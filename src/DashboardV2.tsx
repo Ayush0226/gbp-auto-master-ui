@@ -32,6 +32,7 @@ export default function DashboardV2() {
     // ─── Analytics & Keywords ───
     const [analyticsData, setAnalyticsData] = useState<any>(null);
     const [searchKeywords, setSearchKeywords] = useState<any[]>([]);
+    const [seoKeywords, setSeoKeywords] = useState<string[]>([]);
 
     // ─── Calendar State (managed here, passed to ContentCalendarV2) ───
     const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
@@ -449,6 +450,21 @@ export default function DashboardV2() {
             fetchSearchKeywords();
             fetchCalendarPosts();
         }
+        if (user) {
+            // Fetch user's configured SEO keywords
+            fetch(`${API_URL}/api/user/profile`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: user.id })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.seo_keywords && Array.isArray(data.seo_keywords)) {
+                    setSeoKeywords(data.seo_keywords);
+                }
+            })
+            .catch(() => {});
+        }
     }, [activeLocationId, providerToken, user]);
 
     // ─── PDF Download Placeholder ───
@@ -560,37 +576,195 @@ export default function DashboardV2() {
                     {/* Render Child Views */}
                     <div className="content-container">
                     {/* ─── Dashboard Overview ─── */}
-                    {activeView === 'dashboard' && (
-                        <section className="page active">
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-                                <div className="card glass" style={{ padding: '20px' }}>
-                                    <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginBottom: '6px' }}>Token Balance</div>
-                                    <div style={{ fontSize: '28px', fontWeight: 700, color: '#4F8CFF' }}>{tokenBalance}</div>
+                    {activeView === 'dashboard' && (() => {
+                        // Calculate dashboard stats
+                        const unrepliedCount = liveReviews.filter((r: any) => !r.has_reply && !r.reviewReply).length;
+                        const repliedReviews = liveReviews.filter((r: any) => r.has_reply || r.reviewReply);
+                        const avgRating = liveReviews.length > 0
+                            ? (liveReviews.reduce((sum: number, r: any) => {
+                                const ratingMap: any = { 'ONE': 1, 'TWO': 2, 'THREE': 3, 'FOUR': 4, 'FIVE': 5 };
+                                return sum + (ratingMap[r.starRating || r.rating] || 0);
+                            }, 0) / liveReviews.length).toFixed(1)
+                            : '—';
+                        const upcomingPosts = Object.values(scheduledPosts).filter((p: any) => p?.status === 'scheduled').length;
+
+                        // Rating distribution
+                        const ratingCounts = [0, 0, 0, 0, 0]; // index 0=1star, 4=5star
+                        liveReviews.forEach((r: any) => {
+                            const ratingMap: any = { 'ONE': 0, 'TWO': 1, 'THREE': 2, 'FOUR': 3, 'FIVE': 4 };
+                            const idx = ratingMap[r.starRating || r.rating];
+                            if (idx !== undefined) ratingCounts[idx]++;
+                        });
+                        const ratingColors = ['#EF4444', '#F97316', '#EAB308', '#60A5FA', '#4ADE80'];
+
+                        // Recent reviews (last 4)
+                        const recentReviews = [...liveReviews]
+                            .sort((a: any, b: any) => new Date(b.createTime || 0).getTime() - new Date(a.createTime || 0).getTime())
+                            .slice(0, 4);
+
+                        // Keyword usage count in replies
+                        const getKeywordUsage = (kw: string) => {
+                            if (!kw) return 0;
+                            const kwLower = kw.toLowerCase();
+                            return repliedReviews.filter((r: any) => {
+                                const replyText = (r.reviewReply?.comment || '').toLowerCase();
+                                return replyText.includes(kwLower);
+                            }).length;
+                        };
+
+                        return (
+                            <section className="page active">
+                                {/* Row 1: Stat Cards */}
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(155px, 1fr))', gap: '14px', marginBottom: '24px' }}>
+                                    <div className="stat-card">
+                                        <div className="stat-icon">🪙</div>
+                                        <div className="stat-label">Token Balance</div>
+                                        <div className="stat-value" style={{ color: '#4F8CFF' }}>{tokenBalance}</div>
+                                        <div className="stat-sub">AI credits remaining</div>
+                                    </div>
+                                    <div className="stat-card">
+                                        <div className="stat-icon">⭐</div>
+                                        <div className="stat-label">Total Reviews</div>
+                                        <div className="stat-value">{liveReviews.length}</div>
+                                        <div className="stat-sub">Across all time</div>
+                                    </div>
+                                    <div className="stat-card">
+                                        <div className="stat-icon">🔔</div>
+                                        <div className="stat-label">Unreplied</div>
+                                        <div className="stat-value" style={{ color: unrepliedCount > 0 ? '#EF4444' : '#4ADE80' }}>{unrepliedCount}</div>
+                                        <div className="stat-sub">{unrepliedCount > 0 ? 'Need attention' : 'All caught up!'}</div>
+                                    </div>
+                                    <div className="stat-card">
+                                        <div className="stat-icon">📊</div>
+                                        <div className="stat-label">Avg Rating</div>
+                                        <div className="stat-value" style={{ color: '#FBBF24' }}>{avgRating}</div>
+                                        <div className="stat-sub">{liveReviews.length > 0 ? `From ${liveReviews.length} reviews` : 'No reviews yet'}</div>
+                                    </div>
+                                    <div className="stat-card">
+                                        <div className="stat-icon">📍</div>
+                                        <div className="stat-label">Locations</div>
+                                        <div className="stat-value">{liveLocations.length}</div>
+                                        <div className="stat-sub">Connected profiles</div>
+                                    </div>
+                                    <div className="stat-card">
+                                        <div className="stat-icon">📅</div>
+                                        <div className="stat-label">Upcoming Posts</div>
+                                        <div className="stat-value" style={{ color: '#4ADE80' }}>{upcomingPosts}</div>
+                                        <div className="stat-sub">Scheduled to publish</div>
+                                    </div>
                                 </div>
-                                <div className="card glass" style={{ padding: '20px' }}>
-                                    <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginBottom: '6px' }}>Total Reviews</div>
-                                    <div style={{ fontSize: '28px', fontWeight: 700 }}>{liveReviews.length}</div>
+
+                                {/* Row 2: Rating Distribution + Recent Reviews */}
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr', gap: '16px', marginBottom: '24px' }}>
+                                    {/* Rating Distribution */}
+                                    <div className="card glass" style={{ padding: '24px' }}>
+                                        <h3 style={{ fontSize: '15px', marginBottom: '20px', fontWeight: 700 }}>Rating Distribution</h3>
+                                        {liveReviews.length > 0 ? (
+                                            <div>
+                                                {[5, 4, 3, 2, 1].map((star) => {
+                                                    const count = ratingCounts[star - 1];
+                                                    const pct = liveReviews.length > 0 ? (count / liveReviews.length) * 100 : 0;
+                                                    return (
+                                                        <div className="rating-bar-row" key={star}>
+                                                            <span className="rating-bar-label">{star}★</span>
+                                                            <div className="rating-bar-track">
+                                                                <div className="rating-bar-fill" style={{ width: `${pct}%`, background: ratingColors[star - 1] }}></div>
+                                                            </div>
+                                                            <span className="rating-bar-count">{count}</span>
+                                                        </div>
+                                                    );
+                                                })}
+                                                <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(255,255,255,.03)', borderRadius: '10px', textAlign: 'center' }}>
+                                                    <span style={{ fontSize: '32px', fontWeight: 800, color: '#FBBF24' }}>{avgRating}</span>
+                                                    <span style={{ fontSize: '13px', color: 'rgba(255,255,255,.5)', marginLeft: '6px' }}>/ 5.0</span>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <p style={{ color: 'rgba(255,255,255,.4)', fontSize: '13px' }}>No reviews yet to display.</p>
+                                        )}
+                                    </div>
+
+                                    {/* Recent Reviews */}
+                                    <div className="card glass" style={{ padding: '24px' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                                            <h3 style={{ fontSize: '15px', margin: 0, fontWeight: 700 }}>Recent Reviews</h3>
+                                            <button className="btn btn-ghost btn-sm" onClick={() => setActiveView('reviews')}>View All →</button>
+                                        </div>
+                                        {recentReviews.length > 0 ? (
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                                {recentReviews.map((rev: any, idx: number) => {
+                                                    const ratingMap: any = { 'ONE': 1, 'TWO': 2, 'THREE': 3, 'FOUR': 4, 'FIVE': 5 };
+                                                    const stars = ratingMap[rev.starRating || rev.rating] || 0;
+                                                    const hasReply = !!(rev.has_reply || rev.reviewReply);
+                                                    const comment = rev.comment || rev.text || '';
+                                                    const reviewer = rev.reviewer?.displayName || 'Anonymous';
+                                                    return (
+                                                        <div key={idx} style={{ padding: '14px', background: 'rgba(255,255,255,.03)', borderRadius: '12px', border: '1px solid rgba(255,255,255,.06)' }}>
+                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                                    <span style={{ fontWeight: 600, fontSize: '13px' }}>{reviewer}</span>
+                                                                    <span style={{ color: '#FBBF24', fontSize: '13px' }}>{'★'.repeat(stars)}{'☆'.repeat(5 - stars)}</span>
+                                                                </div>
+                                                                <span className={`badge-pill ${hasReply ? 'b-green' : 'b-red'}`}>
+                                                                    {hasReply ? '✓ Replied' : '⏳ Pending'}
+                                                                </span>
+                                                            </div>
+                                                            {comment && (
+                                                                <p style={{ fontSize: '12.5px', color: 'rgba(255,255,255,.6)', margin: 0, lineHeight: 1.5, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as any }}>
+                                                                    {comment}
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        ) : (
+                                            <p style={{ color: 'rgba(255,255,255,.4)', fontSize: '13px' }}>No reviews yet.</p>
+                                        )}
+                                    </div>
                                 </div>
-                                <div className="card glass" style={{ padding: '20px' }}>
-                                    <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginBottom: '6px' }}>Locations</div>
-                                    <div style={{ fontSize: '28px', fontWeight: 700 }}>{liveLocations.length}</div>
+
+                                {/* Row 3: SEO Keywords at a Glance */}
+                                {seoKeywords.length > 0 && (
+                                    <div className="card glass" style={{ padding: '24px', marginBottom: '24px' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                                            <h3 style={{ fontSize: '15px', margin: 0, fontWeight: 700 }}>🔑 Your SEO Keywords</h3>
+                                            <button className="btn btn-ghost btn-sm" onClick={() => setActiveView('rank')}>Full Analysis →</button>
+                                        </div>
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '12px' }}>
+                                            {seoKeywords.map((kw: string, idx: number) => {
+                                                const usage = getKeywordUsage(kw);
+                                                const totalReplied = repliedReviews.length;
+                                                const pct = totalReplied > 0 ? Math.round((usage / totalReplied) * 100) : 0;
+                                                return (
+                                                    <div key={idx} className="keyword-card" onClick={() => setActiveView('rank')} style={{ cursor: 'pointer' }}>
+                                                        <div className="kw-name">{kw}</div>
+                                                        <div className="kw-stat">Used in {usage} of {totalReplied} replies ({pct}%)</div>
+                                                        <div className="kw-usage-bar">
+                                                            <div className="kw-usage-fill" style={{ width: `${Math.min(pct, 100)}%` }}></div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Row 4: Quick Actions */}
+                                <div className="card glass" style={{ padding: '24px' }}>
+                                    <h3 style={{ fontSize: '15px', marginBottom: '6px', fontWeight: 700 }}>Quick Actions</h3>
+                                    <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px', marginBottom: '16px' }}>Jump to any tool to manage your Google Business Profile.</p>
+                                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                                        <button className="btn btn-blue btn-sm" onClick={() => setActiveView('reviews')}>📝 Manage Reviews</button>
+                                        <button className="btn btn-green btn-sm" onClick={() => setActiveView('calendar')}>📅 Content Calendar</button>
+                                        <button className="btn btn-ghost btn-sm" onClick={() => setActiveView('rank')}>📊 Rank Analysis</button>
+                                        <button className="btn btn-ghost btn-sm" onClick={() => setActiveView('brain')}>🧠 AI Brain Settings</button>
+                                        <button className="btn btn-ghost btn-sm" onClick={() => setActiveView('subscription')}>💳 Subscription</button>
+                                    </div>
                                 </div>
-                                <div className="card glass" style={{ padding: '20px' }}>
-                                    <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginBottom: '6px' }}>Unreplied</div>
-                                    <div style={{ fontSize: '28px', fontWeight: 700, color: '#ef4444' }}>{liveReviews.filter((r: any) => !r.has_reply).length}</div>
-                                </div>
-                            </div>
-                            <div className="card glass" style={{ padding: '24px' }}>
-                                <h3>Welcome to GBP Auto Master V2!</h3>
-                                <p style={{ color: 'rgba(255,255,255,0.6)' }}>Select a tool from the sidebar to manage your Google Business Profile.</p>
-                                <div style={{ display: 'flex', gap: '10px', marginTop: '16px', flexWrap: 'wrap' }}>
-                                    <button className="btn btn-blue btn-sm" onClick={() => setActiveView('reviews')}>📝 Manage Reviews</button>
-                                    <button className="btn btn-green btn-sm" onClick={() => setActiveView('calendar')}>📅 Content Calendar</button>
-                                    <button className="btn btn-ghost btn-sm" onClick={() => setActiveView('rank')}>📊 Rank Analysis</button>
-                                </div>
-                            </div>
-                        </section>
-                    )}
+                            </section>
+                        );
+                    })()}
 
                     {/* ─── Review Manager ─── */}
                     {activeView === 'reviews' && (
