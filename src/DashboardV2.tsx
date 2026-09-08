@@ -160,12 +160,12 @@ export default function DashboardV2() {
                 const data = await res.json();
                 if (data.status === 'error') {
                     console.error('Google API Error:', data.message);
-                    if (data.message.includes('401') || data.message.includes('unauthorized')) {
+                    if (data.message.includes('401') || data.message.includes('unauthorized') || data.message.includes('invalid_grant')) {
                         // Token might be expired, try refreshing
                         refreshGoogleToken(userId);
                     } else {
-                        // We need a way to show toast here, but showToast is not in scope.
-                        // For now we'll rely on the default behavior (empty locations).
+                        // Show error so we know what's happening
+                        alert('Google Sync Error: ' + data.message);
                     }
                 }
                 const locs = data.locations || [];
