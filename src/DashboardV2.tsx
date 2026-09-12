@@ -144,6 +144,29 @@ export default function DashboardV2() {
         }
     };
 
+    // ─── Cache Updater for Instant Dashboard Loading ───
+    const updateLocationCache = async (locId: string, updates: any) => {
+        const updated = liveLocations.map(l => l.id === locId ? { ...l, ...updates } : l);
+        setLiveLocations(updated);
+        if (user) {
+            await supabase.auth.updateUser({
+                data: { cached_locations: updated }
+            });
+        }
+    };
+
+    // Auto-load stats instantly from cache when location changes
+    React.useEffect(() => {
+        if (activeLocationId && liveLocations.length > 0) {
+            const loc = liveLocations.find(l => l.id === activeLocationId);
+            if (loc) {
+                if (loc.reviews !== undefined) setTotalReviewCount(loc.reviews);
+                if (loc.rating !== undefined) setAverageRating(loc.rating);
+                if (loc.tokens !== undefined) setTokenBalance(loc.tokens);
+            }
+        }
+    }, [activeLocationId, liveLocations]);
+
     // ─── Fetch Token Balance ───
     const fetchTokenBalance = async (userId: string, locationId: string) => {
         if (!locationId) return;
@@ -156,6 +179,7 @@ export default function DashboardV2() {
             if (res.ok) {
                 const data = await res.json();
                 setTokenBalance(data.balance || 0);
+                updateLocationCache(locationId, { tokens: data.balance || 0 });
             }
         } catch (error) {
             console.error('Error fetching token balance:', error);
@@ -206,7 +230,11 @@ export default function DashboardV2() {
     // ─── Fetch Reviews for Active Location ───
     const fetchReviews = useCallback(async () => {
         if (!providerToken || !activeLocationId || !user) return;
-        setLoadingReviews(true);
+        
+        // Only show loading state if we don't have cached data for this location
+        const hasCache = liveLocations.find(l => l.id === activeLocationId)?.reviews !== undefined;
+        if (!hasCache) setLoadingReviews(true);
+
         try {
             const res = await fetch(`${API_URL}/api/google/get-reviews`, {
                 method: 'POST',
@@ -222,13 +250,18 @@ export default function DashboardV2() {
                 setLiveReviews(data.reviews || []);
                 if (data.totalReviewCount !== undefined) setTotalReviewCount(data.totalReviewCount);
                 if (data.averageRating !== undefined) setAverageRating(data.averageRating);
+                
+                updateLocationCache(activeLocationId, {
+                    reviews: data.totalReviewCount,
+                    rating: data.averageRating
+                });
             }
         } catch (error) {
             console.error('Error fetching reviews:', error);
         } finally {
             setLoadingReviews(false);
         }
-    }, [providerToken, activeLocationId, user]);
+    }, [providerToken, activeLocationId, user, liveLocations]);
 
     // ─── Sync (Auto-Reply) Reviews ───
     const handleSyncReviews = async () => {
