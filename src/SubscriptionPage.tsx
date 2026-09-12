@@ -4,14 +4,16 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://gbp-auto-master-backend
 
 interface SubscriptionPageProps {
     user: any;
+    locationId: string;
     refreshTokens?: () => void;
 }
 
-export default function SubscriptionPage({ user, refreshTokens }: SubscriptionPageProps) {
+export default function SubscriptionPage({ user, locationId, refreshTokens }: SubscriptionPageProps) {
     const [selectedPlan, setSelectedPlan] = useState<string>('monthly');
     const [discountApplied, setDiscountApplied] = useState<string>('none');
     const [promoCode, setPromoCode] = useState('');
     const [promoDiscount, setPromoDiscount] = useState<number>(0);
+    const [adminPromo, setAdminPromo] = useState('');
     const [tokenBalance, setTokenBalance] = useState<number>(0);
     const [ledgerHistory, setLedgerHistory] = useState<any[]>([]);
     const [currentPlanData, setCurrentPlanData] = useState<any>(null);
@@ -19,6 +21,7 @@ export default function SubscriptionPage({ user, refreshTokens }: SubscriptionPa
 
     useEffect(() => {
         const script = document.createElement('script');
+        script.src = 'https://checkout.js'; // Ensure correct URL
         script.src = 'https://checkout.razorpay.com/v1/checkout.js';
         script.async = true;
         document.body.appendChild(script);
@@ -42,11 +45,11 @@ export default function SubscriptionPage({ user, refreshTokens }: SubscriptionPa
     const currentTier = currentPlanData?.plan_type ? (planTiers[currentPlanData.plan_type] ?? -1) : -1;
 
     useEffect(() => {
-        if (user) {
+        if (user && locationId) {
             fetchTokenBalance();
             fetchUserProfile();
         }
-    }, [user]);
+    }, [user, locationId]);
 
     const showStatus = (text: string, type: 'success' | 'error' | 'info' = 'info') => {
         setStatusMsg({ text, type });
@@ -163,6 +166,7 @@ export default function SubscriptionPage({ user, refreshTokens }: SubscriptionPa
                             razorpay_order_id: response.razorpay_order_id,
                             razorpay_signature: response.razorpay_signature,
                             user_id: user?.id,
+                            location_id: locationId,
                             plan_id: planId
                         })
                     });
@@ -210,6 +214,7 @@ export default function SubscriptionPage({ user, refreshTokens }: SubscriptionPa
                             razorpay_order_id: response.razorpay_order_id,
                             razorpay_signature: response.razorpay_signature,
                             user_id: user?.id,
+                            location_id: locationId,
                             pack_id: packId
                         })
                     });
@@ -225,6 +230,27 @@ export default function SubscriptionPage({ user, refreshTokens }: SubscriptionPa
             rzp.open();
         } catch (e) {
             showStatus('Payment error: ' + e, 'error');
+        }
+    };
+
+    const redeemAdminPromo = async () => {
+        if (!adminPromo) return;
+        try {
+            const res = await fetch(`${API_URL}/api/tokens/redeem-promo`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: user.id, location_id: locationId, promo_code: adminPromo })
+            });
+            if (res.ok) {
+                showStatus('Promo code redeemed! Added 1000 tokens.', 'success');
+                setAdminPromo('');
+                fetchTokenBalance();
+                if (refreshTokens) refreshTokens();
+            } else {
+                showStatus('Invalid promo code', 'error');
+            }
+        } catch (error) {
+            showStatus('Failed to redeem code', 'error');
         }
     };
 
@@ -310,7 +336,7 @@ export default function SubscriptionPage({ user, refreshTokens }: SubscriptionPa
                                 {ledgerHistory.map((item, index) => (
                                     <li key={index} style={{ padding: '8px 0', borderBottom: index < ledgerHistory.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 2fr', gap: '8px', alignItems: 'center', fontSize: '14px' }}>
                                         <span style={{ color: 'rgba(255,255,255,0.7)' }}>{new Date(item.created_at || Date.now()).toLocaleDateString()}</span>
-                                        <span style={{ color: 'rgba(255,255,255,0.9)' }}>{item.action || '-'}</span>
+                                        <span style={{ color: 'rgba(255,255,255,0.9)' }}>{item.action_type || '-'}</span>
                                         <span style={{ color: item.amount > 0 ? 'var(--green-soft)' : 'var(--red-soft)', fontWeight: 'bold' }}>{item.amount > 0 ? '+' : ''}{item.amount}</span>
                                         <span style={{ color: 'rgba(255,255,255,0.7)' }}>{item.description}</span>
                                     </li>
@@ -391,6 +417,15 @@ export default function SubscriptionPage({ user, refreshTokens }: SubscriptionPa
                         {promoDiscount === 100 ? 'Activate Free Trial' : 'Pay with Razorpay'}
                     </button>
                 )}
+            </div>
+
+            <div className="card glass" style={{ maxWidth: '700px', padding: '32px', marginTop: '24px' }}>
+                <h3 style={{ fontSize: '20px', marginBottom: '8px' }}>Redeem Promo Code</h3>
+                <p style={{ fontSize: '14px', color: 'rgba(255,255,255,.6)', marginBottom: '16px' }}>Have a special promo code? Redeem it here for extra tokens on this location.</p>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                    <input type="text" className="input" placeholder="Enter admin promo code" value={adminPromo} onChange={(e) => setAdminPromo(e.target.value)} />
+                    <button className="btn btn-ghost" onClick={redeemAdminPromo}>Redeem</button>
+                </div>
             </div>
         </section>
     );

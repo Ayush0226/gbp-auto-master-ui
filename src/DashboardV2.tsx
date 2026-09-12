@@ -78,7 +78,6 @@ export default function DashboardV2() {
                 }
                 
                 // Fetch data in parallel
-                fetchTokenBalance(session.user.id);
                 if (token) {
                     fetchLocations(session.user.id, token);
                 } else {
@@ -131,12 +130,13 @@ export default function DashboardV2() {
     };
 
     // ─── Fetch Token Balance ───
-    const fetchTokenBalance = async (userId: string) => {
+    const fetchTokenBalance = async (userId: string, locationId: string) => {
+        if (!locationId) return;
         try {
             const res = await fetch(`${API_URL}/api/tokens/balance`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user_id: userId })
+                body: JSON.stringify({ user_id: userId, location_id: locationId })
             });
             if (res.ok) {
                 const data = await res.json();
@@ -146,6 +146,13 @@ export default function DashboardV2() {
             console.error('Error fetching token balance:', error);
         }
     };
+
+    // Auto-fetch tokens when active location changes
+    React.useEffect(() => {
+        if (user?.id && activeLocationId) {
+            fetchTokenBalance(user.id, activeLocationId);
+        }
+    }, [user?.id, activeLocationId]);
 
     // ─── Fetch Google Locations ───
     const fetchLocations = async (userId: string, token: string) => {
@@ -358,7 +365,7 @@ export default function DashboardV2() {
                 setIsSchedulingNew(false);
                 setSelectedDate(null);
                 fetchCalendarPosts();
-                fetchTokenBalance(user.id);
+                fetchTokenBalance(user.id, activeLocationId);
             } else {
                 showToast('Failed to schedule post: ' + error.message, 'error');
             }
@@ -419,17 +426,17 @@ export default function DashboardV2() {
 
     // ─── Claim Daily Reward ───
     const claimDailyReward = async () => {
-        if (!user) return;
+        if (!user || !activeLocationId) return;
         try {
             const res = await fetch(`${API_URL}/api/tokens/claim-daily`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user_id: user.id })
+                body: JSON.stringify({ user_id: user.id, location_id: activeLocationId })
             });
             if (res.ok) {
                 const data = await res.json();
                 showToast(`Daily reward claimed! You earned ${data.tokens_added || 2} tokens.`, 'success');
-                fetchTokenBalance(user.id);
+                fetchTokenBalance(user.id, activeLocationId);
             } else {
                 const errData = await res.json().catch(() => ({}));
                 showToast(errData.detail || 'Already claimed today!', 'error');
@@ -830,7 +837,7 @@ export default function DashboardV2() {
                             showToast={showToast}
                             searchKeywords={searchKeywords}
                             providerToken={providerToken}
-                            refreshTokens={() => fetchTokenBalance(user.id)}
+                            refreshTokens={() => fetchTokenBalance(user.id, activeLocationId)}
                         />
                     )}
 
@@ -846,7 +853,7 @@ export default function DashboardV2() {
 
                     {/* ─── Subscription & Tokens ─── */}
                     {activeView === 'subscription' && (
-                        <SubscriptionPage user={user} refreshTokens={() => fetchTokenBalance(user.id)} />
+                        <SubscriptionPage user={user} locationId={activeLocationId} refreshTokens={() => fetchTokenBalance(user.id, activeLocationId)} />
                     )}
                 </div>
             </main>
