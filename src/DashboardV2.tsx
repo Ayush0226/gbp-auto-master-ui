@@ -67,6 +67,15 @@ export default function DashboardV2() {
             const { data: { session } } = await supabase.auth.getSession();
             if (session?.user) {
                 setUser(session.user);
+                
+                // Instantly load cached locations from database (eliminates 30s wait)
+                const cachedLocs = session.user.user_metadata?.cached_locations || [];
+                if (cachedLocs.length > 0) {
+                    setLiveLocations(cachedLocs);
+                    if (!activeLocationId) setActiveLocationId(cachedLocs[0].id);
+                    setLoadingLocations(false);
+                }
+                
                 const token = session.provider_token;
                 if (token) setProviderToken(token);
 
@@ -89,6 +98,12 @@ export default function DashboardV2() {
             const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
                 if (session?.user) {
                     setUser(session.user);
+                    const cachedLocs = session.user.user_metadata?.cached_locations || [];
+                    if (cachedLocs.length > 0) {
+                        setLiveLocations(cachedLocs);
+                        if (!activeLocationId) setActiveLocationId(cachedLocs[0].id);
+                        setLoadingLocations(false);
+                    }
                     if (session.provider_token) {
                         setProviderToken(session.provider_token);
                     }
@@ -156,7 +171,7 @@ export default function DashboardV2() {
 
     // ─── Fetch Google Locations ───
     const fetchLocations = async (userId: string, token: string) => {
-        setLoadingLocations(true);
+        if (liveLocations.length === 0) setLoadingLocations(true);
         try {
             const res = await fetch(`${API_URL}/api/google/locations`, {
                 method: 'POST',
