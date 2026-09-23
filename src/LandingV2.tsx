@@ -399,7 +399,7 @@ export const LandingV2: React.FC = () => {
             <div className="lv2-price-card lv2-fade-up lv2-delay-1">
               <h3>Monthly Starter</h3>
               <div className="lv2-price">
-                ₹999<span> / month</span>
+                ₹500<span> / month</span>
               </div>
               <p className="lv2-desc">Ideal for small neighborhood shops managing steady review volume.</p>
               <ul className="lv2-feature-list">
@@ -612,3 +612,4 @@ export const LandingV2: React.FC = () => {
 };
 
 export default LandingV2;
+

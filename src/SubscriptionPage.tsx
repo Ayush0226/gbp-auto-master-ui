@@ -29,10 +29,10 @@ export default function SubscriptionPage({ user, locationId, refreshTokens }: Su
     }, []);
 
     const PRICING_PLANS: any = {
-        free: { name: 'Free Forever', price: 0, tokens: 60, keywords: 2, competitor: false },
-        monthly: { name: 'Monthly Starter', price: 600, tokens: 350, keywords: 5, competitor: false },
-        half_yearly: { name: 'Half-Yearly Growth', price: 3200, tokens: 600, keywords: 10, competitor: true },
-        yearly: { name: 'Yearly Domination', price: 6000, tokens: 750, keywords: 15, competitor: true },
+        free: { name: 'Free Forever', price: 0, tokens: 0, keywords: 2, competitor: false },
+        monthly: { name: 'Monthly Starter', price: 500, tokens: 350, keywords: 5, competitor: false },
+        half_yearly: { name: 'Half-Yearly Growth', price: 2500, tokens: 600, keywords: 10, competitor: true },
+        yearly: { name: 'Yearly Domination', price: 5000, tokens: 750, keywords: 15, competitor: true },
     };
 
     const planTiers: any = {
@@ -430,3 +430,4 @@ export default function SubscriptionPage({ user, locationId, refreshTokens }: Su
         </section>
     );
 }
+

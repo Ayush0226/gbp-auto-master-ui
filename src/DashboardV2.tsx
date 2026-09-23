@@ -17,6 +17,7 @@ export default function DashboardV2() {
     const [activeView, setActiveView] = useState('dashboard');
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [tokenBalance, setTokenBalance] = useState<number>(0);
+    const [planType, setPlanType] = useState<string>('free');
     const [toast, setToast] = useState<{message: string, type: 'success' | 'error' | 'info'} | null>(null);
 
     // ─── Location State ───
@@ -179,6 +180,7 @@ export default function DashboardV2() {
             if (res.ok) {
                 const data = await res.json();
                 setTokenBalance(data.balance || 0);
+                if (data.plan_type) setPlanType(data.plan_type);
                 updateLocationCache(locationId, { tokens: data.balance || 0 });
             }
         } catch (error) {
@@ -472,27 +474,7 @@ export default function DashboardV2() {
         }
     };
 
-    // ─── Claim Daily Reward ───
-    const claimDailyReward = async () => {
-        if (!user || !activeLocationId) return;
-        try {
-            const res = await fetch(`${API_URL}/api/tokens/claim-daily`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user_id: user.id, location_id: activeLocationId })
-            });
-            if (res.ok) {
-                const data = await res.json();
-                showToast(`Daily reward claimed! You earned ${data.tokens_added || 2} tokens.`, 'success');
-                fetchTokenBalance(user.id, activeLocationId);
-            } else {
-                const errData = await res.json().catch(() => ({}));
-                showToast(errData.detail || 'Already claimed today!', 'error');
-            }
-        } catch (error) {
-            showToast('Server error during claim', 'error');
-        }
-    };
+    // Daily Reward deprecated in favor of 200 sign up tokens
 
     // ─── Sign Out ───
     const handleSignOut = async () => {
@@ -630,7 +612,7 @@ export default function DashboardV2() {
                                 <strong style={{ fontSize: '16px', color: 'var(--blue-soft, #4F8CFF)' }}>{tokenBalance}</strong>
                                 <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>tokens</span>
                             </div>
-                            <button className="btn btn-green btn-sm" onClick={claimDailyReward}>🎁 Daily Reward</button>
+
                         </div>
                     </header>
 
@@ -909,3 +891,5 @@ export default function DashboardV2() {
         </div>
     );
 }
+
+

@@ -269,7 +269,7 @@ export default function Home() {
         const observer = new IntersectionObserver((entries) => {
             if (entries[0].isIntersecting && !countersVisible) {
                 setCountersVisible(true);
-                const targets = { businesses: 500, reviews: 50000, keywords: 24000 };
+                const targets = { businesses: 500, reviews: 50000, keywords: 22500 };
                 const duration = 2000;
                 const startTime = Date.now();
                 const tick = () => {
@@ -509,8 +509,8 @@ export default function Home() {
                         <div className="price-card home-glass home-glass-hover" style={{ position: 'relative' }}>
                             <div className="plan-badge popular">MOST POPULAR</div>
                             <div className="plan-label">Half-Yearly</div>
-                            <div className="price-strike">₹2,999</div>
-                            <div className="price-amount"><span className="amt">₹1,999</span></div>
+                            <div className="price-strike">₹2,500</div>
+                            <div className="price-amount"><span className="amt">₹1,500</span></div>
                             <div className="price-perday">₹11 / day</div>
                             <div style={{ fontSize: '11px', color: 'var(--blue-soft)', fontWeight: 'bold', marginTop: '4px', marginBottom: '8px' }}>+ First Time Discount Applied</div>
                             <div className="price-sub">Billed every 6 months.</div>
@@ -529,7 +529,7 @@ export default function Home() {
                             <div className="plan-badge best winner">BEST VALUE</div>
                             <div className="plan-label blue">Yearly</div>
                             <div className="price-strike">₹5,500</div>
-                            <div className="price-amount"><span className="amt">₹3,999</span></div>
+                            <div className="price-amount"><span className="amt">₹3,500</span></div>
                             <div className="price-perday">₹10.9 / day</div>
                             <div style={{ fontSize: '11px', color: 'var(--green)', fontWeight: 'bold', marginTop: '4px', marginBottom: '8px' }}>+ First Time Discount Applied</div>
                             <div className="price-sub">Billed once a year.</div>
@@ -574,3 +574,4 @@ export default function Home() {
         </div>
     );
 }
+
