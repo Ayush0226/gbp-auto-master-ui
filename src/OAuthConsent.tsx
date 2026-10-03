@@ -22,6 +22,7 @@ const scopeDescriptions: Record<string, string> = {
   email: 'See the email address connected to your account',
   profile: 'See your basic account profile',
   phone: 'See the phone number connected to your account',
+  offline_access: 'Keep this approved connection active without asking you to sign in repeatedly',
 };
 
 export default function OAuthConsent() {
@@ -182,4 +183,3 @@ export default function OAuthConsent() {
     </main>
   );
 }
-
