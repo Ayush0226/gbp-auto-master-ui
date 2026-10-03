@@ -8,6 +8,7 @@ import SubscriptionPage from './SubscriptionPage';
 import ReviewManager from './ReviewManager';
 import ContentCalendarV2 from './ContentCalendarV2';
 import RankAnalysis from './RankAnalysis';
+import ConnectedApps from './ConnectedApps';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://gbp-auto-master-backend-us.onrender.com';
 
@@ -498,6 +499,7 @@ export default function DashboardV2() {
             case 'rank': return 'Rank Analysis';
             case 'brain': return 'AI Brain Settings';
             case 'subscription': return 'Subscription & Tokens';
+            case 'connections': return 'Connected AI Apps';
             default: return 'Dashboard';
         }
     };
@@ -549,6 +551,7 @@ export default function DashboardV2() {
                     <button className={`nav-item ${activeView === 'rank' ? 'active' : ''}`} onClick={() => { setActiveView('rank'); setSidebarOpen(false); }}>Rank Analysis</button>
                     <button className={`nav-item ${activeView === 'brain' ? 'active' : ''}`} onClick={() => { setActiveView('brain'); setSidebarOpen(false); }}>AI Brain Settings</button>
                     <button className={`nav-item ${activeView === 'subscription' ? 'active' : ''}`} onClick={() => { setActiveView('subscription'); setSidebarOpen(false); }}>Subscription & Tokens</button>
+                    <button className={`nav-item ${activeView === 'connections' ? 'active' : ''}`} onClick={() => { setActiveView('connections'); setSidebarOpen(false); }}>Connected AI Apps</button>
                 </nav>
 
                 {/* Sign Out */}
@@ -860,6 +863,11 @@ export default function DashboardV2() {
                     {/* ─── Subscription & Tokens ─── */}
                     {activeView === 'subscription' && (
                         <SubscriptionPage user={user} locationId={activeLocationId} refreshTokens={() => fetchTokenBalance(user.id, activeLocationId)} />
+                    )}
+
+                    {/* ─── Connected AI Apps ─── */}
+                    {activeView === 'connections' && (
+                        <ConnectedApps showToast={showToast} />
                     )}
                 </div>
             </main>

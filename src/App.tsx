@@ -10,6 +10,7 @@ const MuscleDemoHome = lazy(() => import('./MuscleDemoHome').then(module => ({ d
 const AdminDashboard = lazy(() => import('./AdminDashboard'));
 const LandingV2 = lazy(() => import('./LandingV2'));
 const Brochure = lazy(() => import('./Brochure'));
+const OAuthConsent = lazy(() => import('./OAuthConsent'));
 import './index.css';
 
 function App() {
@@ -42,6 +43,14 @@ function App() {
       window.setTimeout(async () => {
       if (disposed) return;
       if (session?.user) {
+        const path = window.location.pathname;
+        if (path === '/oauth/consent') {
+          if (window.location.hash.includes('access_token')) {
+            window.history.replaceState(null, '', `${path}${window.location.search}`);
+          }
+          setCurrentPath(path);
+          return;
+        }
         
         // Default route
         let targetRoute = '/dashboard-v2';
@@ -62,7 +71,6 @@ function App() {
             setCurrentPath(targetRoute);
         } else {
             // Only redirect if they are on the home page, old dashboard, or landing page. 
-            const path = window.location.pathname;
             if (path === '/' || path === '/dashboard' || path === '/v2' || path === '/landing') {
                 window.history.replaceState(null, '', targetRoute);
                 setCurrentPath(targetRoute);
@@ -83,6 +91,10 @@ function App() {
 
   // Simple router based on current path
   const renderRoute = () => {
+    if (currentPath === '/oauth/consent') {
+      return <OAuthConsent />;
+    }
+
     if (currentPath === '/' || currentPath === '/v2' || currentPath === '/landing') {
       return <LandingV2 />;
     }
