@@ -1,20 +1,22 @@
-import React, { useEffect } from 'react';
+import { apiFetch } from './lib/api';
+import React, { useEffect, lazy, Suspense } from 'react';
 import { supabase } from './lib/supabase';
-import Home from './Home';
-import DashboardV2 from './DashboardV2';
-import Onboarding from './Onboarding';
-import Terms from './Terms';
-import Privacy from './Privacy';
-import Refund from './Refund';
-import { MuscleDemoHome } from './MuscleDemoHome';
-import AdminDashboard from './AdminDashboard';
-import LandingV2 from './LandingV2';
+const DashboardV2 = lazy(() => import('./DashboardV2'));
+const Onboarding = lazy(() => import('./Onboarding'));
+const Terms = lazy(() => import('./Terms'));
+const Privacy = lazy(() => import('./Privacy'));
+const Refund = lazy(() => import('./Refund'));
+const MuscleDemoHome = lazy(() => import('./MuscleDemoHome').then(module => ({ default: module.MuscleDemoHome })));
+const AdminDashboard = lazy(() => import('./AdminDashboard'));
+const LandingV2 = lazy(() => import('./LandingV2'));
+const Brochure = lazy(() => import('./Brochure'));
 import './index.css';
 
 function App() {
   const [currentPath, setCurrentPath] = React.useState(window.location.pathname)
 
   useEffect(() => {
+    let disposed = false;
     const handleLocationChange = () => {
       setCurrentPath(window.location.pathname)
     }
@@ -36,15 +38,17 @@ function App() {
     window.addEventListener('popstate', handleLocationChange)
 
     // Listen for Supabase OAuth redirects globally
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' || session?.user) {
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      window.setTimeout(async () => {
+      if (disposed) return;
+      if (session?.user) {
         
         // Default route
         let targetRoute = '/dashboard-v2';
 
         // Check if onboarding is completed
         try {
-          const { data: profile } = await supabase.table('user_profiles').select('onboarding_completed').eq('id', session.user.id).single();
+          const { data: profile } = await supabase.from('user_profiles').select('onboarding_completed').eq('id', session.user.id).single();
           if (!profile || !profile.onboarding_completed) {
             targetRoute = '/onboarding';
           }
@@ -65,9 +69,11 @@ function App() {
             }
         }
       }
+      }, 0);
     });
 
     return () => {
+      disposed = true;
       window.removeEventListener('popstate', handleLocationChange)
       window.history.pushState = originalPushState
       window.history.replaceState = originalReplaceState
@@ -100,7 +106,8 @@ function App() {
           <button onClick={async () => {
              const { data: { session } } = await supabase.auth.getSession();
              if (session?.user) {
-                await supabase.table('user_profiles').delete().eq('id', session.user.id);
+                const response = await apiFetch('/api/user/reset-onboarding', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: session.user.id }) });
+                if (!response.ok) { alert('Could not reset onboarding. Please retry.'); return; }
              }
              await supabase.auth.signOut();
              localStorage.clear();
@@ -125,6 +132,10 @@ function App() {
       return <Refund />;
     }
 
+    if (currentPath === '/brochure') {
+      return <Brochure />;
+    }
+
     if (currentPath === '/demo') {
       return <MuscleDemoHome />;
     }
@@ -135,7 +146,7 @@ function App() {
 
   return (
     <div className="App">
-      {renderRoute()}
+      <Suspense fallback={<div role="status" style={{ padding: 32 }}>Loading…</div>}>{renderRoute()}</Suspense>
     </div>
   );
 }

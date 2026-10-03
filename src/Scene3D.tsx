@@ -7,7 +7,7 @@ function SceneObjects() {
     const groupRef = useRef<THREE.Group>(null);
     const { mouse, viewport } = useThree();
 
-    useFrame((state) => {
+    useFrame(() => {
         if (groupRef.current) {
             // Subtle parallax based on mouse
             const targetX = (mouse.x * viewport.width) / 30;

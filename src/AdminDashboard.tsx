@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import { apiFetch } from './lib/api';
+import { useEffect, useState } from 'react';
 import { supabase } from './lib/supabase';
 
 export default function AdminDashboard({ onBackToApp }: { onBackToApp?: () => void }) {
@@ -157,13 +158,13 @@ export default function AdminDashboard({ onBackToApp }: { onBackToApp?: () => vo
             }
 
             const email = session.user.email;
-            if (email !== 'ayushsony126@gmail.com') {
+            if (session.user.app_metadata?.role !== 'admin') {
                 router.push('/dashboard');
                 return;
             }
 
             setAdminUser(session.user);
-            fetchUsers(email);
+            fetchUsers(email || '');
         };
 
         checkAdmin();
@@ -171,7 +172,7 @@ export default function AdminDashboard({ onBackToApp }: { onBackToApp?: () => vo
 
     const fetchUsers = async (adminEmail: string) => {
         try {
-            const res = await fetch('https://gbp-auto-master-backend-us.onrender.com/api/admin/users', {
+            const res = await apiFetch('https://gbp-auto-master-backend-us.onrender.com/api/admin/users', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ admin_email: adminEmail })
@@ -216,7 +217,7 @@ export default function AdminDashboard({ onBackToApp }: { onBackToApp?: () => vo
         if (!confirm("Are you sure you want to run the weekly competitor scan for all users? This will consume AI tokens.")) return;
         setLoading(true);
         try {
-            const res = await fetch('https://gbp-auto-master-backend-us.onrender.com/api/admin/run-competitor-scan', {
+            const res = await apiFetch('https://gbp-auto-master-backend-us.onrender.com/api/admin/run-competitor-scan', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ admin_email: adminUser.email })
@@ -242,7 +243,7 @@ export default function AdminDashboard({ onBackToApp }: { onBackToApp?: () => vo
         
         try {
             // 1. Get offline provider token for this user
-            const authRes = await fetch('https://gbp-auto-master-backend-us.onrender.com/api/auth/refresh-google-token', {
+            const authRes = await apiFetch('https://gbp-auto-master-backend-us.onrender.com/api/auth/refresh-google-token', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ user_id: u.id })
@@ -266,7 +267,7 @@ export default function AdminDashboard({ onBackToApp }: { onBackToApp?: () => vo
             const locationPath = activeLoc.includes('locations/') ? activeLoc : `locations/${activeLoc}`;
 
             // 2. Fetch Drafts
-            const draftRes = await fetch('https://gbp-auto-master-backend-us.onrender.com/api/google/draft-reviews', {
+            const draftRes = await apiFetch('https://gbp-auto-master-backend-us.onrender.com/api/google/draft-reviews', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -292,7 +293,7 @@ export default function AdminDashboard({ onBackToApp }: { onBackToApp?: () => vo
     const postDraftReply = async (reviewId: string, replyText: string, idx: number) => {
         try {
             // Get offline token again
-            const authRes = await fetch('https://gbp-auto-master-backend-us.onrender.com/api/auth/refresh-google-token', {
+            const authRes = await apiFetch('https://gbp-auto-master-backend-us.onrender.com/api/auth/refresh-google-token', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ user_id: reviewQueueUser.id })
@@ -300,7 +301,7 @@ export default function AdminDashboard({ onBackToApp }: { onBackToApp?: () => vo
             const authData = await authRes.json();
             if (authData.status !== 'success') throw new Error("Token refresh failed");
 
-            const postRes = await fetch('https://gbp-auto-master-backend-us.onrender.com/api/google/post-reply', {
+            const postRes = await apiFetch('https://gbp-auto-master-backend-us.onrender.com/api/google/post-reply', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -344,7 +345,7 @@ export default function AdminDashboard({ onBackToApp }: { onBackToApp?: () => vo
             const currentSettings = seoModalUser.user_metadata?.ai_settings?.[activeLoc] || {};
             const newSettings = { ...currentSettings, active_keywords: keywordsArray };
             
-            const res = await fetch('https://gbp-auto-master-backend-us.onrender.com/api/user/save-ai-settings', {
+            const res = await apiFetch('https://gbp-auto-master-backend-us.onrender.com/api/user/save-ai-settings', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -373,7 +374,7 @@ export default function AdminDashboard({ onBackToApp }: { onBackToApp?: () => vo
         setLoadingPosts(true);
         setUserPosts([]);
         try {
-            const res = await fetch('https://gbp-auto-master-backend-us.onrender.com/api/admin/calendar', {
+            const res = await apiFetch('https://gbp-auto-master-backend-us.onrender.com/api/admin/calendar', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ admin_email: adminUser.email, target_user_id: user.id })

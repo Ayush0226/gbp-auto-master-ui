@@ -1,3 +1,4 @@
+import { apiFetch } from './lib/api';
 import { useEffect, useState } from 'react';
 import { supabase } from './lib/supabase';
 import AdminDashboard from './AdminDashboard';
@@ -146,7 +147,7 @@ export default function MasterDashboardPage() {
         setReportError(null);
         try {
             const contextDump = `Live Reviews: ${liveReviews?.length}, Competitors: ${competitors?.length}, Rank: ${activeLocObj?.rank || 'N/A'}`;
-            const resp = await fetch('https://gbp-auto-master-backend-us.onrender.com/api/ai/generate-report', {
+            const resp = await apiFetch('https://gbp-auto-master-backend-us.onrender.com/api/ai/generate-report', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ user_id: user?.id, context_dump: contextDump })
@@ -203,7 +204,7 @@ Target SEO Keywords: ${JSON.stringify(targetKeywords || [])}
 Analytics: ${JSON.stringify(analyticsData || {})}
             `;
 
-            const resp = await fetch('https://gbp-auto-master-backend-us.onrender.com/api/ai/chat', {
+            const resp = await apiFetch('https://gbp-auto-master-backend-us.onrender.com/api/ai/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -274,7 +275,7 @@ Analytics: ${JSON.stringify(analyticsData || {})}
             
             if (!currentProviderToken && session.user?.user_metadata?.google_refresh_token) {
                 try {
-                    const resp = await fetch('https://gbp-auto-master-backend-us.onrender.com/api/auth/refresh-google-token', {
+                    const resp = await apiFetch('https://gbp-auto-master-backend-us.onrender.com/api/auth/refresh-google-token', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ user_id: session.user.id })
@@ -313,7 +314,7 @@ Analytics: ${JSON.stringify(analyticsData || {})}
         if (!user?.id || !activeLocationId) return;
         
         try {
-            const res = await fetch('https://gbp-auto-master-backend-us.onrender.com/api/user/save-ai-settings', {
+            const res = await apiFetch('https://gbp-auto-master-backend-us.onrender.com/api/user/save-ai-settings', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -367,7 +368,7 @@ Analytics: ${JSON.stringify(analyticsData || {})}
     // Fetch Live Locations from Python Backend
     useEffect(() => {
         if (appState !== 'loading' && providerToken && user) {
-            fetch('https://gbp-auto-master-backend-us.onrender.com/api/google/locations', {
+            apiFetch('https://gbp-auto-master-backend-us.onrender.com/api/google/locations', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ user_id: user.id, provider_token: providerToken })
@@ -391,7 +392,7 @@ Analytics: ${JSON.stringify(analyticsData || {})}
     useEffect(() => {
         if (appState === 'dashboard' && providerToken && user && activeLocationId && activeLocationId !== 'loc1') {
             setLoadingReviews(true);
-            fetch('https://gbp-auto-master-backend-us.onrender.com/api/google/get-reviews', {
+            apiFetch('https://gbp-auto-master-backend-us.onrender.com/api/google/get-reviews', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ user_id: user.id, provider_token: providerToken, location_id: activeLocationId })
@@ -428,7 +429,7 @@ Analytics: ${JSON.stringify(analyticsData || {})}
     // Auto-Register Webhook Silently
     useEffect(() => {
         if (appState === 'dashboard' && providerToken && user && activeLocationId && activeLocationId !== 'loc1') {
-            fetch('https://gbp-auto-master-backend-us.onrender.com/api/google/register-webhook', {
+            apiFetch('https://gbp-auto-master-backend-us.onrender.com/api/google/register-webhook', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ user_id: user.id, provider_token: providerToken, location_id: activeLocationId })
@@ -440,7 +441,7 @@ Analytics: ${JSON.stringify(analyticsData || {})}
         if (!providerToken || !user || !activeLocationId) return;
         setSyncingReviews(true);
         try {
-            const res = await fetch('https://gbp-auto-master-backend-us.onrender.com/api/google/sync-reviews', {
+            const res = await apiFetch('https://gbp-auto-master-backend-us.onrender.com/api/google/sync-reviews', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ user_id: user.id, provider_token: providerToken, location_id: activeLocationId })
@@ -454,7 +455,7 @@ Analytics: ${JSON.stringify(analyticsData || {})}
             }
             
             // Refetch reviews after sync
-            const freshRes = await fetch('https://gbp-auto-master-backend-us.onrender.com/api/google/get-reviews', {
+            const freshRes = await apiFetch('https://gbp-auto-master-backend-us.onrender.com/api/google/get-reviews', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ user_id: user.id, provider_token: providerToken, location_id: activeLocationId })
@@ -495,7 +496,7 @@ Analytics: ${JSON.stringify(analyticsData || {})}
         }
         setSavingReplyId(reviewId);
         try {
-            const res = await fetch('https://gbp-auto-master-backend-us.onrender.com/api/google/post-reply', {
+            const res = await apiFetch('https://gbp-auto-master-backend-us.onrender.com/api/google/post-reply', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -525,7 +526,7 @@ Analytics: ${JSON.stringify(analyticsData || {})}
         
         setSavingReplyId(reviewId);
         try {
-            const res = await fetch('https://gbp-auto-master-backend-us.onrender.com/api/google/delete-reply', {
+            const res = await apiFetch('https://gbp-auto-master-backend-us.onrender.com/api/google/delete-reply', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -581,7 +582,7 @@ Analytics: ${JSON.stringify(analyticsData || {})}
     // Fetch Analytics Data
     useEffect(() => {
         if (appState === 'dashboard' && providerToken && activeLocationId) {
-            fetch('https://gbp-auto-master-backend-us.onrender.com/api/google/analytics', {
+            apiFetch('https://gbp-auto-master-backend-us.onrender.com/api/google/analytics', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ user_id: user.id, provider_token: providerToken, location_id: activeLocationId })
@@ -600,7 +601,7 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                 showToast(`Network Error fetching analytics.`, 'error');
             });
             
-            fetch('https://gbp-auto-master-backend-us.onrender.com/api/google/search-keywords', {
+            apiFetch('https://gbp-auto-master-backend-us.onrender.com/api/google/search-keywords', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ user_id: user?.id, provider_token: providerToken, location_id: activeLocationId })
@@ -624,7 +625,7 @@ Analytics: ${JSON.stringify(analyticsData || {})}
         setAppState('demo-running');
         
         try {
-            const res = await fetch("https://gbp-auto-master-backend-us.onrender.com/api/google/run-demo", {
+            const res = await apiFetch("https://gbp-auto-master-backend-us.onrender.com/api/google/run-demo", {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ user_id: user?.id, provider_token: providerToken, location_id: demoSelectedLoc })
@@ -837,7 +838,7 @@ Analytics: ${JSON.stringify(analyticsData || {})}
 
     const handleCheckout = async () => {
         try {
-            const res = await fetch("https://gbp-auto-master-backend-us.onrender.com/api/payment/create-order", {
+            const res = await apiFetch("https://gbp-auto-master-backend-us.onrender.com/api/payment/create-order", {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -862,7 +863,7 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                 return;
             }
 
-            const keyRes = await fetch("https://gbp-auto-master-backend-us.onrender.com/api/payment/key");
+            const keyRes = await apiFetch("https://gbp-auto-master-backend-us.onrender.com/api/payment/key");
             const keyData = await keyRes.json();
 
             const options = {
@@ -874,7 +875,7 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                 order_id: data.order_id,
                 handler: async function (response: any) {
                     // Securely verify signature on backend
-                    const verifyRes = await fetch("https://gbp-auto-master-backend-us.onrender.com/api/payment/verify", {
+                    const verifyRes = await apiFetch("https://gbp-auto-master-backend-us.onrender.com/api/payment/verify", {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -968,7 +969,7 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                 }
                 
                 // Publish immediately
-                const res = await fetch("https://gbp-auto-master-backend-us.onrender.com/api/google/publish-post", {
+                const res = await apiFetch("https://gbp-auto-master-backend-us.onrender.com/api/google/publish-post", {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -1045,7 +1046,7 @@ Analytics: ${JSON.stringify(analyticsData || {})}
     const publishNow = async (post: any) => {
         try {
             setLoadingAction(true);
-            const res = await fetch("https://gbp-auto-master-backend-us.onrender.com/api/google/publish-post", {
+            const res = await apiFetch("https://gbp-auto-master-backend-us.onrender.com/api/google/publish-post", {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -1073,7 +1074,7 @@ Analytics: ${JSON.stringify(analyticsData || {})}
         if (!user || !providerToken) return;
         setLoadingCompetitors(true);
         try {
-            const res = await fetch('https://gbp-auto-master-backend-us.onrender.com/api/google/competitors', {
+            const res = await apiFetch('https://gbp-auto-master-backend-us.onrender.com/api/google/competitors', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ user_id: user.id, location_name: activeLocationName, keyword: competitorKeyword })
@@ -1429,7 +1430,7 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                                 <button className="btn btn-green btn-sm" onClick={async () => {
                                     setLoadingAction(true);
                                     try {
-                                        const res = await fetch("https://gbp-auto-master-backend-us.onrender.com/api/google/register-webhook", {
+                                        const res = await apiFetch("https://gbp-auto-master-backend-us.onrender.com/api/google/register-webhook", {
                                             method: 'POST',
                                             headers: { 'Content-Type': 'application/json' },
                                             body: JSON.stringify({
@@ -1625,7 +1626,7 @@ Analytics: ${JSON.stringify(analyticsData || {})}
                                                     onClick={async () => {
                                                         if (window.confirm("Are you sure you want to cancel? You will lose AI automation at the end of your billing cycle.")) {
                                                             try {
-                                                                const res = await fetch(`${API_BASE}/api/billing/cancel`, {
+                                                                const res = await apiFetch(`${API_BASE}/api/billing/cancel`, {
                                                                     method: 'POST',
                                                                     headers: { 'Content-Type': 'application/json' },
                                                                     body: JSON.stringify({ user_id: session.user.id, location_id: activeLocationId })

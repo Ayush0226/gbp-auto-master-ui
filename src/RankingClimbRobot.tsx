@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import './RankingClimbRobot.css';
 
 export default function RankingClimbRobot() {
@@ -16,7 +16,6 @@ export default function RankingClimbRobot() {
             // Progress starts when the top of the element enters the bottom of the screen
             // Progress ends when the bottom of the element leaves the top of the screen
             const elementTop = rect.top;
-            const elementHeight = rect.height;
             
             // Calculate a progress value from 0 to 1
             // Start at 0 when elementTop is at windowHeight * 0.8

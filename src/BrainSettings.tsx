@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import { apiFetch } from './lib/api';
+import { useState, useEffect } from 'react';
 
 interface BrainSettingsProps {
     user: any;
@@ -31,10 +32,10 @@ export default function BrainSettings({
             
             try {
                 // Get max keywords from profile
-                const profRes = await fetch(`${API_URL}/api/user/profile`, {
+                const profRes = await apiFetch(`${API_URL}/api/user/profile`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ user_id: user?.id })
+                    body: JSON.stringify({ user_id: user?.id, location_id: activeLocationId })
                 });
                 if(profRes.ok) {
                     const profData = await profRes.json();
@@ -42,7 +43,7 @@ export default function BrainSettings({
                 }
 
                 // Get AI settings for specific location
-                const res = await fetch(`${API_URL}/api/user/get-ai-settings`, {
+                const res = await apiFetch(`${API_URL}/api/user/get-ai-settings`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ user_id: user?.id, location_id: activeLocationId })
@@ -68,7 +69,7 @@ export default function BrainSettings({
 
     const saveUserSettings = async (settings: any) => {
         try {
-            const res = await fetch(`${API_URL}/api/user/save-ai-settings`, {
+            const res = await apiFetch(`${API_URL}/api/user/save-ai-settings`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -110,7 +111,7 @@ export default function BrainSettings({
                 <button className="btn btn-green btn-sm" onClick={async () => {
                     setLoadingAction(true);
                     try {
-                        const res = await fetch(`${API_URL}/api/google/register-webhook`, {
+                        const res = await apiFetch(`${API_URL}/api/google/register-webhook`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({

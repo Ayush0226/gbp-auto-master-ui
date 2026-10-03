@@ -2,11 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from './lib/supabase';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Points, PointMaterial } from '@react-three/drei';
-import * as THREE from 'three';
 import './LandingV2.css';
 
 const ParticleField = () => {
-  const ref = useRef<any>();
+  const ref = useRef<any>(null);
   const [sphere] = useState(() => {
     const positions = new Float32Array(3000 * 3);
     for (let i = 0; i < 3000; i++) {
@@ -20,7 +19,7 @@ const ParticleField = () => {
     return positions;
   });
 
-  useFrame((state, delta) => {
+  useFrame((_state, delta) => {
     if (ref.current) {
       ref.current.rotation.x -= delta / 10;
       ref.current.rotation.y -= delta / 15;
@@ -356,7 +355,7 @@ export const LandingV2: React.FC = () => {
         <div className="lv2-wrap">
           <div className="lv2-section-head lv2-fade-up">
             <h2>Transparent Plans: Subscriptions &amp; Token Freedom</h2>
-            <p>Start free, top-up tokens when needed, or select a recurring plan with monthly token refills.</p>
+            <p>Start free, top-up tokens when needed, or select a prepaid plan with monthly token refills.</p>
           </div>
 
           <div className="lv2-pricing-grid">
@@ -369,7 +368,7 @@ export const LandingV2: React.FC = () => {
               <p className="lv2-desc">Explore the dashboard and start growing with daily token rewards.</p>
               <ul className="lv2-feature-list">
                 <li>
-                  <div className="lv2-check">✓</div> <span><b>60 Tokens</b> (2/day login reward)</span>
+                  <div className="lv2-check">✓</div> <span><b>200 Account Tokens</b> (one-time signup bonus)</span>
                 </li>
                 <li>
                   <div className="lv2-check">✓</div> <span><b>2 SEO Keywords</b></span>
@@ -491,7 +490,7 @@ export const LandingV2: React.FC = () => {
             <div>
               <h4>Need extra tokens? Top up anytime.</h4>
               <p>
-                Tokens never expire and roll over month-to-month. Prefer no recurring subscription? You can run entirely on top-up tokens with complete freedom.
+                Tokens never expire and roll over month-to-month. Prefer no prepaid plan? You can run entirely on top-up tokens with complete freedom.
               </p>
             </div>
             <div className="lv2-topup-price">
@@ -504,7 +503,7 @@ export const LandingV2: React.FC = () => {
           <div className="lv2-freemium-banner lv2-fade-up lv2-delay-2">
             <h4>🎁 Earn Free Tokens &bull; Zero Forced Paywalls</h4>
             <p>
-              Log in with Google to explore your analytics dashboard immediately. Earn extra tokens by completing your SEO profile setup and referring fellow business owners!
+              Log in with Google to explore your analytics dashboard immediately. New accounts receive 200 tokens once, shared across all connected Google business profiles.
             </p>
           </div>
         </div>

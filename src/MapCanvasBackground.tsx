@@ -107,7 +107,7 @@ export const MapCanvasBackground: React.FC = () => {
             const globeTiltX = 0.2; // slight tilt for the globe
 
             // 1. Draw Back Rings and Back Particles
-            rings.forEach((ring, idx) => {
+            rings.forEach((ring) => {
                 ctx.beginPath();
                 for (let a = 0; a <= Math.PI * 2; a += 0.1) {
                     const px = Math.cos(a) * ring.radius;
@@ -186,7 +186,7 @@ export const MapCanvasBackground: React.FC = () => {
             ctx.shadowBlur = 0;
 
             // 4. Draw Front Rings and Front Particles
-            rings.forEach((ring, idx) => {
+            rings.forEach((ring) => {
                 ctx.beginPath();
                 for (let a = 0; a <= Math.PI * 2; a += 0.1) {
                     const px = Math.cos(a) * ring.radius;

@@ -1,4 +1,3 @@
-import React from 'react';
 
 export const DetailedAnalysisBg = () => (
     <div className="card-custom-bg" style={{ position: 'absolute', right: '-20%', top: '-10%', width: '120%', height: '120%', opacity: 0.15, pointerEvents: 'none' }}>

@@ -1,3 +1,4 @@
+import { apiFetch } from './lib/api';
 import React, { useState } from 'react';
 
 interface RankAnalysisProps {
@@ -18,10 +19,6 @@ export default function RankAnalysis({
     const [generatingReport, setGeneratingReport] = useState(false);
     const [seoKeywords, setSeoKeywords] = useState<any[]>([]);
     const [planType, setPlanType] = useState<string>('');
-    const [searchKeyword, setSearchKeyword] = useState('');
-    const [scanningCompetitors, setScanningCompetitors] = useState(false);
-    const [competitorResults, setCompetitorResults] = useState<any[]>([]);
-    const [reportResults, setReportResults] = useState<Record<string, any>>({});
 
     let positive = 0;
     let neutral = 0;
@@ -133,10 +130,10 @@ export default function RankAnalysis({
     React.useEffect(() => {
         if (user?.id) {
             // Fetch plan type
-            fetch(`${API_URL}/api/user/profile`, {
+            apiFetch(`${API_URL}/api/user/profile`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user_id: user.id })
+                body: JSON.stringify({ user_id: user.id, location_id: activeLocationId })
             })
             .then(res => res.json())
             .then(data => {
@@ -149,7 +146,7 @@ export default function RankAnalysis({
 
         if (user?.id && activeLocationId) {
             // Fetch location-specific SEO keywords
-            fetch(`${API_URL}/api/user/get-ai-settings`, {
+            apiFetch(`${API_URL}/api/user/get-ai-settings`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ user_id: user.id, location_id: activeLocationId })
@@ -167,16 +164,16 @@ export default function RankAnalysis({
     }, [user?.id, activeLocationId, API_URL]);
 
     const handleGenerateReport = async (keyword: string) => {
-        if (planType === 'free') {
-            showToast("Competitor Rank Reports are only available on paid plans.", "error");
+        if (!['half_yearly', 'yearly'].includes(planType)) {
+            showToast("Competitor reports require a Growth or Yearly plan.", "error");
             return;
         }
 
         try {
-            const balRes = await fetch(`${API_URL}/api/tokens/balance`, {
+            const balRes = await apiFetch(`${API_URL}/api/tokens/balance`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user_id: user?.id })
+                body: JSON.stringify({ user_id: user?.id, location_id: activeLocationId })
             });
             const balData = await balRes.json();
             if (balData.balance < 10) {
@@ -191,7 +188,7 @@ export default function RankAnalysis({
         setGeneratingReport(true);
         showToast("Generating report...", "info");
         try {
-            const res = await fetch(`${API_URL}/api/rank/generate-report`, {
+            const res = await apiFetch(`${API_URL}/api/rank/generate-report`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -304,8 +301,6 @@ export default function RankAnalysis({
                 ) : (
                     <p style={{ fontSize: '13px', color: 'rgba(255,255,255,.5)' }}>No keywords fetched yet.</p>
                 )}
-            </div>
-
             </div>
 
             {/* User SEO Keywords Section */}

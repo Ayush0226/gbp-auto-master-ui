@@ -227,7 +227,7 @@ export default function Home() {
     const [countersVisible, setCountersVisible] = useState(false);
     const [counterValues, setCounterValues] = useState({ businesses: 0, reviews: 0, keywords: 0 });
     const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-    const [theme, setTheme] = useState<'light'|'dark'>('dark');
+    const [theme] = useState<'light'|'dark'>('dark');
     const counterRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {

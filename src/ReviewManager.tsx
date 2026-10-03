@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import { apiFetch } from './lib/api';
+import { useState } from 'react';
 
 export default function ReviewManager({ 
     liveReviews, 
@@ -8,7 +9,9 @@ export default function ReviewManager({
     providerToken, 
     user, 
     activeLocationId, 
-    handleSyncReviews, 
+    handleSyncReviews,
+    onReviewsChanged,
+    refreshTokens,
     showToast 
 }: any) {
     const API_URL = import.meta.env.VITE_API_URL || 'https://gbp-auto-master-backend-us.onrender.com';
@@ -23,7 +26,7 @@ export default function ReviewManager({
         }
         setSavingReplyId(reviewId);
         try {
-            const res = await fetch(`${API_URL}/api/google/post-reply`, {
+            const res = await apiFetch(`${API_URL}/api/google/post-reply`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -53,7 +56,7 @@ export default function ReviewManager({
         
         setSavingReplyId(reviewId);
         try {
-            const res = await fetch(`${API_URL}/api/google/delete-reply`, {
+            const res = await apiFetch(`${API_URL}/api/google/delete-reply`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -79,20 +82,22 @@ export default function ReviewManager({
     const handleBatchReply = async (count: number) => {
         showToast(`Triggering reply to ${count} reviews...`, "info");
         try {
-            const res = await fetch(`${API_URL}/api/reviews/batch-reply`, {
+            const res = await apiFetch(`${API_URL}/api/reviews/batch-reply`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     user_id: user?.id,
                     location_id: activeLocationId,
-                    account_id: activeLocationId.split('/')[0] || activeLocationId,
+                    account_id: '', // Backend resolves the verified Google account.
                     access_token: providerToken,
                     count
                 })
             });
-            const data = await res.json();
             if (res.ok) {
-                showToast(`Batch reply triggered for ${count} reviews!`, "success");
+                const data = await res.json();
+                const sent = data.replied?.filter((reply: any) => reply.status === "published").length || 0;
+                showToast(`${sent} replies published.`, sent ? "success" : "info");
+                onReviewsChanged?.(); refreshTokens?.();
             } else {
                 showToast("Failed to batch reply.", "error");
             }
@@ -104,7 +109,7 @@ export default function ReviewManager({
     const handleRegenerateReply = async (reviewId: string, reviewText: string, starRating: string) => {
         setSavingReplyId(reviewId);
         try {
-            const res = await fetch(`${API_URL}/api/reviews/regenerate-reply`, {
+            const res = await apiFetch(`${API_URL}/api/reviews/regenerate-reply`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -116,9 +121,9 @@ export default function ReviewManager({
                     access_token: providerToken
                 })
             });
-            const data = await res.json();
             if (res.ok) {
                 showToast("Reply regenerated!", "success");
+                onReviewsChanged?.(); refreshTokens?.();
             } else {
                 showToast("Failed to regenerate reply", "error");
             }

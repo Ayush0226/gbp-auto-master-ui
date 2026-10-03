@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import { apiFetch } from './lib/api';
+import { useState, useEffect } from 'react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://gbp-auto-master-backend-us.onrender.com';
 
@@ -21,7 +22,6 @@ export default function SubscriptionPage({ user, locationId, refreshTokens }: Su
 
     useEffect(() => {
         const script = document.createElement('script');
-        script.src = 'https://checkout.js'; // Ensure correct URL
         script.src = 'https://checkout.razorpay.com/v1/checkout.js';
         script.async = true;
         document.body.appendChild(script);
@@ -45,9 +45,9 @@ export default function SubscriptionPage({ user, locationId, refreshTokens }: Su
     const currentTier = currentPlanData?.plan_type ? (planTiers[currentPlanData.plan_type] ?? -1) : -1;
 
     useEffect(() => {
-        if (user && locationId) {
+        if (user) {
             fetchTokenBalance();
-            fetchUserProfile();
+            if (locationId) fetchUserProfile();
         }
     }, [user, locationId]);
 
@@ -58,10 +58,10 @@ export default function SubscriptionPage({ user, locationId, refreshTokens }: Su
 
     const fetchUserProfile = async () => {
         try {
-            const res = await fetch(`${API_URL}/api/user/profile`, {
+            const res = await apiFetch(`${API_URL}/api/user/profile`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user_id: user.id })
+                body: JSON.stringify({ user_id: user.id, location_id: locationId })
             });
             if (res.ok) {
                 const data = await res.json();
@@ -75,7 +75,7 @@ export default function SubscriptionPage({ user, locationId, refreshTokens }: Su
     const fetchTokenBalance = async () => {
         if (!user) return;
         try {
-            const res = await fetch(`${API_URL}/api/tokens/balance`, {
+            const res = await apiFetch(`${API_URL}/api/tokens/balance`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ user_id: user.id })
@@ -98,16 +98,16 @@ export default function SubscriptionPage({ user, locationId, refreshTokens }: Su
             return;
         }
         try {
-            const res = await fetch(`${API_URL}/api/payment/validate-promo`, {
+            const res = await apiFetch(`${API_URL}/api/payment/validate-promo`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ code: promoCode, user_id: user?.id })
+                body: JSON.stringify({ code: promoCode, user_id: user?.id, location_id: locationId })
             });
             const data = await res.json();
             if (res.ok && data.valid) {
                 setDiscountApplied(promoCode);
-                setPromoDiscount(data.discount_percentage || 0);
-                showStatus(`Promo code applied! ${data.discount_percentage}% discount.`, 'success');
+                setPromoDiscount(data.discount_percent || 0);
+                showStatus(`Promo code applied! ${data.discount_percent}% discount.`, 'success');
             } else {
                 setDiscountApplied('none');
                 setPromoDiscount(0);
@@ -121,19 +121,17 @@ export default function SubscriptionPage({ user, locationId, refreshTokens }: Su
 
     const handleCheckout = async (planId: string) => {
         try {
-            const planPrice = PRICING_PLANS[planId]?.price || 0;
-            const finalPrice = Math.max(0, planPrice * (1 - promoDiscount / 100));
 
             // 1. Create order on backend
-            const orderRes = await fetch(`${API_URL}/api/payment/create-order`, {
+            const orderRes = await apiFetch(`${API_URL}/api/payment/create-order`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ plan_id: planId, promo_code: discountApplied !== 'none' ? discountApplied : '', user_id: user?.id })
+                body: JSON.stringify({ plan_id: planId, promo_code: discountApplied !== 'none' ? discountApplied : '', user_id: user?.id, location_id: locationId })
             });
             const orderData = await orderRes.json();
             
-            if (finalPrice === 0) {
-                if (orderData.status === 'success' || (!orderData.order_id && orderData.status === 'success')) {
+            if (orderData.status === 'free_activated') {
+                if (orderRes.ok) {
                     showStatus('Plan activated successfully!', 'success');
                     setTimeout(() => window.location.reload(), 1500);
                 } else {
@@ -142,10 +140,11 @@ export default function SubscriptionPage({ user, locationId, refreshTokens }: Su
                 return;
             }
 
-            if (!orderData.order_id) { showStatus('Failed to create order', 'error'); return; }
+            if (orderData.status === 'free_activated') { showStatus('Promo applied successfully!', 'success'); fetchTokenBalance(); fetchUserProfile(); return; }
+            if (!orderRes.ok || !orderData.order_id) { showStatus(orderData.detail || 'Failed to create order', 'error'); return; }
 
             // 2. Get Razorpay key
-            const keyRes = await fetch(`${API_URL}/api/payment/key`);
+            const keyRes = await apiFetch(`${API_URL}/api/payment/key`);
             const keyData = await keyRes.json();
 
             // 3. Open Razorpay modal
@@ -158,7 +157,7 @@ export default function SubscriptionPage({ user, locationId, refreshTokens }: Su
                 order_id: orderData.order_id,
                 handler: async (response: any) => {
                     // 4. Verify payment
-                    const verifyRes = await fetch(`${API_URL}/api/payment/verify`, {
+                    const verifyRes = await apiFetch(`${API_URL}/api/payment/verify`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -173,6 +172,8 @@ export default function SubscriptionPage({ user, locationId, refreshTokens }: Su
                     if (verifyRes.ok) {
                         showStatus('Payment successful! Plan upgraded.', 'success');
                         setTimeout(() => window.location.reload(), 1500);
+                    } else {
+                        const error = await verifyRes.json(); showStatus(error.detail || 'Payment verification failed. Contact support with your payment ID.', 'error');
                     }
                 },
                 prefill: { email: user?.email },
@@ -185,17 +186,18 @@ export default function SubscriptionPage({ user, locationId, refreshTokens }: Su
         }
     };
 
-    const handleTopUp = async (packId: string, amount: number) => {
+    const handleTopUp = async (packId: string) => {
         try {
-            const orderRes = await fetch(`${API_URL}/api/payment/create-topup-order`, {
+            const orderRes = await apiFetch(`${API_URL}/api/payment/create-topup-order`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ user_id: user?.id, pack_id: packId, promo_code: discountApplied !== 'none' ? discountApplied : '' })
             });
             const orderData = await orderRes.json();
-            if (!orderData.order_id) { showStatus('Failed to create order', 'error'); return; }
+            if (orderData.status === 'free_activated') { showStatus('Promo applied successfully!', 'success'); fetchTokenBalance(); fetchUserProfile(); return; }
+            if (!orderRes.ok || !orderData.order_id) { showStatus(orderData.detail || 'Failed to create order', 'error'); return; }
 
-            const keyRes = await fetch(`${API_URL}/api/payment/key`);
+            const keyRes = await apiFetch(`${API_URL}/api/payment/key`);
             const keyData = await keyRes.json();
 
             const options = {
@@ -206,7 +208,7 @@ export default function SubscriptionPage({ user, locationId, refreshTokens }: Su
                 description: 'Token Top-Up',
                 order_id: orderData.order_id,
                 handler: async (response: any) => {
-                    const verifyRes = await fetch(`${API_URL}/api/payment/verify-topup`, {
+                    const verifyRes = await apiFetch(`${API_URL}/api/payment/verify-topup`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -214,13 +216,14 @@ export default function SubscriptionPage({ user, locationId, refreshTokens }: Su
                             razorpay_order_id: response.razorpay_order_id,
                             razorpay_signature: response.razorpay_signature,
                             user_id: user?.id,
-                            location_id: locationId,
                             pack_id: packId
                         })
                     });
                     if (verifyRes.ok) {
                         showStatus('Top-up successful!', 'success');
                         fetchTokenBalance();
+                    } else {
+                        const error = await verifyRes.json(); showStatus(error.detail || 'Top-up verification failed. Contact support with your payment ID.', 'error');
                     }
                 },
                 prefill: { email: user?.email },
@@ -236,10 +239,10 @@ export default function SubscriptionPage({ user, locationId, refreshTokens }: Su
     const redeemAdminPromo = async () => {
         if (!adminPromo) return;
         try {
-            const res = await fetch(`${API_URL}/api/tokens/redeem-promo`, {
+            const res = await apiFetch(`${API_URL}/api/tokens/redeem-promo`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user_id: user.id, location_id: locationId, promo_code: adminPromo })
+                body: JSON.stringify({ user_id: user.id, promo_code: adminPromo })
             });
             if (res.ok) {
                 showStatus('Promo code redeemed! Added 1000 tokens.', 'success');
@@ -258,7 +261,7 @@ export default function SubscriptionPage({ user, locationId, refreshTokens }: Su
         <section className="page active">
             <div className="page-head">
                 <h2>Subscription & Tokens</h2>
-                <p>Manage your billing and AI tokens.</p>
+                <p>One account token balance, shared across all your Google business profiles.</p>
             </div>
 
             {statusMsg && (
@@ -281,11 +284,11 @@ export default function SubscriptionPage({ user, locationId, refreshTokens }: Su
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                         <div>
                             <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)', margin: 0 }}>Plan</p>
-                            <p style={{ fontWeight: 'bold' }}>{currentPlanData.plan_name || 'Free'}</p>
+                            <p style={{ fontWeight: 'bold' }}>{PRICING_PLANS[currentPlanData.plan_type]?.name || 'Free'}</p>
                         </div>
                         <div>
                             <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)', margin: 0 }}>Business</p>
-                            <p style={{ fontWeight: 'bold' }}>{currentPlanData.business_name || 'N/A'}</p>
+                            <p style={{ fontWeight: 'bold' }}>{locationId || 'No profile selected'}</p>
                         </div>
                         <div>
                             <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)', margin: 0 }}>User</p>
@@ -293,7 +296,7 @@ export default function SubscriptionPage({ user, locationId, refreshTokens }: Su
                         </div>
                         <div>
                             <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)', margin: 0 }}>Max Keywords</p>
-                            <p style={{ fontWeight: 'bold' }}>{currentPlanData.max_keywords || 0}</p>
+                            <p style={{ fontWeight: 'bold' }}>{currentPlanData.max_seo_keywords || 2}</p>
                         </div>
                     </div>
                 </div>
@@ -302,7 +305,7 @@ export default function SubscriptionPage({ user, locationId, refreshTokens }: Su
             <div className="card glass" style={{ maxWidth: '700px', margin: '0 0 32px 0', padding: '32px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                     <div>
-                        <h3 style={{ fontSize: '20px', marginBottom: '4px' }}>Token Balance</h3>
+                        <h3 style={{ fontSize: '20px', marginBottom: '4px' }}>Account Token Balance</h3>
                         <p style={{ fontSize: '28px', fontWeight: 'bold', color: 'var(--blue-soft)' }}>{tokenBalance} Tokens</p>
                     </div>
                 </div>
@@ -313,12 +316,12 @@ export default function SubscriptionPage({ user, locationId, refreshTokens }: Su
                         <div className="card-sm" style={{ background: 'rgba(255,255,255,.02)', border: '1px solid rgba(255,255,255,.05)' }}>
                             <p style={{ fontWeight: 'bold', marginBottom: '8px' }}>Standard Top-Up</p>
                             <p style={{ fontSize: '14px', color: 'rgba(255,255,255,.7)', marginBottom: '16px' }}>450 tokens for ₹500</p>
-                            <button className="btn btn-sm btn-ghost" onClick={() => handleTopUp('standard', 500)}>Buy Now</button>
+                            <button className="btn btn-sm btn-ghost" onClick={() => handleTopUp('standard')}>Buy Now</button>
                         </div>
                         <div className="card-sm" style={{ background: 'rgba(255,255,255,.02)', border: '1px solid rgba(255,255,255,.05)' }}>
                             <p style={{ fontWeight: 'bold', marginBottom: '8px' }}>Bulk Top-Up</p>
                             <p style={{ fontSize: '14px', color: 'rgba(255,255,255,.7)', marginBottom: '16px' }}>1000 tokens for ₹900</p>
-                            <button className="btn btn-sm btn-ghost" onClick={() => handleTopUp('bulk', 900)}>Buy Now</button>
+                            <button className="btn btn-sm btn-ghost" onClick={() => handleTopUp('bulk')}>Buy Now</button>
                         </div>
                     </div>
                 </div>
@@ -335,7 +338,7 @@ export default function SubscriptionPage({ user, locationId, refreshTokens }: Su
                             <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
                                 {ledgerHistory.map((item, index) => (
                                     <li key={index} style={{ padding: '8px 0', borderBottom: index < ledgerHistory.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 2fr', gap: '8px', alignItems: 'center', fontSize: '14px' }}>
-                                        <span style={{ color: 'rgba(255,255,255,0.7)' }}>{new Date(item.created_at || Date.now()).toLocaleDateString()}</span>
+                                        <span style={{ color: 'rgba(255,255,255,0.7)' }}>{item.created_at ? new Date(item.created_at).toLocaleDateString() : '—'}</span>
                                         <span style={{ color: 'rgba(255,255,255,0.9)' }}>{item.action_type || '-'}</span>
                                         <span style={{ color: item.amount > 0 ? 'var(--green-soft)' : 'var(--red-soft)', fontWeight: 'bold' }}>{item.amount > 0 ? '+' : ''}{item.amount}</span>
                                         <span style={{ color: 'rgba(255,255,255,0.7)' }}>{item.description}</span>
@@ -421,7 +424,7 @@ export default function SubscriptionPage({ user, locationId, refreshTokens }: Su
 
             <div className="card glass" style={{ maxWidth: '700px', padding: '32px', marginTop: '24px' }}>
                 <h3 style={{ fontSize: '20px', marginBottom: '8px' }}>Redeem Promo Code</h3>
-                <p style={{ fontSize: '14px', color: 'rgba(255,255,255,.6)', marginBottom: '16px' }}>Have a special promo code? Redeem it here for extra tokens on this location.</p>
+                <p style={{ fontSize: '14px', color: 'rgba(255,255,255,.6)', marginBottom: '16px' }}>Have a special promo code? Redeem it here for extra tokens for your account.</p>
                 <div style={{ display: 'flex', gap: '10px' }}>
                     <input type="text" className="input" placeholder="Enter admin promo code" value={adminPromo} onChange={(e) => setAdminPromo(e.target.value)} />
                     <button className="btn btn-ghost" onClick={redeemAdminPromo}>Redeem</button>

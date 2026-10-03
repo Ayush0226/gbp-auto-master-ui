@@ -1,3 +1,4 @@
+import { apiFetch } from './lib/api';
 import React, { useState } from 'react';
 import { supabase } from './lib/supabase';
 import './Onboarding.css';
@@ -39,10 +40,11 @@ const Onboarding = () => {
         { reviewer: "Amit Verma", rating: 5, reply: `Thank you for the 5 stars, Amit! We've made sure to focus on ${keywords[0] || 'our service'} to give you the best experience.` },
         { reviewer: "Priya Sharma", rating: 4, reply: `Thanks Priya! Your feedback helps us improve our ${keywords[1] || 'offerings'} for all our customers.` }
       ]);
-      setDemoStatus('success');
+
       
       // Save onboarding data to actual database
-      await fetch(`${API_URL}/api/user/onboarding`, {
+      if (!session?.user) throw new Error('Please sign in again');
+      const response = await apiFetch(`${API_URL}/api/user/onboarding`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -55,6 +57,8 @@ const Onboarding = () => {
         })
       });
       
+      if (!response.ok) throw new Error('Could not save onboarding');
+      setDemoStatus('success');
       setTimeout(() => setStep(4), 1500);
     } catch (error) {
       console.error(error);
@@ -159,7 +163,7 @@ const Onboarding = () => {
           <div className="step-content fade-in success-step">
             <div className="confetti-icon">&#127881;</div>
             <h2>You're all set!</h2>
-            <p className="tokens-msg">You've been given <strong>60 free tokens!</strong></p>
+            <p className="tokens-msg">New accounts receive <strong>200 free tokens once</strong>, shared across all business profiles.</p>
             
             <div className="demo-results">
               <h3>Demo Results:</h3>

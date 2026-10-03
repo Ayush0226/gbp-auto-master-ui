@@ -1,3 +1,4 @@
+import { apiFetch } from './lib/api';
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from './lib/supabase';
 
@@ -17,7 +18,7 @@ export default function DashboardV2() {
     const [activeView, setActiveView] = useState('dashboard');
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [tokenBalance, setTokenBalance] = useState<number>(0);
-    const [planType, setPlanType] = useState<string>('free');
+
     const [toast, setToast] = useState<{message: string, type: 'success' | 'error' | 'info'} | null>(null);
 
     // ─── Location State ───
@@ -64,6 +65,8 @@ export default function DashboardV2() {
 
     // ─── Auth & Initial Data Fetch ───
     useEffect(() => {
+        let unsubscribe = () => {};
+        let disposed = false;
         const initDashboard = async () => {
             const { data: { session } } = await supabase.auth.getSession();
             if (session?.user) {
@@ -73,7 +76,7 @@ export default function DashboardV2() {
                 const cachedLocs = session.user.user_metadata?.cached_locations || [];
                 if (cachedLocs.length > 0) {
                     setLiveLocations(cachedLocs);
-                    if (!activeLocationId) setActiveLocationId(cachedLocs[0].id);
+                    setActiveLocationId(current => current || cachedLocs[0].id);
                     setLoadingLocations(false);
                 }
                 
@@ -81,7 +84,7 @@ export default function DashboardV2() {
                 if (token) setProviderToken(token);
 
                 // Save refresh token to user metadata if it exists
-                if (session.provider_refresh_token) {
+                if (session.provider_refresh_token && session.user.user_metadata?.google_refresh_token !== session.provider_refresh_token) {
                     await supabase.auth.updateUser({
                         data: { google_refresh_token: session.provider_refresh_token }
                     });
@@ -96,19 +99,22 @@ export default function DashboardV2() {
                 }
             }
 
-            const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
+            if (disposed) return;
+            const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+                window.setTimeout(async () => {
+                if (disposed) return;
                 if (session?.user) {
                     setUser(session.user);
                     const cachedLocs = session.user.user_metadata?.cached_locations || [];
                     if (cachedLocs.length > 0) {
                         setLiveLocations(cachedLocs);
-                        if (!activeLocationId) setActiveLocationId(cachedLocs[0].id);
+                        setActiveLocationId(current => current || cachedLocs[0].id);
                         setLoadingLocations(false);
                     }
                     if (session.provider_token) {
                         setProviderToken(session.provider_token);
                     }
-                    if (session.provider_refresh_token) {
+                    if (session.provider_refresh_token && session.user.user_metadata?.google_refresh_token !== session.provider_refresh_token) {
                         await supabase.auth.updateUser({
                             data: { google_refresh_token: session.provider_refresh_token }
                         });
@@ -116,19 +122,18 @@ export default function DashboardV2() {
                 } else {
                     setUser(null);
                 }
+                }, 0);
             });
-
-            return () => {
-                authListener.subscription.unsubscribe();
-            };
+            unsubscribe = () => authListener.subscription.unsubscribe();
         };
         initDashboard();
+        return () => { disposed = true; unsubscribe(); };
     }, []);
 
     // ─── Refresh Google Token via Backend ───
     const refreshGoogleToken = async (userId: string) => {
         try {
-            const res = await fetch(`${API_URL}/api/auth/refresh-google-token`, {
+            const res = await apiFetch(`${API_URL}/api/auth/refresh-google-token`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ user_id: userId })
@@ -146,15 +151,9 @@ export default function DashboardV2() {
     };
 
     // ─── Cache Updater for Instant Dashboard Loading ───
-    const updateLocationCache = async (locId: string, updates: any) => {
-        const updated = liveLocations.map(l => l.id === locId ? { ...l, ...updates } : l);
-        setLiveLocations(updated);
-        if (user) {
-            await supabase.auth.updateUser({
-                data: { cached_locations: updated }
-            });
-        }
-    };
+    const updateLocationCache = useCallback((locId: string, updates: any) => {
+        setLiveLocations(current => current.map(location => location.id === locId ? { ...location, ...updates } : location));
+    }, []);
 
     // Auto-load stats instantly from cache when location changes
     React.useEffect(() => {
@@ -163,25 +162,22 @@ export default function DashboardV2() {
             if (loc) {
                 if (loc.reviews !== undefined) setTotalReviewCount(loc.reviews);
                 if (loc.rating !== undefined) setAverageRating(loc.rating);
-                if (loc.tokens !== undefined) setTokenBalance(loc.tokens);
             }
         }
     }, [activeLocationId, liveLocations]);
 
     // ─── Fetch Token Balance ───
-    const fetchTokenBalance = async (userId: string, locationId: string) => {
-        if (!locationId) return;
+    const fetchTokenBalance = async (userId: string, _locationId?: string) => {
         try {
-            const res = await fetch(`${API_URL}/api/tokens/balance`, {
+            const res = await apiFetch(`${API_URL}/api/tokens/balance`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user_id: userId, location_id: locationId })
+                body: JSON.stringify({ user_id: userId })
             });
             if (res.ok) {
                 const data = await res.json();
                 setTokenBalance(data.balance || 0);
-                if (data.plan_type) setPlanType(data.plan_type);
-                updateLocationCache(locationId, { tokens: data.balance || 0 });
+
             }
         } catch (error) {
             console.error('Error fetching token balance:', error);
@@ -190,7 +186,7 @@ export default function DashboardV2() {
 
     // Auto-fetch tokens when active location changes
     React.useEffect(() => {
-        if (user?.id && activeLocationId) {
+        if (user?.id) {
             fetchTokenBalance(user.id, activeLocationId);
         }
     }, [user?.id, activeLocationId]);
@@ -199,7 +195,7 @@ export default function DashboardV2() {
     const fetchLocations = async (userId: string, token: string) => {
         if (liveLocations.length === 0) setLoadingLocations(true);
         try {
-            const res = await fetch(`${API_URL}/api/google/locations`, {
+            const res = await apiFetch(`${API_URL}/api/google/locations`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ user_id: userId, provider_token: token })
@@ -218,8 +214,9 @@ export default function DashboardV2() {
                 }
                 const locs = data.locations || [];
                 setLiveLocations(locs);
-                if (locs.length > 0 && !activeLocationId) {
-                    setActiveLocationId(locs[0].id);
+                fetchTokenBalance(userId);
+                if (locs.length > 0) {
+                    setActiveLocationId(current => current || locs[0].id);
                 }
             }
         } catch (error) {
@@ -238,7 +235,7 @@ export default function DashboardV2() {
         if (!hasCache) setLoadingReviews(true);
 
         try {
-            const res = await fetch(`${API_URL}/api/google/get-reviews`, {
+            const res = await apiFetch(`${API_URL}/api/google/get-reviews`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -270,7 +267,7 @@ export default function DashboardV2() {
         if (!providerToken || !activeLocationId || !user) return;
         setSyncingReviews(true);
         try {
-            const res = await fetch(`${API_URL}/api/google/sync-reviews`, {
+            const res = await apiFetch(`${API_URL}/api/google/sync-reviews`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -295,7 +292,7 @@ export default function DashboardV2() {
     const fetchAnalytics = async () => {
         if (!providerToken || !activeLocationId || !user) return;
         try {
-            const res = await fetch(`${API_URL}/api/google/analytics`, {
+            const res = await apiFetch(`${API_URL}/api/google/analytics`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -317,7 +314,7 @@ export default function DashboardV2() {
     const fetchSearchKeywords = async () => {
         if (!providerToken || !activeLocationId || !user) return;
         try {
-            const res = await fetch(`${API_URL}/api/google/search-keywords`, {
+            const res = await apiFetch(`${API_URL}/api/google/search-keywords`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -339,7 +336,7 @@ export default function DashboardV2() {
     const fetchCalendarPosts = async () => {
         if (!user || !activeLocationId) return;
         try {
-            const { data, error } = await supabase
+            const { data } = await supabase
                 .from('calendar_posts')
                 .select('*')
                 .eq('user_id', user.id)
@@ -381,6 +378,7 @@ export default function DashboardV2() {
                 const { data: uploadData, error: uploadError } = await supabase.storage
                     .from('calendar_images')
                     .upload(filePath, file);
+                if (uploadError) throw uploadError;
                 if (uploadData) {
                     const { data: publicUrlData } = supabase.storage
                         .from('calendar_images')
@@ -390,25 +388,17 @@ export default function DashboardV2() {
             }
 
             // Insert post into Supabase
-            const { error } = await supabase.from('calendar_posts').insert({
+            const scheduleResponse = await apiFetch(`${API_URL}/api/calendar/schedule`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
                 user_id: user.id,
                 location_id: activeLocationId,
                 post_date: postDate,
                 caption: postText,
                 image_url: imageUrl,
                 post_type: postType,
-                status: 'scheduled'
-            });
+            }) });
+            const scheduleResult = await scheduleResponse.json();
 
-            if (!error) {
-                // Deduct 5 tokens
-                await fetch(`${API_URL}/api/tokens/balance`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ user_id: user.id })
-                });
-                // We need a deduct endpoint — use the existing deduct_tokens logic via a direct supabase call
-                // For now, refresh balance after backend cron processes it
+            if (scheduleResponse.ok) {
                 showToast('Post scheduled! 5 tokens deducted.', 'success');
                 setPostText('');
                 setFile(null);
@@ -417,7 +407,7 @@ export default function DashboardV2() {
                 fetchCalendarPosts();
                 fetchTokenBalance(user.id, activeLocationId);
             } else {
-                showToast('Failed to schedule post: ' + error.message, 'error');
+                showToast('Failed to schedule post: ' + (scheduleResult.detail || 'Please retry'), 'error');
             }
         } catch (error) {
             showToast('Error scheduling post', 'error');
@@ -435,22 +425,11 @@ export default function DashboardV2() {
         setLoadingAction(true);
         try {
             // Get the post data
-            const { data: postData } = await supabase.from('calendar_posts').select('*').eq('id', postId).single();
-            if (!postData) { showToast('Post not found', 'error'); return; }
-
-            const res = await fetch(`${API_URL}/api/google/publish-post`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    provider_token: providerToken,
-                    location_id: activeLocationId,
-                    summary: postData.caption,
-                    image_url: postData.image_url || null,
-                    post_type: postData.post_type || 'LOCAL_POST'
-                })
+            const res = await apiFetch(`${API_URL}/api/calendar/publish`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: user.id, location_id: activeLocationId, post_id: postId, provider_token: providerToken })
             });
             if (res.ok) {
-                await supabase.from('calendar_posts').update({ status: 'published' }).eq('id', postId);
                 showToast('Post published to Google!', 'success');
                 fetchCalendarPosts();
             } else {
@@ -466,7 +445,8 @@ export default function DashboardV2() {
     // ─── Cancel a Scheduled Post ───
     const cancelPost = async (postId: string) => {
         try {
-            await supabase.from('calendar_posts').delete().eq('id', postId);
+            const res = await apiFetch(`${API_URL}/api/calendar/delete`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: user.id, location_id: activeLocationId, post_id: postId }) });
+            if (!res.ok) throw new Error('Could not delete this post');
             showToast('Post cancelled.', 'info');
             fetchCalendarPosts();
         } catch (error) {
@@ -493,7 +473,7 @@ export default function DashboardV2() {
         }
         if (user && activeLocationId) {
             // Fetch user's configured SEO keywords for this location
-            fetch(`${API_URL}/api/user/get-ai-settings`, {
+            apiFetch(`${API_URL}/api/user/get-ai-settings`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ user_id: user.id, location_id: activeLocationId })
@@ -509,11 +489,6 @@ export default function DashboardV2() {
             .catch(() => {});
         }
     }, [activeLocationId, providerToken, user]);
-
-    // ─── PDF Download Placeholder ───
-    const downloadPdfReport = () => {
-        showToast('PDF export coming soon!', 'info');
-    };
 
     // ─── View Title Helper ───
     const getViewTitle = () => {
@@ -610,7 +585,7 @@ export default function DashboardV2() {
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.05)', padding: '8px 14px', borderRadius: '8px' }}>
                                 <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)' }}>Balance:</span>
                                 <strong style={{ fontSize: '16px', color: 'var(--blue-soft, #4F8CFF)' }}>{tokenBalance}</strong>
-                                <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>tokens</span>
+                                <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>account tokens</span>
                             </div>
 
                         </div>
@@ -821,10 +796,12 @@ export default function DashboardV2() {
                             setLiveReviews={setLiveReviews}
                             loadingReviews={loadingReviews}
                             syncingReviews={syncingReviews}
-                            providerToken={providerToken}
+                            providerToken={providerToken || ''}
                             user={user}
                             activeLocationId={activeLocationId}
                             handleSyncReviews={handleSyncReviews}
+                            onReviewsChanged={fetchReviews}
+                            refreshTokens={() => fetchTokenBalance(user.id)}
                             showToast={showToast}
                         />
                     )}
@@ -863,10 +840,9 @@ export default function DashboardV2() {
                             activeLocationId={activeLocationId}
                             user={user}
                             liveReviews={liveReviews}
-                            downloadPdfReport={downloadPdfReport}
                             showToast={showToast}
                             searchKeywords={searchKeywords}
-                            providerToken={providerToken}
+                            providerToken={providerToken || ''}
                             refreshTokens={() => fetchTokenBalance(user.id, activeLocationId)}
                         />
                     )}
@@ -876,7 +852,7 @@ export default function DashboardV2() {
                         <BrainSettings 
                             user={user} 
                             activeLocationId={activeLocationId} 
-                            providerToken={providerToken} 
+                            providerToken={providerToken || ''}
                             showToast={showToast} 
                         />
                     )}

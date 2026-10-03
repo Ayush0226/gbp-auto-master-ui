@@ -1,4 +1,3 @@
-import React from 'react';
 
 export default function ContentCalendarV2({
     currentMonth, setCurrentMonth, currentYear, setCurrentYear,
