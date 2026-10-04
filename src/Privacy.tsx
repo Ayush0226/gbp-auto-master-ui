@@ -45,7 +45,17 @@ export default function Privacy() {
                             We implement a variety of security measures including secure OAuth 2.0 flows and encrypted database storage to maintain the safety of your personal information. 
                         </p>
 
-                        <h2>6. Contact Us</h2>
+                        <h2>6. Local Rank Reports</h2>
+                        <p>
+                            When you request a local rank report, we send the keyword and business search area to SerpApi to retrieve Google local search results. We use the connected business name and Google Place ID, when available, to identify its measured position. Google OAuth credentials are not sent to SerpApi.
+                        </p>
+
+                        <h2>7. Data Requests and Deletion</h2>
+                        <p>
+                            You may request access, correction, or deletion of your GBP Auto Master account data by contacting support@gbpautomaster.in. We verify account ownership before completing a request and retain records only as required for security, billing, dispute resolution, and legal obligations.
+                        </p>
+
+                        <h2>8. Contact Us</h2>
                         <p>
                             If there are any questions regarding this privacy policy, you may contact us using the information below:
                         </p>

@@ -5,6 +5,7 @@ const DashboardV2 = lazy(() => import('./DashboardV2'));
 const Onboarding = lazy(() => import('./Onboarding'));
 const Terms = lazy(() => import('./Terms'));
 const Privacy = lazy(() => import('./Privacy'));
+const Support = lazy(() => import('./Support'));
 const Refund = lazy(() => import('./Refund'));
 const MuscleDemoHome = lazy(() => import('./MuscleDemoHome').then(module => ({ default: module.MuscleDemoHome })));
 const AdminDashboard = lazy(() => import('./AdminDashboard'));
@@ -138,6 +139,10 @@ function App() {
 
     if (currentPath === '/privacy') {
       return <Privacy />;
+    }
+
+    if (currentPath === '/support') {
+      return <Support />;
     }
 
     if (currentPath === '/refund') {

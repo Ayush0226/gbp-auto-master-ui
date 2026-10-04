@@ -13,12 +13,11 @@ interface RankAnalysisProps {
 }
 
 export default function RankAnalysis({
-    analyticsData, activeLocationId, user, liveReviews, showToast, searchKeywords, providerToken, refreshTokens
+    analyticsData, activeLocationId, user, liveReviews, showToast, searchKeywords, refreshTokens
 }: RankAnalysisProps) {
     const API_URL = import.meta.env.VITE_API_URL || 'https://gbp-auto-master-backend-us.onrender.com';
     const [generatingReport, setGeneratingReport] = useState(false);
     const [seoKeywords, setSeoKeywords] = useState<any[]>([]);
-    const [planType, setPlanType] = useState<string>('');
 
     let positive = 0;
     let neutral = 0;
@@ -55,7 +54,7 @@ export default function RankAnalysis({
         }
     };
 
-    const downloadKeywordPdf = async (keyword: string, reportText?: string, competitors?: any[]) => {
+    const downloadKeywordPdf = async (keyword: string, report: any) => {
         showToast(`Generating PDF for ${keyword}...`, 'info');
         try {
             const jsPDF = (await import('jspdf')).default;
@@ -82,39 +81,25 @@ export default function RankAnalysis({
             pdf.text(`AI Reply Usage: Weaved ${usageCount} times across ${totalReplies} replies.`, 14, yPos);
             yPos += 15;
 
-            // Competitors
-            if (competitors && competitors.length > 0) {
+            pdf.setFont("helvetica", "bold");
+            pdf.text(`Measured rank: ${report.found_in_top_11 ? `#${report.actual_rank}` : 'Not found in top 11'}`, 14, yPos);
+            yPos += 8;
+            pdf.setFont("helvetica", "normal");
+            pdf.text(`Business: ${report.target_business}`, 14, yPos);
+            yPos += 7;
+            pdf.text(`Search area: ${report.search_area}`, 14, yPos);
+            yPos += 15;
+
+            if (report.results && report.results.length > 0) {
                 pdf.setFont("helvetica", "bold");
-                pdf.text(`Local Top 10 Competitors for "${keyword}"`, 14, yPos);
+                pdf.text(`Google local top 11 for "${keyword}"`, 14, yPos);
                 yPos += 8;
                 pdf.setFont("helvetica", "normal");
-                competitors.forEach((c: any, idx: number) => {
+                report.results.forEach((c: any) => {
                     if (yPos > 270) { pdf.addPage(); yPos = 20; }
-                    pdf.text(`#${idx + 1} - ${c.name} (Rating: ${c.rating}, Reviews: ${c.reviews})`, 14, yPos);
+                    pdf.text(`#${c.position} - ${c.business_name}${c.is_target ? ' (Your business)' : ''} (Rating: ${c.rating ?? 'N/A'}, Reviews: ${c.reviews ?? 'N/A'})`, 14, yPos);
                     yPos += 8;
                 });
-                yPos += 10;
-            }
-
-            // AI Report
-            if (reportText) {
-                if (yPos > 250) { pdf.addPage(); yPos = 20; }
-                pdf.setFont("helvetica", "bold");
-                pdf.text(`AI Intelligence Analysis`, 14, yPos);
-                yPos += 10;
-                pdf.setFont("helvetica", "normal");
-                
-                const splitText = pdf.splitTextToSize(reportText, 180);
-                splitText.forEach((line: string) => {
-                    if (yPos > 280) {
-                        pdf.addPage();
-                        yPos = 20;
-                    }
-                    pdf.text(line, 14, yPos);
-                    yPos += 7;
-                });
-            } else {
-                pdf.text("No AI analysis report available. Use the 'Generate Report' button.", 14, yPos);
             }
 
             pdf.save(`Rank_Report_${keyword.replace(/[^a-z0-9]/gi, '_')}.pdf`);
@@ -128,22 +113,6 @@ export default function RankAnalysis({
 
 
     React.useEffect(() => {
-        if (user?.id) {
-            // Fetch plan type
-            apiFetch(`${API_URL}/api/user/profile`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user_id: user.id, location_id: activeLocationId })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.plan_type) {
-                    setPlanType(data.plan_type);
-                }
-            })
-            .catch(e => console.error("Failed to fetch profile", e));
-        }
-
         if (user?.id && activeLocationId) {
             // Fetch location-specific SEO keywords
             apiFetch(`${API_URL}/api/user/get-ai-settings`, {
@@ -164,11 +133,6 @@ export default function RankAnalysis({
     }, [user?.id, activeLocationId, API_URL]);
 
     const handleGenerateReport = async (keyword: string) => {
-        if (!['half_yearly', 'yearly'].includes(planType)) {
-            showToast("Competitor reports require a Growth or Yearly plan.", "error");
-            return;
-        }
-
         try {
             const balRes = await apiFetch(`${API_URL}/api/tokens/balance`, {
                 method: 'POST',
@@ -195,13 +159,14 @@ export default function RankAnalysis({
                     user_id: user?.id,
                     keyword: keyword,
                     location_id: activeLocationId,
-                    access_token: providerToken
+                    request_id: crypto.randomUUID()
                 })
             });
             const data = await res.json();
             if (data.status === 'success') {
-                showToast(`Report generated successfully for "${keyword}"! Downloading...`, 'success');
-                downloadKeywordPdf(keyword, data.report, data.competitors);
+                const rank = data.found_in_top_11 ? `#${data.actual_rank}` : 'not found in the top 11';
+                showToast(`Measured Google local rank: ${rank}. Downloading report...`, 'success');
+                downloadKeywordPdf(keyword, data);
                 if (refreshTokens) refreshTokens();
             } else {
                 showToast(data.detail || data.message || "Failed to generate report", "error");
@@ -240,7 +205,7 @@ export default function RankAnalysis({
                         onClick={() => handleGenerateReport('general')}
                         disabled={generatingReport}
                     >
-                        {generatingReport ? 'Generating...' : 'Generate Report (15 tokens)'}
+                        {generatingReport ? 'Scanning...' : 'Check “general” rank (10 credits)'}
                     </button>
                 </div>
             </div>
@@ -329,7 +294,7 @@ export default function RankAnalysis({
                                             disabled={generatingReport}
                                             style={{ width: '100%', background: 'rgba(255,255,255,.05)' }}
                                         >
-                                            {generatingReport ? 'Scanning Competitors...' : 'dY"S Generate Report (10 tokens)'}
+                                            {generatingReport ? 'Checking Google local results...' : 'Check top-11 rank (10 credits)'}
                                         </button>
                                     </div>
                                 </div>
