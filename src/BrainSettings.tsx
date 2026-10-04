@@ -25,6 +25,9 @@ export default function BrainSettings({
     const [searchKeywords, setSearchKeywords] = useState<any[]>([]);
     const [loadingAction, setLoadingAction] = useState(false);
     const [maxSeoKeywords, setMaxSeoKeywords] = useState(5);
+    const [automationMode, setAutomationMode] = useState<'draft' | 'approval' | 'auto_publish'>('approval');
+    const [delayMinutes, setDelayMinutes] = useState(0);
+    const [dailyLimit, setDailyLimit] = useState(20);
 
     useEffect(() => {
         const fetchSettings = async () => {
@@ -60,6 +63,21 @@ export default function BrainSettings({
                     }
                     if (data.search_keywords !== undefined) setSearchKeywords(data.search_keywords);
                 }
+
+                const rulesRes = await apiFetch(`${API_URL}/api/platform/automation-rules`);
+                if (rulesRes.ok) {
+                    const rulesData = await rulesRes.json();
+                    const rule = (rulesData.rules || []).find((item: any) => item.location_id === activeLocationId);
+                    if (rule) {
+                        setIsAiActive(rule.enabled);
+                        setAutomationMode(rule.mode);
+                        setAiTone(rule.tone || 'Professional');
+                        setCustomInstructions(rule.custom_instructions || '');
+                        setDelayMinutes(rule.delay_minutes || 0);
+                        setDailyLimit(rule.daily_limit || 20);
+                        setReplyTo1Star((rule.min_rating || 1) <= 1);
+                    }
+                }
             } catch (err) {
                 console.error("Failed to fetch settings", err);
             }
@@ -67,24 +85,50 @@ export default function BrainSettings({
         fetchSettings();
     }, [user, activeLocationId, API_URL]);
 
-    const saveUserSettings = async (settings: any) => {
+    const saveAllSettings = async () => {
+        setLoadingAction(true);
         try {
-            const res = await apiFetch(`${API_URL}/api/user/save-ai-settings`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    user_id: user?.id,
-                    location_id: activeLocationId,
-                    settings: settings
-                })
-            });
-            if (res.ok) {
-                showToast('Settings saved successfully!', 'success');
-            } else {
-                showToast('Failed to save settings', 'error');
-            }
-        } catch (e) {
-            showToast('Error saving settings', 'error');
+            const [legacy, automation] = await Promise.all([
+                apiFetch(`${API_URL}/api/user/save-ai-settings`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: user?.id,
+                        location_id: activeLocationId,
+                        settings: {
+                            is_ai_active: isAiActive,
+                            reply_to_1_star: replyTo1Star,
+                            ai_tone: aiTone,
+                            custom_instructions: customInstructions,
+                            active_keywords: targetKeywords,
+                        },
+                    }),
+                }),
+                apiFetch(`${API_URL}/api/platform/automation-rules`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        location_id: activeLocationId,
+                        name: 'Review automation',
+                        enabled: isAiActive,
+                        mode: automationMode,
+                        min_rating: replyTo1Star ? 1 : 3,
+                        max_rating: 5,
+                        tone: aiTone,
+                        language: 'auto',
+                        custom_instructions: customInstructions,
+                        delay_minutes: delayMinutes,
+                        daily_limit: dailyLimit,
+                        blocked_terms: [],
+                    }),
+                }),
+            ]);
+            if (!legacy.ok || !automation.ok) throw new Error('Could not save every setting');
+            showToast('Review automation settings saved.', 'success');
+        } catch (error: any) {
+            showToast(error.message || 'Could not save review automation', 'error');
+        } finally {
+            setLoadingAction(false);
         }
     };
 
@@ -101,6 +145,28 @@ export default function BrainSettings({
                     <p style={{ fontSize: '12.5px', color: 'rgba(255,255,255,.5)', margin: '4px 0 0' }}>Turn off to instantly stop replying to new reviews.</p>
                 </div>
                 <div className={`toggle ${isAiActive ? 'on' : ''}`} onClick={() => setIsAiActive(!isAiActive)}><span className="knob"></span></div>
+            </div>
+
+            <div className="card glass" style={{ marginBottom: '16px' }}>
+                <label className="field-label">Publishing workflow</label>
+                <select value={automationMode} onChange={(event) => setAutomationMode(event.target.value as any)}>
+                    <option value="draft">Draft only</option>
+                    <option value="approval">Wait for approval</option>
+                    <option value="auto_publish">Publish automatically</option>
+                </select>
+                <p style={{ fontSize: '12.5px', color: 'rgba(255,255,255,.5)', margin: '8px 0 0' }}>
+                    Draft only stores suggestions. Approval waits for you or your AI agent. Automatic mode publishes qualifying replies after the delay.
+                </p>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: '12px', marginTop: '14px' }}>
+                    <div>
+                        <label className="field-label">Delay (minutes)</label>
+                        <input className="input" type="number" min={0} max={10080} value={delayMinutes} onChange={(event) => setDelayMinutes(Number(event.target.value))} />
+                    </div>
+                    <div>
+                        <label className="field-label">Daily limit</label>
+                        <input className="input" type="number" min={1} max={500} value={dailyLimit} onChange={(event) => setDailyLimit(Number(event.target.value))} />
+                    </div>
+                </div>
             </div>
 
             <div className="card glass" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', background: 'rgba(52,168,83,.05)', border: '1px solid rgba(52,168,83,.2)' }}>
@@ -231,15 +297,9 @@ export default function BrainSettings({
             <div className="card glass">
                 <label className="field-label">Custom Instructions</label>
                 <textarea className="input" rows={3} value={customInstructions} onChange={(e) => setCustomInstructions(e.target.value)} placeholder="e.g. Always mention our 30-day return policy"></textarea>
-                <button className="btn btn-primary btn-sm" style={{ marginTop: '12px' }} onClick={() => {
-                    saveUserSettings({ 
-                        is_ai_active: isAiActive, 
-                        reply_to_1_star: replyTo1Star, 
-                        ai_tone: aiTone, 
-                        custom_instructions: customInstructions,
-                        active_keywords: targetKeywords 
-                    });
-                }}>Save Settings</button>
+                <button className="btn btn-primary btn-sm" style={{ marginTop: '12px' }} disabled={loadingAction} onClick={saveAllSettings}>
+                    {loadingAction ? 'Saving...' : 'Save Settings'}
+                </button>
             </div>
         </section>
     );

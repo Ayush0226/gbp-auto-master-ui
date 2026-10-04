@@ -39,16 +39,8 @@ export default function DashboardV2() {
     const [totalReviewCount, setTotalReviewCount] = useState<number>(0);
     const [averageRating, setAverageRating] = useState<number>(0);
 
-    // ─── Calendar State (managed here, passed to ContentCalendarV2) ───
-    const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
-    const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
-    const [selectedDate, setSelectedDate] = useState<number | null>(null);
+    // Legacy calendar rows remain visible in the dashboard summary during migration.
     const [scheduledPosts, setScheduledPosts] = useState<any>({});
-    const [isSchedulingNew, setIsSchedulingNew] = useState(false);
-    const [postType, setPostType] = useState<'LOCAL_POST' | 'PHOTO' | 'VIDEO'>('LOCAL_POST');
-    const [file, setFile] = useState<File | null>(null);
-    const [postText, setPostText] = useState('');
-    const [loadingAction, setLoadingAction] = useState(false);
 
     // ─── Helper: Show Toast ───
     const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
@@ -59,10 +51,6 @@ export default function DashboardV2() {
     // ─── Helper: Get active location object ───
     const activeLocObj = liveLocations.find(l => l.id === activeLocationId) || (liveLocations.length > 0 ? liveLocations[0] : null);
     const activeLocationName = activeLocObj ? activeLocObj.name : 'No Location Connected';
-
-    // Calendar derived values
-    const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
-    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
 
     // ─── Auth & Initial Data Fetch ───
     useEffect(() => {
@@ -353,105 +341,6 @@ export default function DashboardV2() {
             }
         } catch (error) {
             console.error('Error fetching calendar posts:', error);
-        }
-    };
-
-    // ─── Schedule a Post ───
-    const handleSchedule = async () => {
-        if (!user || !selectedDate || !postText.trim()) {
-            showToast('Please select a date and write content.', 'error');
-            return;
-        }
-        // Check token balance (5 tokens per post)
-        if (tokenBalance < 5) {
-            showToast('Insufficient tokens! You need 5 tokens to schedule a post.', 'error');
-            return;
-        }
-
-        setLoadingAction(true);
-        const postDate = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(selectedDate).padStart(2, '0')}`;
-
-        try {
-            let imageUrl = '';
-            // Upload file to Supabase Storage if exists
-            if (file) {
-                const filePath = `${user.id}/${Date.now()}_${file.name}`;
-                const { data: uploadData, error: uploadError } = await supabase.storage
-                    .from('calendar_images')
-                    .upload(filePath, file);
-                if (uploadError) throw uploadError;
-                if (uploadData) {
-                    const { data: publicUrlData } = supabase.storage
-                        .from('calendar_images')
-                        .getPublicUrl(filePath);
-                    imageUrl = publicUrlData.publicUrl;
-                }
-            }
-
-            // Insert post into Supabase
-            const scheduleResponse = await apiFetch(`${API_URL}/api/calendar/schedule`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
-                user_id: user.id,
-                location_id: activeLocationId,
-                post_date: postDate,
-                caption: postText,
-                image_url: imageUrl,
-                post_type: postType,
-            }) });
-            const scheduleResult = await scheduleResponse.json();
-
-            if (scheduleResponse.ok) {
-                showToast('Post scheduled! 5 tokens deducted.', 'success');
-                setPostText('');
-                setFile(null);
-                setIsSchedulingNew(false);
-                setSelectedDate(null);
-                fetchCalendarPosts();
-                fetchTokenBalance(user.id, activeLocationId);
-            } else {
-                showToast('Failed to schedule post: ' + (scheduleResult.detail || 'Please retry'), 'error');
-            }
-        } catch (error) {
-            showToast('Error scheduling post', 'error');
-        } finally {
-            setLoadingAction(false);
-        }
-    };
-
-    // ─── Publish Now (immediately post to Google) ───
-    const publishNow = async (postId: string) => {
-        if (!providerToken) {
-            showToast('Google token missing. Please re-login.', 'error');
-            return;
-        }
-        setLoadingAction(true);
-        try {
-            // Get the post data
-            const res = await apiFetch(`${API_URL}/api/calendar/publish`, {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user_id: user.id, location_id: activeLocationId, post_id: postId, provider_token: providerToken })
-            });
-            if (res.ok) {
-                showToast('Post published to Google!', 'success');
-                fetchCalendarPosts();
-            } else {
-                showToast('Failed to publish to Google', 'error');
-            }
-        } catch (error) {
-            showToast('Error publishing post', 'error');
-        } finally {
-            setLoadingAction(false);
-        }
-    };
-
-    // ─── Cancel a Scheduled Post ───
-    const cancelPost = async (postId: string) => {
-        try {
-            const res = await apiFetch(`${API_URL}/api/calendar/delete`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: user.id, location_id: activeLocationId, post_id: postId }) });
-            if (!res.ok) throw new Error('Could not delete this post');
-            showToast('Post cancelled.', 'info');
-            fetchCalendarPosts();
-        } catch (error) {
-            showToast('Error cancelling post', 'error');
         }
     };
 
@@ -812,27 +701,12 @@ export default function DashboardV2() {
                     {/* ─── Content Calendar ─── */}
                     {activeView === 'calendar' && (
                         <ContentCalendarV2 
-                            currentMonth={currentMonth}
-                            setCurrentMonth={setCurrentMonth}
-                            currentYear={currentYear}
-                            setCurrentYear={setCurrentYear}
-                            selectedDate={selectedDate}
-                            setSelectedDate={setSelectedDate}
-                            scheduledPosts={scheduledPosts}
-                            isSchedulingNew={isSchedulingNew}
-                            setIsSchedulingNew={setIsSchedulingNew}
-                            postType={postType}
-                            setPostType={setPostType}
-                            file={file}
-                            setFile={setFile}
-                            postText={postText}
-                            setPostText={setPostText}
-                            handleSchedule={handleSchedule}
-                            publishNow={publishNow}
-                            cancelPost={cancelPost}
-                            firstDayOfMonth={firstDayOfMonth}
-                            daysInMonth={daysInMonth}
-                            loadingAction={loadingAction}
+                            user={user}
+                            liveLocations={liveLocations}
+                            activeLocationId={activeLocationId}
+                            tokenBalance={tokenBalance}
+                            refreshTokens={() => fetchTokenBalance(user.id)}
+                            showToast={showToast}
                         />
                     )}
 
