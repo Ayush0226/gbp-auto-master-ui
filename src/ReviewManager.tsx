@@ -1,5 +1,5 @@
 import { apiFetch } from './lib/api';
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 export default function ReviewManager({ 
     liveReviews, 
@@ -18,6 +18,38 @@ export default function ReviewManager({
     const [editingReviewId, setEditingReviewId] = useState<string | null>(null);
     const [editReplyText, setEditReplyText] = useState('');
     const [savingReplyId, setSavingReplyId] = useState<string | null>(null);
+    const [replyJobs, setReplyJobs] = useState<any[]>([]);
+
+    const fetchReplyJobs = useCallback(async () => {
+        try {
+            const response = await apiFetch(`${API_URL}/api/platform/review-jobs?limit=50`);
+            if (response.ok) {
+                const data = await response.json();
+                setReplyJobs((data.jobs || []).filter((job: any) => !activeLocationId || job.location_id === activeLocationId));
+            }
+        } catch (error) {
+            console.error('Could not load review reply queue', error);
+        }
+    }, [API_URL, activeLocationId]);
+
+    useEffect(() => { fetchReplyJobs(); }, [fetchReplyJobs]);
+
+    const updateReplyJob = async (jobId: string, action: 'approve' | 'cancel') => {
+        try {
+            const response = await apiFetch(`${API_URL}/api/platform/review-jobs/${jobId}/${action}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: action === 'approve' ? JSON.stringify({ publish_at: null }) : '{}',
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.detail || `Could not ${action} reply`);
+            showToast(action === 'approve' ? 'Reply approved. Publishing costs 2.5 credits.' : 'Reply cancelled.', 'success');
+            fetchReplyJobs();
+            refreshTokens?.();
+        } catch (error: any) {
+            showToast(error.message || `Could not ${action} reply`, 'error');
+        }
+    };
 
     const handlePostManualReply = async (reviewId: string, replyText: string) => {
         if (!replyText.trim()) {
@@ -163,6 +195,31 @@ export default function ReviewManager({
                     </button>
                 </div>
             </div>
+
+            {replyJobs.some(job => ['draft', 'pending_approval', 'scheduled', 'failed'].includes(job.status)) && (
+                <div className="card-sm" style={{ marginBottom: '16px', background: 'rgba(66,133,244,.06)', border: '1px solid rgba(66,133,244,.25)' }}>
+                    <h3 style={{ fontSize: '14px', margin: '0 0 10px' }}>AI reply queue</h3>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        {replyJobs.filter(job => ['draft', 'pending_approval', 'scheduled', 'failed'].includes(job.status)).map(job => (
+                            <div key={job.id} style={{ padding: '10px', borderRadius: '8px', background: 'rgba(255,255,255,.03)' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px' }}>
+                                    <strong style={{ fontSize: '12px' }}>{job.rating}/5 review · {job.status.replace('_', ' ')}</strong>
+                                    <span style={{ fontSize: '11px', color: 'rgba(255,255,255,.5)' }}>{job.scheduled_for ? new Date(job.scheduled_for).toLocaleString() : 'Not scheduled'}</span>
+                                </div>
+                                <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.65)', margin: '7px 0' }}>{job.review_text || 'Rating without a written comment'}</p>
+                                <p style={{ fontSize: '13px', margin: '7px 0' }}>{job.draft_text}</p>
+                                {job.last_error && <p style={{ fontSize: '11px', color: '#fca5a5' }}>{job.last_error}</p>}
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                    {['draft', 'pending_approval', 'failed'].includes(job.status) && (
+                                        <button className="btn btn-green btn-sm" onClick={() => updateReplyJob(job.id, 'approve')}>Approve · 2.5 credits</button>
+                                    )}
+                                    <button className="btn btn-ghost btn-sm" onClick={() => updateReplyJob(job.id, 'cancel')}>Cancel</button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {loadingReviews ? (
