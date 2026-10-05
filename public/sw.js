@@ -1,4 +1,4 @@
-const CACHE_NAME = 'gbp-auto-master-v1';
+const CACHE_NAME = 'gbp-auto-master-v2';
 const urlsToCache = [
   '/',
   '/index.html',

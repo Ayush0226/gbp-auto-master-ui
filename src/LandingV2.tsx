@@ -163,6 +163,7 @@ export const LandingV2: React.FC = () => {
             <a href="#features">Features</a>
             <a href="#how-it-works">How It Works</a>
             <a href="#pricing">Pricing</a>
+            <a href="/plugin">ChatGPT Plugin</a>
             <a href="#faq">FAQ</a>
           </nav>
 
@@ -205,6 +206,9 @@ export const LandingV2: React.FC = () => {
               </button>
               <a href="#pricing" className="lv2-btn lv2-btn-ghost" style={{ color: '#fff', borderColor: 'rgba(255,255,255,0.25)' }}>
                 View Token Plans
+              </a>
+              <a href="/plugin" className="lv2-btn lv2-btn-ghost" style={{ color: '#9feeff', borderColor: 'rgba(104,228,255,0.4)' }}>
+                See ChatGPT Plugin
               </a>
             </div>
 
