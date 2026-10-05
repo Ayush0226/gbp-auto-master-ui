@@ -584,6 +584,7 @@ export const LandingV2: React.FC = () => {
             <ul>
               <li><a href="#faq">FAQ</a></li>
               <li><a href="mailto:support@gbpautomaster.in">Support Email</a></li>
+              <li><a href="/plugin">ChatGPT Plugin</a></li>
             </ul>
           </div>
 

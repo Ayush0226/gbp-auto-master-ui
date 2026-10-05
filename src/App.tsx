@@ -6,6 +6,7 @@ const Onboarding = lazy(() => import('./Onboarding'));
 const Terms = lazy(() => import('./Terms'));
 const Privacy = lazy(() => import('./Privacy'));
 const Support = lazy(() => import('./Support'));
+const PluginGuide = lazy(() => import('./PluginGuide'));
 const Refund = lazy(() => import('./Refund'));
 const MuscleDemoHome = lazy(() => import('./MuscleDemoHome').then(module => ({ default: module.MuscleDemoHome })));
 const AdminDashboard = lazy(() => import('./AdminDashboard'));
@@ -143,6 +144,10 @@ function App() {
 
     if (currentPath === '/support') {
       return <Support />;
+    }
+
+    if (currentPath === '/plugin') {
+      return <PluginGuide />;
     }
 
     if (currentPath === '/refund') {
