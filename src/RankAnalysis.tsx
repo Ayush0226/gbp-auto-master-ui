@@ -166,7 +166,11 @@ export default function RankAnalysis({
             if (data.status === 'success') {
                 const rank = data.found_in_top_11 ? `#${data.actual_rank}` : 'not found in the top 11';
                 showToast(`Measured Google local rank: ${rank}. Downloading report...`, 'success');
-                downloadKeywordPdf(keyword, data);
+                if (data.pdf_download_url) {
+                    window.location.assign(data.pdf_download_url);
+                } else {
+                    downloadKeywordPdf(keyword, data);
+                }
                 if (refreshTokens) refreshTokens();
             } else {
                 showToast(data.detail || data.message || "Failed to generate report", "error");
