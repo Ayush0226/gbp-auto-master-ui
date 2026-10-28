@@ -1,6 +1,6 @@
 # GBP Auto Master Product Todo
 
-This roadmap covers the product for local business owners. Items are grouped by delivery order so the core GBP experience remains reliable while the platform expands.
+This product is dedicated to Google Business Profile management and supporting Google services. The website, backend and MCP tools share this Google-only scope.
 
 ## Current foundation
 
@@ -105,77 +105,7 @@ This roadmap covers the product for local business owners. Items are grouped by 
 - [ ] Media calendar and expiration reminders
 - [ ] Brand templates and media approval
 
-## P2 — Convert local visibility into customers
-
-### Unified lead inbox
-
-- [ ] Lead model with source, status, owner and value
-- [ ] Website-form leads
-- [ ] WhatsApp leads
-- [ ] Instagram and Facebook leads
-- [ ] Phone-call and missed-call leads through an approved provider
-- [ ] Manual lead entry
-- [ ] Follow-up reminders
-- [ ] Notes, attachments and activity timeline
-- [ ] Lead source and conversion reporting
-
-### WhatsApp Business
-
-- [ ] Meta business onboarding and permission flow
-- [ ] WhatsApp Business account and number connection
-- [ ] Approved message-template management
-- [ ] Shared customer inbox
-- [ ] Conversation assignment
-- [ ] Automated greeting and away messages
-- [ ] Human handoff
-- [ ] Appointment and follow-up reminders
-- [ ] Opt-in and opt-out records
-- [ ] Webhook verification, retries and audit trail
-
-### Booking and enquiries
-
-- [ ] Services and staff availability
-- [ ] Booking slots and capacity
-- [ ] Google Calendar synchronization
-- [ ] Rescheduling and cancellation
-- [ ] Deposits through supported payment flow
-- [ ] Confirmation and reminder messages
-- [ ] No-show reporting
-- [ ] Quote and estimate assistant
-- [ ] Customer photo and requirement collection
-
-## P3 — Cross-platform content and Meta
-
-- [ ] Instagram professional account connection
-- [ ] Facebook Page connection
-- [ ] Page and Instagram account selection
-- [ ] Instagram photo, carousel and supported video publishing
-- [ ] Facebook post publishing
-- [ ] Comments and message workflows where permissions permit
-- [ ] Unified approval queue
-- [ ] One campaign adapted per platform
-- [ ] Platform-specific previews, limits and validation
-- [ ] Hashtag, caption and call-to-action assistance
-- [ ] Campaign media variants
-- [ ] Publishing result and failure reporting
-- [ ] Content performance comparison
-- [ ] Account permission and token health
-- [ ] Meta data deletion and disconnect controls
-
-## P4 — Customer retention
-
-- [ ] Digital loyalty cards
-- [ ] Visit- or purchase-based rewards
-- [ ] Referral codes
-- [ ] Birthday and anniversary offers
-- [ ] Inactive-customer follow-up
-- [ ] Service renewal and rebooking reminders
-- [ ] Private feedback collection
-- [ ] Policy-compliant public review invitations without review gating
-- [ ] Offer redemption tracking
-- [ ] Customer consent and communication preferences
-
-## P5 — Local SEO, discovery and website tools
+## P2 — Local SEO, discovery and website tools
 
 - [ ] Automated on-page website audit
 - [ ] Title, description, heading and indexability checks
@@ -192,7 +122,7 @@ This roadmap covers the product for local business owners. Items are grouped by 
 - [ ] Calls, directions, bookings and form conversion tracking
 - [ ] UTM campaign builder
 
-## P6 — Multi-location and agency operations
+## P3 — Multi-location and agency operations
 
 - [ ] Organisation, workspace and client account hierarchy
 - [ ] Owner, manager, editor and approver roles
@@ -206,28 +136,19 @@ This roadmap covers the product for local business owners. Items are grouped by 
 - [ ] Agency billing and credit allocation
 - [ ] Team audit trail
 
-## P7 — Business intelligence and AI assistant
+## P4 — Business intelligence and AI assistant
 
 - [ ] Daily owner summary
 - [ ] Weekly action plan
 - [ ] Plain-language performance explanations
-- [ ] Alerts for reviews, posts, leads and connection failures
+- [ ] Alerts for Google reviews, posts and connection failures
 - [ ] Recommendations ranked by effort and expected value
 - [ ] Revenue and lead attribution where data is available
 - [ ] Anomaly detection across locations
-- [ ] Report delivery through dashboard, email and WhatsApp
+- [ ] Downloadable Google Business Profile reports in the dashboard
 - [ ] Agent confirmation policy for public or paid actions
-- [ ] Expanded MCP tools for profile health, leads and reporting
+- [ ] Expanded MCP tools for Google profile health and reporting
 - [ ] Tool-level permissions for teams and agencies
-
-## P8 — Secondary channels
-
-- [ ] LinkedIn organisation publishing for relevant businesses
-- [ ] YouTube channel and video workflow for relevant businesses
-- [ ] X publishing only where customer demand justifies it
-- [ ] Email campaign integration
-- [ ] Channel-specific analytics and permissions
-- [ ] Central asset and content reuse without identical spam posting
 
 ## Product principles
 
@@ -235,20 +156,18 @@ This roadmap covers the product for local business owners. Items are grouped by 
 - [ ] Require clear confirmation before public publishing unless a rule authorises it
 - [ ] Never promise rankings, reviews, leads or revenue
 - [ ] Label samples, estimates and live data accurately
-- [ ] Use official platform APIs and comply with platform policies
+- [ ] Use official Google APIs and comply with Google policies
 - [ ] Collect only the data required for the chosen workflow
 - [ ] Make disconnect, export and deletion understandable
 - [ ] Preserve an audit trail for agent and automation actions
 - [ ] Design for one location first and make multi-location behaviour explicit
-- [ ] Validate demand before adding another social channel
+- [ ] Keep this project focused on Google Business Profile and supporting Google services
 
 ## Recommended delivery order
 
 1. Release reliability and self-service account controls.
 2. GBP profile health, editing, services, products and media.
-3. WhatsApp-connected lead inbox and follow-up.
-4. Booking, quotes and missed-call recovery.
-5. Instagram and Facebook publishing and inbox workflows.
-6. Retention, loyalty and customer reminders.
-7. Automated local SEO and conversion attribution.
-8. Agency operations and secondary channels.
+3. Google review automation, approval queues and reputation reporting.
+4. Google content scheduling and multi-location publishing.
+5. Google Search Console and local SEO reporting.
+6. Agency operations, Google connection health and MCP reporting tools.
