@@ -217,19 +217,19 @@ export default function RankAnalysis({
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '24px' }}>
                 {messages > 0 && (
                     <div className="card glass glass-hover animate-in" style={{ '--delay': '0.5s' } as any}>
-                        <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)' }}>Messages (Chat)</p>
+                        <p style={{ fontSize: '12px', color: 'var(--live-muted, rgba(255,255,255,.5))' }}>Messages (Chat)</p>
                         <p style={{ fontSize: '24px', fontWeight: 800, marginTop: '6px', color: 'var(--blue-soft)' }}>{messages.toLocaleString()}</p>
                     </div>
                 )}
                 {bookings > 0 && (
                     <div className="card glass glass-hover animate-in" style={{ '--delay': '0.6s' } as any}>
-                        <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)' }}>Bookings Made</p>
+                        <p style={{ fontSize: '12px', color: 'var(--live-muted, rgba(255,255,255,.5))' }}>Bookings Made</p>
                         <p style={{ fontSize: '24px', fontWeight: 800, marginTop: '6px', color: 'var(--green-soft)' }}>{bookings.toLocaleString()}</p>
                     </div>
                 )}
                 {foodOrders > 0 && (
                     <div className="card glass glass-hover animate-in" style={{ '--delay': '0.7s' } as any}>
-                        <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)' }}>Food Orders</p>
+                        <p style={{ fontSize: '12px', color: 'var(--live-muted, rgba(255,255,255,.5))' }}>Food Orders</p>
                         <p style={{ fontSize: '24px', fontWeight: 800, marginTop: '6px', color: 'var(--orange-soft)' }}>{foodOrders.toLocaleString()}</p>
                     </div>
                 )}
@@ -249,7 +249,7 @@ export default function RankAnalysis({
                                 </div>
                             </>
                         ) : (
-                            <p style={{ fontSize: '13px', color: 'rgba(255,255,255,.5)' }}>Not enough reviews to calculate sentiment yet.</p>
+                            <p style={{ fontSize: '13px', color: 'var(--live-muted, rgba(255,255,255,.5))' }}>Not enough reviews to calculate sentiment yet.</p>
                         )}
                     </div>
                 </div>
@@ -262,13 +262,13 @@ export default function RankAnalysis({
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px' }}>
                         {searchKeywords.slice(0, 12).map((kw: any, idx: number) => (
                             <div key={idx} style={{ background: 'rgba(255,255,255,.05)', padding: '12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,.1)' }}>
-                                <p style={{ fontSize: '14px', fontWeight: 'bold', margin: '0 0 4px', color: '#fff' }}>{kw.searchKeyword}</p>
+                                <p style={{ fontSize: '14px', fontWeight: 'bold', margin: '0 0 4px', color: 'var(--live-text, #fff)' }}>{kw.searchKeyword}</p>
                                 <p style={{ fontSize: '12px', color: 'var(--green-soft)', margin: 0 }}>{kw.monthlyImpressionsValue || 0} views/mo</p>
                             </div>
                         ))}
                     </div>
                 ) : (
-                    <p style={{ fontSize: '13px', color: 'rgba(255,255,255,.5)' }}>No keywords fetched yet.</p>
+                    <p style={{ fontSize: '13px', color: 'var(--live-muted, rgba(255,255,255,.5))' }}>No keywords fetched yet.</p>
                 )}
             </div>
 
@@ -284,8 +284,8 @@ export default function RankAnalysis({
                             
                             return (
                                 <div key={idx} className="keyword-card" style={{ background: 'rgba(255,255,255,.05)', padding: '16px', borderRadius: '8px', border: '1px solid rgba(255,255,255,.1)' }}>
-                                    <p className="kw-name" style={{ fontSize: '16px', fontWeight: 'bold', margin: '0 0 8px', color: '#fff' }}>{kw}</p>
-                                    <p className="kw-stat" style={{ fontSize: '13px', margin: '0 0 8px', color: 'rgba(255,255,255,.7)' }}>
+                                    <p className="kw-name" style={{ fontSize: '16px', fontWeight: 'bold', margin: '0 0 8px', color: 'var(--live-text, #fff)' }}>{kw}</p>
+                                    <p className="kw-stat" style={{ fontSize: '13px', margin: '0 0 8px', color: 'var(--live-muted, rgba(255,255,255,.7))' }}>
                                         AI Usage: {usageCount} times in replies
                                     </p>
                                     <div className="kw-usage-bar" style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,.1)', borderRadius: '3px', overflow: 'hidden', marginBottom: '16px' }}>
@@ -306,7 +306,7 @@ export default function RankAnalysis({
                         })}
                     </div>
                 ) : (
-                    <p style={{ fontSize: '13px', color: 'rgba(255,255,255,.5)' }}>No SEO keywords found in your profile.</p>
+                    <p style={{ fontSize: '13px', color: 'var(--live-muted, rgba(255,255,255,.5))' }}>No SEO keywords found in your profile.</p>
                 )}
             </div>
 

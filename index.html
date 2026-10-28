@@ -4,11 +4,20 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>GBP Auto Master</title>
+    <title>Google Business Profile management | GBP Auto Master</title>
+    <meta name="description" content="Bring Google Business Profile reviews, scheduled content, local rank reports, and your SEO workflow together in one connected workspace." />
+    <meta property="og:title" content="Your business. Better connected. | GBP Auto Master" />
+    <meta property="og:description" content="A little less busywork. A lot more connection. Manage reviews, content, and local visibility with GBP Auto Master." />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="https://gbpautomaster.in/logo.jpeg" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="canonical" href="https://gbpautomaster.in/" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     
     <!-- PWA Setup -->
     <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#121212" />
+    <meta name="theme-color" content="#f8f7f2" />
     <link rel="apple-touch-icon" href="/favicon.svg" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -22,7 +31,7 @@
     
     <!-- Register Service Worker -->
     <script>
-      if ('serviceWorker' in navigator) {
+      if ('serviceWorker' in navigator && !['localhost', '127.0.0.1'].includes(location.hostname)) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('/sw.js').then(registration => {
             console.log('SW registered: ', registration);

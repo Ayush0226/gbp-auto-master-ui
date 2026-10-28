@@ -70,7 +70,7 @@ export default function ConnectedApps({ showToast }: {
         ) : grants.length === 0 ? (
           <div>
             <h3 style={{ marginTop: 0 }}>No AI apps connected</h3>
-            <p style={{ color: 'rgba(255,255,255,.62)', marginBottom: 0 }}>
+            <p style={{ color: 'var(--live-muted, rgba(255,255,255,.62))', marginBottom: 0 }}>
               Connections you approve through the GBP Master consent screen will appear here.
             </p>
           </div>
@@ -93,10 +93,10 @@ export default function ConnectedApps({ showToast }: {
               >
                 <div>
                   <h3 style={{ margin: '0 0 6px' }}>{grant.client.name}</h3>
-                  <p style={{ margin: '0 0 5px', color: 'rgba(255,255,255,.6)', fontSize: '13px' }}>
+                  <p style={{ margin: '0 0 5px', color: 'var(--live-muted, rgba(255,255,255,.6))', fontSize: '13px' }}>
                     Connected {new Date(grant.granted_at).toLocaleString()}
                   </p>
-                  <p style={{ margin: 0, color: 'rgba(255,255,255,.48)', fontSize: '12px' }}>
+                  <p style={{ margin: 0, color: 'var(--live-muted, rgba(255,255,255,.48))', fontSize: '12px' }}>
                     Account scopes: {grant.scopes.join(', ') || 'email'}
                   </p>
                 </div>

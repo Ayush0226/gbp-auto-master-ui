@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /dashboard-v2
+Disallow: /admin
+Disallow: /onboarding
+Disallow: /oauth/
+Disallow: /workspace
+Disallow: /seo
+Disallow: /signup
+Disallow: /reset
+
+Sitemap: https://gbpautomaster.in/sitemap.xml

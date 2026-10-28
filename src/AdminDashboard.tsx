@@ -425,7 +425,7 @@ export default function AdminDashboard({ onBackToApp }: { onBackToApp?: () => vo
                     <button className="btn btn-ghost" style={{ width: '100%', display: 'flex', gap: '10px', justifyContent: 'center', border: '1px solid rgba(255,255,255,.1)' }} onClick={() => router.push('/dashboard')}>
                         <span>←</span> Back to App
                     </button>
-                    <button className="btn btn-ghost" style={{ width: '100%', display: 'flex', gap: '10px', justifyContent: 'center', color: 'var(--red-soft)' }} onClick={async () => { await supabase.auth.signOut(); window.location.href='/'; }}>
+                    <button className="btn btn-ghost" style={{ width: '100%', display: 'flex', gap: '10px', justifyContent: 'center', color: 'var(--red-soft)' }} onClick={async () => { await supabase.auth.signOut({ scope: 'local' }); window.location.href='/'; }}>
                         <span>👋</span> Sign Out
                     </button>
                 </div>
@@ -439,7 +439,7 @@ export default function AdminDashboard({ onBackToApp }: { onBackToApp?: () => vo
                         ☰
                     </button>
                     <div style={{ fontWeight: 'bold', fontSize: '16px' }}>Master <span className="grad-blue">Admin</span></div>
-                    <button className="btn btn-ghost btn-sm" style={{ padding: '6px 12px', color: 'var(--red-soft)', fontSize: '11px', background: 'rgba(239, 68, 68, .1)', border: '1px solid rgba(239, 68, 68, .2)' }} onClick={async () => { await supabase.auth.signOut(); window.location.href='/'; }}>Sign Out</button>
+                    <button className="btn btn-ghost btn-sm" style={{ padding: '6px 12px', color: 'var(--red-soft)', fontSize: '11px', background: 'rgba(239, 68, 68, .1)', border: '1px solid rgba(239, 68, 68, .2)' }} onClick={async () => { await supabase.auth.signOut({ scope: 'local' }); window.location.href='/'; }}>Sign Out</button>
                 </div>
 
                 <main className="main">

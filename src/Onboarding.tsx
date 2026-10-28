@@ -1,192 +1,24 @@
+import { useState } from 'react';
 import { apiFetch } from './lib/api';
-import React, { useState } from 'react';
-import { supabase } from './lib/supabase';
+import { GoogleBusinessConnectButton } from './design/AuthPage';
+import SiteShell from './design/SiteShell';
+import Icon from './design/Icon';
 import './Onboarding.css';
 
-const Onboarding = () => {
-  const [step, setStep] = useState(1);
-  const [replyLength, setReplyLength] = useState('10-40');
-  const [keywordInput, setKeywordInput] = useState('');
-  const [keywords, setKeywords] = useState<string[]>([]);
-  const [demoStatus, setDemoStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [demoResults, setDemoResults] = useState<any[]>([]);
-  
-  const handleKeywordAdd = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && keywordInput.trim()) {
-      if (keywords.length < 2) {
-        setKeywords([...keywords, keywordInput.trim()]);
-        setKeywordInput('');
-      }
-    }
-  };
-
-  const removeKeyword = (index: number) => {
-    setKeywords(keywords.filter((_, i) => i !== index));
-  };
-
-  const runDemo = async () => {
-    setStep(3);
-    setDemoStatus('loading');
-    
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      const API_URL = import.meta.env.VITE_API_URL || 'https://gbp-auto-master-backend-us.onrender.com';
-      
-      // Simulate demo processing for 2 seconds
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      setDemoResults([
-        { reviewer: "Amit Verma", rating: 5, reply: `Thank you for the 5 stars, Amit! We've made sure to focus on ${keywords[0] || 'our service'} to give you the best experience.` },
-        { reviewer: "Priya Sharma", rating: 4, reply: `Thanks Priya! Your feedback helps us improve our ${keywords[1] || 'offerings'} for all our customers.` }
-      ]);
-
-      
-      // Save onboarding data to actual database
-      if (!session?.user) throw new Error('Please sign in again');
-      const response = await apiFetch(`${API_URL}/api/user/onboarding`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.access_token}`
-        },
-        body: JSON.stringify({ 
-          user_id: session?.user?.id, 
-          reply_length: replyLength, 
-          seo_keywords: keywords 
-        })
-      });
-      
-      if (!response.ok) throw new Error('Could not save onboarding');
-      setDemoStatus('success');
-      setTimeout(() => setStep(4), 1500);
-    } catch (error) {
-      console.error(error);
-      setDemoStatus('error');
-    }
-  };
-
-  return (
-    <div className="onboarding-container">
-      <div className="onboarding-card">
-        <div className="onboarding-progress">
-          <div className={`progress-step ${step >= 1 ? 'active' : ''}`}></div>
-          <div className={`progress-step ${step >= 2 ? 'active' : ''}`}></div>
-          <div className={`progress-step ${step >= 3 ? 'active' : ''}`}></div>
-          <div className={`progress-step ${step >= 4 ? 'active' : ''}`}></div>
-        </div>
-
-        {step === 1 && (
-          <div className="step-content fade-in">
-            <h2>Welcome! Let's get started.</h2>
-            <p>How long should AI replies be?</p>
-            <div className="radio-group">
-              {['10-40', '50-90', '100-120'].map((length) => (
-                <label key={length} className={`radio-option ${replyLength === length ? 'selected' : ''}`}>
-                  <input
-                    type="radio"
-                    name="replyLength"
-                    value={length}
-                    checked={replyLength === length}
-                    onChange={(e) => setReplyLength(e.target.value)}
-                  />
-                  <span>{length} words</span>
-                </label>
-              ))}
-            </div>
-            <button className="primary-btn" onClick={() => setStep(2)}>Next Step</button>
-          </div>
-        )}
-
-        {step === 2 && (
-          <div className="step-content fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div>
-              <h2 style={{ marginBottom: '8px' }}>Boost your SEO</h2>
-              <p>Add the SEO keywords you want to rank for.</p>
-            </div>
-            
-            <div className="plan-badge" style={{ marginBottom: '12px' }}>Free Plan: Max 2 keywords</div>
-            
-            <div className="keyword-input-wrapper">
-              <input
-                type="text"
-                placeholder="Press Enter to add keyword..."
-                value={keywordInput}
-                onChange={(e) => setKeywordInput(e.target.value)}
-                onKeyDown={handleKeywordAdd}
-                disabled={keywords.length >= 2}
-                className="keyword-input"
-              />
-            </div>
-            
-            <div className="chips-container">
-              {keywords.map((kw, idx) => (
-                <span key={idx} className="chip">
-                  {kw}
-                  <button onClick={() => removeKeyword(idx)} className="chip-remove">&times;</button>
-                </span>
-              ))}
-            </div>
-            
-            <div className="btn-group">
-              <button className="secondary-btn" onClick={() => setStep(1)}>Back</button>
-              <button className="primary-btn" onClick={runDemo}>Run Live Demo</button>
-            </div>
-          </div>
-        )}
-
-        {step === 3 && (
-          <div className="step-content fade-in text-center">
-            <h2>Live Demo</h2>
-            <p>We are connecting to your Google Business Profile...</p>
-            
-            <div className="demo-status">
-              {demoStatus === 'loading' && (
-                <div className="loader">
-                  <div className="spinner"></div>
-                  <p>Replying to 2 live reviews automatically...</p>
-                </div>
-              )}
-              {demoStatus === 'success' && (
-                <div className="success-icon">&#10003; Success!</div>
-              )}
-              {demoStatus === 'error' && (
-                <div className="error-message">
-                  Something went wrong. <button onClick={runDemo} className="retry-btn">Retry</button>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {step === 4 && (
-          <div className="step-content fade-in success-step">
-            <div className="confetti-icon">&#127881;</div>
-            <h2>You're all set!</h2>
-            <p className="tokens-msg">New accounts receive <strong>200 free tokens once</strong>, shared across all business profiles.</p>
-            
-            <div className="demo-results">
-              <h3>Demo Results:</h3>
-              {demoResults.map((res, idx) => (
-                <div key={idx} className="result-card">
-                  <div className="reviewer">{res.reviewer}</div>
-                  <div className="reply-text">{res.reply}</div>
-                </div>
-              ))}
-            </div>
-
-            <button className="primary-btn pulse" onClick={() => {
-              window.history.pushState(null, '', '/dashboard-v2');
-              const navEvent = new PopStateEvent('popstate');
-              window.dispatchEvent(navEvent);
-            }}>
-              Go to Dashboard
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
-export default Onboarding;
+export default function Onboarding() {
+  const [step,setStep]=useState(()=>sessionStorage.getItem('gbp_connection_started')?'2':'1');
+  const [replyLength,setReplyLength]=useState('10-40');
+  const [keywordInput,setKeywordInput]=useState('');
+  const [keywords,setKeywords]=useState<string[]>([]);
+  const [saving,setSaving]=useState(false);
+  const [error,setError]=useState('');
+  const addKeyword=(event:React.KeyboardEvent<HTMLInputElement>)=>{if(event.key==='Enter'&&keywordInput.trim()&&keywords.length<2){event.preventDefault();setKeywords([...keywords,keywordInput.trim()]);setKeywordInput('');}};
+  const save=async()=>{setSaving(true);setError('');try{const response=await apiFetch('/api/user/onboarding',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({reply_length:replyLength,seo_keywords:keywords})});if(!response.ok)throw new Error('Could not save your preferences.');setStep('4');}catch(error){setError(error instanceof Error?error.message:'Could not save your preferences.');}finally{setSaving(false);}};
+  return <SiteShell title="Set up your workspace" description="Connect Google Business Profile and choose your GBP Auto Master preferences." noIndex path="/onboarding"><div className="onboarding-container"><div className="onboarding-card onboarding-card-v2">
+    <div className="onboarding-progress" aria-label={`Step ${step} of 4`}>{[1,2,3,4].map(number=><div key={number} className={`progress-step ${Number(step)>=number?'active':''}`}/>)}</div>
+    {step==='1'&&<div className="step-content fade-in"><span className="st-status">Account created</span><h2>Connect your Google Business Profile</h2><p>This separate Google screen asks for permission to read and manage the locations you select. We never receive your Google password.</p><div className="onboarding-permissions"><span><Icon name="check" size={16}/> Read locations and reviews</span><span><Icon name="check" size={16}/> Publish replies and approved content</span><span><Icon name="shield" size={16}/> Revoke access from your Google Account</span></div><GoogleBusinessConnectButton label="Continue to Google"/><a className="secondary-btn" href="/workspace">Explore sample workspace first</a></div>}
+    {step==='2'&&<div className="step-content fade-in"><span className="st-status st-status-sample">Preferences</span><h2>Choose your review style</h2><p>AI drafts follow this approximate length. You can edit every draft before approval.</p><div className="radio-group">{['10-40','50-90','100-120'].map(length=><label key={length} className={`radio-option ${replyLength===length?'selected':''}`}><input type="radio" name="replyLength" value={length} checked={replyLength===length} onChange={event=>setReplyLength(event.target.value)}/><span>{length} words</span></label>)}</div><button className="primary-btn" onClick={()=>setStep('3')}>Continue</button></div>}
+    {step==='3'&&<div className="step-content fade-in"><span className="st-status st-status-sample">Optional</span><h2>Add up to two local keywords</h2><p>These help organize your workspace. A paid rank scan costs 10 credits and always asks for confirmation.</p><input className="keyword-input" value={keywordInput} onChange={event=>setKeywordInput(event.target.value)} onKeyDown={addKeyword} disabled={keywords.length>=2} placeholder="Type a keyword and press Enter"/><div className="chips-container">{keywords.map((keyword,index)=><span className="chip" key={keyword}>{keyword}<button aria-label={`Remove ${keyword}`} onClick={()=>setKeywords(keywords.filter((_,item)=>item!==index))}>×</button></span>)}</div>{error&&<p className="error-message" role="alert">{error}</p>}<div className="btn-group"><button className="secondary-btn" onClick={()=>setStep('2')}>Back</button><button className="primary-btn" disabled={saving} onClick={save}>{saving?'Saving…':'Save preferences'}</button></div></div>}
+    {step==='4'&&<div className="step-content fade-in success-step"><div className="confetti-icon"><Icon name="check" size={34}/></div><h2>Your workspace is ready</h2><p>New accounts receive 200 welcome credits once. Live actions show their credit cost before confirmation.</p><a className="primary-btn" href="/dashboard-v2">Open dashboard</a></div>}
+  </div></div></SiteShell>;
+}

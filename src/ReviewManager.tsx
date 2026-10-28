@@ -19,6 +19,9 @@ export default function ReviewManager({
     const [editReplyText, setEditReplyText] = useState('');
     const [savingReplyId, setSavingReplyId] = useState<string | null>(null);
     const [replyJobs, setReplyJobs] = useState<any[]>([]);
+    const reviewerName = (review: any) => typeof review?.reviewer === 'string'
+        ? review.reviewer
+        : (review?.reviewer?.displayName || review?.authorName || 'Anonymous');
 
     const fetchReplyJobs = useCallback(async () => {
         try {
@@ -67,13 +70,13 @@ export default function ReviewManager({
                     reply_text: replyText
                 })
             });
-            const data = await res.json();
-            if (data.status === 'success') {
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && data.status === 'success') {
                 showToast("Reply updated successfully!", "success");
                 setLiveReviews((prev: any) => prev.map((r: any) => r.id === reviewId ? { ...r, has_reply: true, reply_comment: replyText } : r));
                 setEditingReviewId(null);
             } else {
-                showToast("Failed to post: " + data.message, "error");
+                showToast("Failed to post: " + (data.detail || data.message || 'Google rejected the reply'), "error");
             }
         } catch (e: any) {
             showToast("Network Error: " + e.message, "error");
@@ -96,13 +99,13 @@ export default function ReviewManager({
                     review_id: reviewId
                 })
             });
-            const data = await res.json();
-            if (data.status === 'success') {
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && data.status === 'success') {
                 showToast("Reply deleted successfully!", "success");
                 setLiveReviews((prev: any) => prev.map((r: any) => r.id === reviewId ? { ...r, has_reply: false, reply_comment: '' } : r));
                 setEditingReviewId(null);
             } else {
-                showToast("Failed to delete: " + data.message, "error");
+                showToast("Failed to delete: " + (data.detail || data.message || 'Google rejected the request'), "error");
             }
         } catch (e: any) {
             showToast("Network Error: " + e.message, "error");
@@ -171,7 +174,7 @@ export default function ReviewManager({
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
                 <div>
                     <h3 style={{ fontSize: '15px', margin: 0 }}>Google Review Manager</h3>
-                    <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.5)', margin: '4px 0 0' }}>The AI replies automatically. You can also manually push replies.</p>
+                    <p style={{ fontSize: '12px', color: 'var(--live-muted, rgba(255,255,255,.5))', margin: '4px 0 0' }}>Incoming reviews follow the workflow selected in AI Brain Settings. You can also reply manually here.</p>
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
                     <button 
@@ -204,9 +207,9 @@ export default function ReviewManager({
                             <div key={job.id} style={{ padding: '10px', borderRadius: '8px', background: 'rgba(255,255,255,.03)' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px' }}>
                                     <strong style={{ fontSize: '12px' }}>{job.rating}/5 review · {job.status.replace('_', ' ')}</strong>
-                                    <span style={{ fontSize: '11px', color: 'rgba(255,255,255,.5)' }}>{job.scheduled_for ? new Date(job.scheduled_for).toLocaleString() : 'Not scheduled'}</span>
+                                    <span style={{ fontSize: '11px', color: 'var(--live-muted, rgba(255,255,255,.5))' }}>{job.scheduled_for ? new Date(job.scheduled_for).toLocaleString() : 'Not scheduled'}</span>
                                 </div>
-                                <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.65)', margin: '7px 0' }}>{job.review_text || 'Rating without a written comment'}</p>
+                                <p style={{ fontSize: '12px', color: 'var(--live-muted, rgba(255,255,255,.65))', margin: '7px 0' }}>{job.review_text || 'Rating without a written comment'}</p>
                                 <p style={{ fontSize: '13px', margin: '7px 0' }}>{job.draft_text}</p>
                                 {job.last_error && <p style={{ fontSize: '11px', color: '#fca5a5' }}>{job.last_error}</p>}
                                 <div style={{ display: 'flex', gap: '8px' }}>
@@ -223,27 +226,27 @@ export default function ReviewManager({
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {loadingReviews ? (
-                    <p style={{ fontSize: '13px', color: 'rgba(255,255,255,.5)' }}>Loading your real Google Reviews...</p>
+                    <p style={{ fontSize: '13px', color: 'var(--live-muted, rgba(255,255,255,.5))' }}>Loading your real Google Reviews...</p>
                 ) : !liveReviews || liveReviews.length === 0 ? (
                     <div className="card-sm" style={{ background: 'rgba(255,255,255,.03)', border: '1px dashed rgba(255,255,255,.2)', textAlign: 'center', padding: '32px 20px' }}>
                         <p style={{ fontWeight: 600, fontSize: '14px', margin: '0 0 6px' }}>No reviews found for this location.</p>
-                        <p style={{ fontSize: '13px', color: 'rgba(255,255,255,.5)', margin: 0 }}>Once customers leave reviews, they will appear here.</p>
+                        <p style={{ fontSize: '13px', color: 'var(--live-muted, rgba(255,255,255,.5))', margin: 0 }}>Once customers leave reviews, they will appear here.</p>
                     </div>
                 ) : (
                     liveReviews.slice(0, 12).map((rev: any, i: number) => (
-                        <div key={i} className="card-sm" style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.08)' }}>
+                        <div key={rev.id || rev.name || i} className="card-sm" style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.08)' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'var(--blue)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 'bold' }}>
-                                        {rev.reviewer.charAt(0)}
+                                    <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'var(--blue)', color: 'var(--live-text, #fff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 'bold' }}>
+                                        {reviewerName(rev).charAt(0).toUpperCase()}
                                     </div>
-                                    <p style={{ fontWeight: 600, fontSize: '13px', margin: 0 }}>{rev.reviewer}</p>
+                                    <p style={{ fontWeight: 600, fontSize: '13px', margin: 0 }}>{reviewerName(rev)}</p>
                                 </div>
                                 <div style={{ display: 'flex', gap: '2px', color: '#fbbf24', fontSize: '12px' }}>
                                     {rev.rating === 'FIVE' ? '★★★★★' : rev.rating === 'FOUR' ? '★★★★☆' : rev.rating === 'THREE' ? '★★★☆☆' : rev.rating === 'TWO' ? '★★☆☆☆' : '★☆☆☆☆'}
                                 </div>
                             </div>
-                            <p style={{ fontSize: '13px', color: 'rgba(255,255,255,.8)', margin: '8px 0', lineHeight: 1.5 }}>
+                            <p style={{ fontSize: '13px', color: 'var(--live-muted, rgba(255,255,255,.8))', margin: '8px 0', lineHeight: 1.5 }}>
                                 "{rev.comment || 'No comment provided'}"
                             </p>
                             
@@ -260,7 +263,7 @@ export default function ReviewManager({
                                             {savingReplyId === rev.id ? '...' : '🔄 Regenerate'}
                                         </button>
                                     </div>
-                                    <p style={{ fontSize: '12px', color: 'rgba(255,255,255,.9)', margin: 0 }}>{rev.reply_comment || 'Replied'}</p>
+                                    <p style={{ fontSize: '12px', color: 'var(--live-text, rgba(255,255,255,.9))', margin: 0 }}>{rev.reply_comment || 'Replied'}</p>
                                 </div>
                             )}
 
@@ -293,7 +296,7 @@ export default function ReviewManager({
                             )}
 
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px' }}>
-                                <p style={{ fontSize: '11px', color: 'rgba(255,255,255,.4)', margin: 0 }}>
+                                <p style={{ fontSize: '11px', color: 'var(--live-muted, rgba(255,255,255,.4))', margin: 0 }}>
                                     {new Date(rev.createTime).toLocaleDateString()}
                                 </p>
                                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>

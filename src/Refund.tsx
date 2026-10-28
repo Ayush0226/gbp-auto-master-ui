@@ -1,21 +1,7 @@
+import { LegalLayout } from './design/PublicPages';
+
 export default function Refund() {
-    return (
-        <div className="app-shell" style={{ overflowY: 'auto' }}>
-            <div className="noise"></div>
-            
-            <header className="home-topbar" style={{ position: 'relative', top: 0 }}>
-                <div className="home-logo">GBP Auto <span className="grad-blue">Master</span></div>
-                <nav>
-                    <a href="/" className="home-btn-secondary home-glass">← Back to Home</a>
-                </nav>
-            </header>
-
-            <section className="home-section" style={{ paddingTop: '60px', paddingBottom: '60px' }}>
-                <div className="legal-container">
-                    <div className="legal-card">
-                        <h1 className="home-grad-metal">Cancellation & Refund Policy</h1>
-                        <p style={{ color: 'rgba(255,255,255,.5)' }}>Last Updated: {new Date().toLocaleDateString()}</p>
-
+    return <LegalLayout title="Cancellation & refunds">
                         <h2>1. Subscription Cancellations</h2>
                         <p>
                             You may cancel your GBP Auto Master subscription at any time directly from your dashboard or by contacting support. Your cancellation will take effect at the end of your current paid billing cycle. You will not be billed again, and you will continue to have access to our AI automation services until the end of your prepaid period.
@@ -42,9 +28,5 @@ export default function Refund() {
                             <li>Email: <b>ayushsony126@gmail.com</b></li>
                             <li>Phone: <b>+91 93720 60163</b></li>
                         </ul>
-                    </div>
-                </div>
-            </section>
-        </div>
-    );
+    </LegalLayout>;
 }

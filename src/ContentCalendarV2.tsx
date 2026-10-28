@@ -208,7 +208,7 @@ export default function ContentCalendarV2({
             </div>
 
             <div className="card glass" style={{ padding: 18 }}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 6, fontSize: 11, color: 'rgba(255,255,255,.4)', textAlign: 'center', marginBottom: 8 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 6, fontSize: 11, color: 'var(--live-muted, rgba(255,255,255,.4))', textAlign: 'center', marginBottom: 8 }}>
                     {'Sun Mon Tue Wed Thu Fri Sat'.split(' ').map(day => <span key={day}>{day}</span>)}
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 6 }}>
@@ -231,10 +231,10 @@ export default function ContentCalendarV2({
                     <button className="btn btn-ghost btn-sm" onClick={() => openComposer(selectedDay)}>+ Add campaign</button>
                 </div>
                 {(campaignsByDay[selectedDay] || []).map(campaign => <div key={campaign.id} className="card-sm" style={{ marginTop: 10, display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
-                    <div><strong>{campaign.title}</strong><div style={{ fontSize: 12, color: 'rgba(255,255,255,.55)', marginTop: 4 }}>{campaign.topic_type} · {campaign.locations.length} location{campaign.locations.length === 1 ? '' : 's'} · <span style={{ color: STATUS_COLORS[campaign.status] }}>{campaign.status.replaceAll('_', ' ')}</span></div></div>
+                    <div><strong>{campaign.title}</strong><div style={{ fontSize: 12, color: 'var(--live-muted, rgba(255,255,255,.55))', marginTop: 4 }}>{campaign.topic_type} · {campaign.locations.length} location{campaign.locations.length === 1 ? '' : 's'} · <span style={{ color: STATUS_COLORS[campaign.status] }}>{campaign.status.replaceAll('_', ' ')}</span></div></div>
                     {['draft', 'awaiting_approval', 'scheduled'].includes(campaign.status) && <button className="btn btn-red-ghost btn-sm" disabled={loading} onClick={() => cancelCampaign(campaign)}>Cancel</button>}
                 </div>)}
-                {!(campaignsByDay[selectedDay] || []).length && <p style={{ color: 'rgba(255,255,255,.45)' }}>No campaigns scheduled for this day.</p>}
+                {!(campaignsByDay[selectedDay] || []).length && <p style={{ color: 'var(--live-muted, rgba(255,255,255,.45))' }}>No campaigns scheduled for this day.</p>}
             </div>}
 
             {composerOpen && <div style={{ position: 'fixed', inset: 0, zIndex: 80, background: 'rgba(0,0,0,.72)', overflowY: 'auto', padding: 24 }}>

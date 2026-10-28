@@ -1,5 +1,6 @@
 import { apiFetch } from './lib/api';
 import { useState, useEffect } from 'react';
+import Icon from './design/Icon';
 
 interface BrainSettingsProps {
     user: any;
@@ -28,11 +29,13 @@ export default function BrainSettings({
     const [automationMode, setAutomationMode] = useState<'draft' | 'approval' | 'auto_publish'>('approval');
     const [delayMinutes, setDelayMinutes] = useState(0);
     const [dailyLimit, setDailyLimit] = useState(20);
+    const [loadingSettings, setLoadingSettings] = useState(true);
+    const [webhookConnected, setWebhookConnected] = useState(false);
 
     useEffect(() => {
         const fetchSettings = async () => {
             if (!user || !activeLocationId) return;
-            
+            setLoadingSettings(true);
             try {
                 // Get max keywords from profile
                 const profRes = await apiFetch(`${API_URL}/api/user/profile`, {
@@ -80,53 +83,93 @@ export default function BrainSettings({
                 }
             } catch (err) {
                 console.error("Failed to fetch settings", err);
+            } finally {
+                setLoadingSettings(false);
             }
         };
         fetchSettings();
     }, [user, activeLocationId, API_URL]);
 
-    const saveAllSettings = async () => {
+    const saveAllSettings = async (options?: { mode?: 'draft' | 'approval' | 'auto_publish'; enabled?: boolean; quiet?: boolean }) => {
+        if (!activeLocationId) {
+            showToast('Select a Google Business Profile location first.', 'error');
+            return false;
+        }
         setLoadingAction(true);
         try {
-            const [legacy, automation] = await Promise.all([
-                apiFetch(`${API_URL}/api/user/save-ai-settings`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        user_id: user?.id,
-                        location_id: activeLocationId,
-                        settings: {
-                            is_ai_active: isAiActive,
-                            reply_to_1_star: replyTo1Star,
-                            ai_tone: aiTone,
-                            custom_instructions: customInstructions,
-                            active_keywords: targetKeywords,
-                        },
-                    }),
+            const nextMode = options?.mode ?? automationMode;
+            const nextEnabled = options?.enabled ?? isAiActive;
+            const automation = await apiFetch(`${API_URL}/api/platform/automation-rules`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    location_id: activeLocationId,
+                    name: 'Review automation',
+                    enabled: nextEnabled,
+                    mode: nextMode,
+                    min_rating: replyTo1Star ? 1 : 3,
+                    max_rating: 5,
+                    tone: aiTone,
+                    language: 'auto',
+                    custom_instructions: customInstructions,
+                    delay_minutes: delayMinutes,
+                    daily_limit: dailyLimit,
+                    blocked_terms: [],
                 }),
-                apiFetch(`${API_URL}/api/platform/automation-rules`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        location_id: activeLocationId,
-                        name: 'Review automation',
-                        enabled: isAiActive,
-                        mode: automationMode,
-                        min_rating: replyTo1Star ? 1 : 3,
-                        max_rating: 5,
-                        tone: aiTone,
-                        language: 'auto',
+            });
+            if (!automation.ok) {
+                const body = await automation.json().catch(() => ({}));
+                throw new Error(body.detail || 'Could not save review automation');
+            }
+            const legacy = await apiFetch(`${API_URL}/api/user/save-ai-settings`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_id: user?.id,
+                    location_id: activeLocationId,
+                    settings: {
+                        is_ai_active: nextEnabled,
+                        reply_to_1_star: replyTo1Star,
+                        ai_tone: aiTone,
                         custom_instructions: customInstructions,
-                        delay_minutes: delayMinutes,
-                        daily_limit: dailyLimit,
-                        blocked_terms: [],
-                    }),
+                        active_keywords: targetKeywords,
+                    },
                 }),
-            ]);
-            if (!legacy.ok || !automation.ok) throw new Error('Could not save every setting');
-            showToast('Review automation settings saved.', 'success');
+            });
+            if (!legacy.ok) console.warn('Legacy AI preferences did not sync; platform automation was saved.');
+            setAutomationMode(nextMode);
+            setIsAiActive(nextEnabled);
+            if (!options?.quiet) showToast('Review automation settings saved.', 'success');
+            return true;
         } catch (error: any) {
             showToast(error.message || 'Could not save review automation', 'error');
+            return false;
+        } finally {
+            setLoadingAction(false);
+        }
+    };
+
+    const registerWebhook = async (quiet = false) => {
+        const res = await apiFetch(`${API_URL}/api/google/register-webhook`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ provider_token: providerToken || 'stored-google-connection', location_id: activeLocationId, user_id: user?.id })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.detail || data.message || 'Could not register Google notifications');
+        setWebhookConnected(true);
+        if (!quiet) showToast('Google review notifications are connected.', 'success');
+    };
+
+    const enableAutopilot = async () => {
+        setLoadingAction(true);
+        try {
+            const saved = await saveAllSettings({ mode: 'auto_publish', enabled: true, quiet: true });
+            if (!saved) return;
+            await registerWebhook(true);
+            showToast('Autopilot is live. New qualifying reviews will be replied to automatically.', 'success');
+        } catch (error: any) {
+            showToast(`Autopilot rule was saved, but Google notifications are not connected: ${error.message || 'please reconnect Google'}.`, 'error');
         } finally {
             setLoadingAction(false);
         }
@@ -135,14 +178,31 @@ export default function BrainSettings({
     return (
         <section className="page active">
             <div className="page-head">
+                <span className="workspace-kicker">AUTOMATION</span>
                 <h2>AI Brain Settings</h2>
-                <p>Control center for the autopilot engine on this location.</p>
+                <p>Choose exactly how new Google reviews should be handled for this location.</p>
+            </div>
+
+            <div className={`autopilot-hero ${isAiActive && automationMode === 'auto_publish' ? 'is-live' : ''}`}>
+                <div className="autopilot-orbit"><Icon name="spark" size={24}/></div>
+                <div className="autopilot-copy">
+                    <span className="workspace-kicker">{isAiActive && automationMode === 'auto_publish' ? 'AUTOPILOT LIVE' : 'AUTOPILOT READY'}</span>
+                    <h3>{isAiActive && automationMode === 'auto_publish' ? 'New reviews can be handled while you work.' : 'Put new review replies on autopilot.'}</h3>
+                    <p>Google sends the review to GBP Master, AI writes a reply using these rules, and eligible replies publish after your chosen delay. Each published reply uses 2.5 credits.</p>
+                </div>
+                <button className="btn btn-green" disabled={loadingAction || loadingSettings || !activeLocationId} onClick={enableAutopilot}>
+                    {loadingAction ? 'Configuring…' : isAiActive && automationMode === 'auto_publish' ? 'Reconnect notifications' : 'Enable autopilot'}
+                </button>
+            </div>
+
+            <div className="automation-flow" aria-label="Automatic review reply flow">
+                <span><b>01</b> New Google review</span><i>→</i><span><b>02</b> AI applies your rules</span><i>→</i><span><b>03</b> Reply publishes</span>
             </div>
 
             <div className="card glass" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                 <div>
                     <p style={{ fontWeight: 600, fontSize: '15px', margin: 0 }}>Master Autopilot Switch</p>
-                    <p style={{ fontSize: '12.5px', color: 'rgba(255,255,255,.5)', margin: '4px 0 0' }}>Turn off to instantly stop replying to new reviews.</p>
+                    <p style={{ fontSize: '12.5px', color: 'var(--live-muted, rgba(255,255,255,.5))', margin: '4px 0 0' }}>Turn off to stop creating or publishing replies for incoming reviews.</p>
                 </div>
                 <div className={`toggle ${isAiActive ? 'on' : ''}`} onClick={() => setIsAiActive(!isAiActive)}><span className="knob"></span></div>
             </div>
@@ -154,7 +214,7 @@ export default function BrainSettings({
                     <option value="approval">Wait for approval</option>
                     <option value="auto_publish">Publish automatically</option>
                 </select>
-                <p style={{ fontSize: '12.5px', color: 'rgba(255,255,255,.5)', margin: '8px 0 0' }}>
+                <p style={{ fontSize: '12.5px', color: 'var(--live-muted, rgba(255,255,255,.5))', margin: '8px 0 0' }}>
                     Draft only stores suggestions. Approval waits for you or your AI agent. Automatic mode publishes qualifying replies after the delay.
                 </p>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: '12px', marginTop: '14px' }}>
@@ -172,32 +232,18 @@ export default function BrainSettings({
             <div className="card glass" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', background: 'rgba(52,168,83,.05)', border: '1px solid rgba(52,168,83,.2)' }}>
                 <div>
                     <p style={{ fontWeight: 600, fontSize: '15px', color: 'var(--green-soft)', margin: 0 }}>Enable Instant Google Webhooks</p>
-                    <p style={{ fontSize: '12.5px', color: 'rgba(255,255,255,.6)', margin: '4px 0 0', lineHeight: 1.5 }}>Link your Google Account to our Pub/Sub Webhook so AI replies instantly in seconds, bypassing cron jobs.</p>
+                    <p style={{ fontSize: '12.5px', color: 'var(--live-muted, rgba(255,255,255,.6))', margin: '4px 0 0', lineHeight: 1.5 }}>Link your Google Account to our Pub/Sub Webhook so AI replies instantly in seconds, bypassing cron jobs.</p>
                 </div>
                 <button className="btn btn-green btn-sm" onClick={async () => {
                     setLoadingAction(true);
                     try {
-                        const res = await apiFetch(`${API_URL}/api/google/register-webhook`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                provider_token: providerToken,
-                                location_id: activeLocationId,
-                                user_id: user?.id
-                            })
-                        });
-                        const data = await res.json();
-                        if (data.status === 'success') {
-                            showToast('Webhook successfully registered! Instant replies are now live.', 'success');
-                        } else {
-                            showToast('Error registering Webhook: ' + data.message, 'error');
-                        }
-                    } catch (e) {
-                        showToast('Server error during webhook registration', 'error');
+                        await registerWebhook();
+                    } catch (e: any) {
+                        showToast(e.message || 'Server error during webhook registration', 'error');
                     } finally {
                         setLoadingAction(false);
                     }
-                }}>{loadingAction ? 'Connecting...' : 'Connect Webhook'}</button>
+                }}>{loadingAction ? 'Connecting...' : webhookConnected ? 'Connected' : 'Connect Google notifications'}</button>
             </div>
 
             <div className="card glass" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
@@ -207,7 +253,7 @@ export default function BrainSettings({
                     </div>
                     <div>
                         <p style={{ fontWeight: 600, fontSize: '14.5px', margin: 0 }}>Reply to negative reviews</p>
-                        <p style={{ fontSize: '12.5px', color: 'rgba(255,255,255,.5)', margin: '4px 0 0' }}>If unchecked, the AI skips 1 and 2-star reviews so you can handle upset customers personally.</p>
+                        <p style={{ fontSize: '12.5px', color: 'var(--live-muted, rgba(255,255,255,.5))', margin: '4px 0 0' }}>If unchecked, the AI skips 1 and 2-star reviews so you can handle upset customers personally.</p>
                     </div>
                 </div>
             </div>
@@ -223,7 +269,7 @@ export default function BrainSettings({
 
             <div className="card glass" style={{ marginBottom: '16px' }}>
                 <label className="field-label">Target SEO Keywords (Max: {maxSeoKeywords})</label>
-                <p style={{ fontSize: '12.5px', color: 'rgba(255,255,255,.5)', margin: '0 0 12px' }}>
+                <p style={{ fontSize: '12.5px', color: 'var(--live-muted, rgba(255,255,255,.5))', margin: '0 0 12px' }}>
                     Select auto-discovered local keywords or manually type your own separated by commas. AI will organically inject these into review replies.
                 </p>
                 
@@ -297,7 +343,7 @@ export default function BrainSettings({
             <div className="card glass">
                 <label className="field-label">Custom Instructions</label>
                 <textarea className="input" rows={3} value={customInstructions} onChange={(e) => setCustomInstructions(e.target.value)} placeholder="e.g. Always mention our 30-day return policy"></textarea>
-                <button className="btn btn-primary btn-sm" style={{ marginTop: '12px' }} disabled={loadingAction} onClick={saveAllSettings}>
+                <button className="btn btn-primary btn-sm" style={{ marginTop: '12px' }} disabled={loadingAction || loadingSettings} onClick={() => { void saveAllSettings(); }}>
                     {loadingAction ? 'Saving...' : 'Save Settings'}
                 </button>
             </div>

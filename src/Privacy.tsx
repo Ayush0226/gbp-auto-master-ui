@@ -1,21 +1,7 @@
+import { LegalLayout } from './design/PublicPages';
+
 export default function Privacy() {
-    return (
-        <div className="app-shell" style={{ overflowY: 'auto' }}>
-            <div className="noise"></div>
-            
-            <header className="home-topbar" style={{ position: 'relative', top: 0 }}>
-                <div className="home-logo">GBP Auto <span className="grad-blue">Master</span></div>
-                <nav>
-                    <a href="/" className="home-btn-secondary home-glass">← Back to Home</a>
-                </nav>
-            </header>
-
-            <section className="home-section" style={{ paddingTop: '60px', paddingBottom: '60px' }}>
-                <div className="legal-container">
-                    <div className="legal-card">
-                        <h1 className="home-grad-metal">Privacy Policy</h1>
-                        <p style={{ color: 'rgba(255,255,255,.5)' }}>Last Updated: {new Date().toLocaleDateString()}</p>
-
+    return <LegalLayout title="Privacy policy">
                         <h2>1. Information We Collect</h2>
                         <p>
                             We collect information from you when you register on our site or securely connect your Google Business Profile via OAuth. This includes your name, email address, profile picture, and Google location data necessary to perform our automation services.
@@ -54,6 +40,8 @@ export default function Privacy() {
                         <p>
                             You may request access, correction, or deletion of your GBP Auto Master account data by contacting support@gbpautomaster.in. We verify account ownership before completing a request and retain records only as required for security, billing, dispute resolution, and legal obligations.
                         </p>
+                        <p><b>To disconnect Google:</b> open your Google Account’s third-party connections, select GBP Auto Master, and remove access. This stops new Google Business Profile access but does not itself delete your GBP Auto Master account.</p>
+                        <p><b>To delete your account and stored data:</b> email <a href="mailto:support@gbpautomaster.in?subject=GBP%20Auto%20Master%20account%20deletion" style={{ color: 'var(--blue-soft)', textDecoration: 'underline' }}>support@gbpautomaster.in</a> from the address used for your account with the subject “GBP Auto Master account deletion”. We will verify ownership, cancel pending automation, and confirm when deletion is complete.</p>
 
                         <h2>8. Contact Us</h2>
                         <p>
@@ -64,9 +52,5 @@ export default function Privacy() {
                             <li>Email: <b>ayushsony126@gmail.com</b></li>
                             <li>Phone: <b>+91 93720 60163</b></li>
                         </ul>
-                    </div>
-                </div>
-            </section>
-        </div>
-    );
+    </LegalLayout>;
 }
