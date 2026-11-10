@@ -5,19 +5,20 @@ export default function Brochure() {
             backgroundColor: '#0F1115',
             color: '#E2E8F0',
             minHeight: '100vh',
-            fontFamily: '""Inter"", -apple-system, BlinkMacSystemFont, ""Segoe UI"", Roboto, sans-serif',
+            fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
             padding: '60px 20px',
-            lineHeight: 1.6
+            lineHeight: 1.6,
+            overflowWrap: 'anywhere'
         }}>
             <div style={{ maxWidth: '900px', margin: '0 auto' }}>
                 
                 {/* Header */}
-                <header style={{ display: 'flex', alignItems: 'center', gap: '24px', marginBottom: '50px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '40px' }}>
+                <header style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '24px', marginBottom: '50px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '40px' }}>
                     <div style={{ background: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)', color: 'white', padding: '20px', borderRadius: '16px', fontSize: '28px', fontWeight: 900, boxShadow: '0 8px 24px rgba(59,130,246,0.25)' }}>
                         GBP
                     </div>
                     <div>
-                        <h1 style={{ fontSize: '48px', fontWeight: 900, margin: '0 0 8px 0', letterSpacing: '-1px' }}>
+                        <h1 style={{ fontSize: 'clamp(28px, 7vw, 48px)', fontWeight: 900, margin: '0 0 8px 0', letterSpacing: '-1px' }}>
                             <span style={{ color: '#FFFFFF' }}>GBP Auto</span><span style={{ color: '#10B981' }}>Master</span>
                         </h1>
                         <p style={{ fontSize: '20px', color: '#94A3B8', margin: 0, fontWeight: 400 }}>
@@ -47,11 +48,11 @@ export default function Brochure() {
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '24px' }}>
                         
                         {/* Feature 1 & 2 */}
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '24px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 350px), 1fr))', gap: '24px' }}>
                             <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '16px', padding: '32px', position: 'relative', overflow: 'hidden' }}>
                                 <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '4px', background: 'linear-gradient(90deg, #3B82F6, #60A5FA)' }}></div>
                                 <h3 style={{ fontSize: '20px', color: '#60A5FA', display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px', fontWeight: 700 }}>
-                                    <span style={{ fontSize: '24px' }}>??</span> 24/7 AI Auto-Replier
+                                    <span style={{ fontSize: '24px' }}>&#9670;</span> 24/7 AI Auto-Replier
                                 </h3>
                                 <p style={{ fontSize: '15px', color: '#94A3B8', marginBottom: '0', lineHeight: 1.6 }}>
                                     Our proprietary AI engine analyzes the sentiment of every incoming review and instantly writes a personalized, professional response. It custom-handles 1-star reviews with empathy and amplifies 5-star reviews with gratitude.
@@ -61,7 +62,7 @@ export default function Brochure() {
                             <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '16px', padding: '32px', position: 'relative', overflow: 'hidden' }}>
                                 <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '4px', background: 'linear-gradient(90deg, #10B981, #34D399)' }}></div>
                                 <h3 style={{ fontSize: '20px', color: '#10B981', display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px', fontWeight: 700 }}>
-                                    <span style={{ fontSize: '24px' }}>??</span> Auto SEO Keyword Injection
+                                    <span style={{ fontSize: '24px' }}>&#9670;</span> Auto SEO Keyword Injection
                                 </h3>
                                 <p style={{ fontSize: '15px', color: '#94A3B8', marginBottom: '0', lineHeight: 1.6 }}>
                                     Stop guessing what keywords work. Define your target local keywords (e.g., "plumber in Rohini"), and the AI will naturally weave them into your review replies to boost your search indexing and Map Pack ranking.
@@ -70,11 +71,11 @@ export default function Brochure() {
                         </div>
 
                         {/* Feature 3 & 4 */}
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '24px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 350px), 1fr))', gap: '24px' }}>
                             <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '16px', padding: '32px', position: 'relative', overflow: 'hidden' }}>
                                 <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '4px', background: 'linear-gradient(90deg, #F59E0B, #FBBF24)' }}></div>
                                 <h3 style={{ fontSize: '20px', color: '#FBBF24', display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px', fontWeight: 700 }}>
-                                    <span style={{ fontSize: '24px' }}>??</span> Automated Content Calendar
+                                    <span style={{ fontSize: '24px' }}>&#9670;</span> Automated Content Calendar
                                 </h3>
                                 <p style={{ fontSize: '15px', color: '#94A3B8', marginBottom: '0', lineHeight: 1.6 }}>
                                     Keep your profile fresh without the daily hassle. Upload promotional offers or photos and schedule posts months in advance. Our visual calendar plans your entire local marketing strategy in minutes.
@@ -84,7 +85,7 @@ export default function Brochure() {
                             <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '16px', padding: '32px', position: 'relative', overflow: 'hidden' }}>
                                 <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '4px', background: 'linear-gradient(90deg, #8B5CF6, #A78BFA)' }}></div>
                                 <h3 style={{ fontSize: '20px', color: '#A78BFA', display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px', fontWeight: 700 }}>
-                                    <span style={{ fontSize: '24px' }}>??</span> Competitor Rank Pusher
+                                    <span style={{ fontSize: '24px' }}>&#9670;</span> Competitor Rank Pusher
                                 </h3>
                                 <p style={{ fontSize: '15px', color: '#94A3B8', marginBottom: '0', lineHeight: 1.6 }}>
                                     Track exactly where you stand. Monitor your local competitors' ratings and activity, and get actionable, data-driven insights to push your business past them to the #1 spot on Google Maps.
@@ -93,11 +94,11 @@ export default function Brochure() {
                         </div>
                         
                         {/* Feature 5 & 6 */}
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '24px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 350px), 1fr))', gap: '24px' }}>
                             <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '16px', padding: '32px', position: 'relative', overflow: 'hidden' }}>
                                 <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '4px', background: 'linear-gradient(90deg, #EC4899, #F472B6)' }}></div>
                                 <h3 style={{ fontSize: '20px', color: '#F472B6', display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px', fontWeight: 700 }}>
-                                    <span style={{ fontSize: '24px' }}>?</span> Master Autopilot Control
+                                    <span style={{ fontSize: '24px' }}>&#9670;</span> Master Autopilot Control
                                 </h3>
                                 <p style={{ fontSize: '15px', color: '#94A3B8', marginBottom: '0', lineHeight: 1.6 }}>
                                     Full control over your AI. Personalize exactly how the AI speaks to your customers by selecting its tone (Professional, Casual, Friendly) and adding custom brand instructions.
@@ -107,7 +108,7 @@ export default function Brochure() {
                             <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '16px', padding: '32px', position: 'relative', overflow: 'hidden' }}>
                                 <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '4px', background: 'linear-gradient(90deg, #06B6D4, #22D3EE)' }}></div>
                                 <h3 style={{ fontSize: '20px', color: '#22D3EE', display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px', fontWeight: 700 }}>
-                                    <span style={{ fontSize: '24px' }}>??</span> Multi-Location Management
+                                    <span style={{ fontSize: '24px' }}>&#9670;</span> Multi-Location Management
                                 </h3>
                                 <p style={{ fontSize: '15px', color: '#94A3B8', marginBottom: '0', lineHeight: 1.6 }}>
                                     Own 5 clinics or 10 restaurants? No problem. Connect all your storefronts securely via OAuth and manage every single location from one unified, high-level analytics dashboard.
@@ -125,30 +126,30 @@ export default function Brochure() {
                     </h2>
                     
                     <div style={{ background: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: '16px', padding: '40px' }}>
-                        <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
+                        <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: '24px' }}>
                             <li style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
-                                <div style={{ color: '#10B981', fontSize: '24px' }}>?</div> 
+                                <div style={{ color: '#10B981', fontSize: '24px' }}>&#10003;</div> 
                                 <div>
                                     <strong style={{ display: 'block', fontSize: '16px', color: '#E2E8F0', marginBottom: '4px' }}>100% Response Rate</strong>
                                     <span style={{ color: '#94A3B8', fontSize: '14px' }}>Actively boosts your Map Pack ranking by showing Google you are highly responsive.</span>
                                 </div>
                             </li>
                             <li style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
-                                <div style={{ color: '#10B981', fontSize: '24px' }}>?</div> 
+                                <div style={{ color: '#10B981', fontSize: '24px' }}>&#10003;</div> 
                                 <div>
                                     <strong style={{ display: 'block', fontSize: '16px', color: '#E2E8F0', marginBottom: '4px' }}>SEO Domination</strong>
                                     <span style={{ color: '#94A3B8', fontSize: '14px' }}>AI intelligently injects target SEO keywords into every reply automatically.</span>
                                 </div>
                             </li>
                             <li style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
-                                <div style={{ color: '#10B981', fontSize: '24px' }}>?</div> 
+                                <div style={{ color: '#10B981', fontSize: '24px' }}>&#10003;</div> 
                                 <div>
                                     <strong style={{ display: 'block', fontSize: '16px', color: '#E2E8F0', marginBottom: '4px' }}>Establish Customer Trust</strong>
                                     <span style={{ color: '#94A3B8', fontSize: '14px' }}>Consistent profile activity and empathetic responses signal deep trust to new customers.</span>
                                 </div>
                             </li>
                             <li style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
-                                <div style={{ color: '#10B981', fontSize: '24px' }}>?</div> 
+                                <div style={{ color: '#10B981', fontSize: '24px' }}>&#10003;</div> 
                                 <div>
                                     <strong style={{ display: 'block', fontSize: '16px', color: '#E2E8F0', marginBottom: '4px' }}>Reclaim Your Time</strong>
                                     <span style={{ color: '#94A3B8', fontSize: '14px' }}>Complete hands-off automation. Save 5+ hours a week and focus entirely on your business.</span>
@@ -164,7 +165,7 @@ export default function Brochure() {
                         Getting Started in 3 Steps
                     </h2>
                     
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 250px), 1fr))', gap: '20px' }}>
                         <div style={{ background: 'rgba(255,255,255,0.02)', padding: '24px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
                             <div style={{ color: '#60A5FA', fontSize: '32px', fontWeight: 900, marginBottom: '12px', opacity: 0.8 }}>1</div>
                             <strong style={{ display: 'block', fontSize: '18px', color: '#FFFFFF', marginBottom: '8px' }}>Secure Connection</strong>
