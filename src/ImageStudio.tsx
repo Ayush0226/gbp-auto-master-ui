@@ -16,7 +16,7 @@ export default function ImageStudio({ onSelect }: { onSelect: (asset: ImageAsset
         apiFetch(`${API_URL}/api/images/providers`).then(async response => {
             if (!response.ok) throw new Error('Could not load image-provider connections');
             const data = await response.json();
-            if (active) { setProviders(data); if (!data.cloudflare_available) setProvider('pollinations'); }
+            if (active) setProviders(data);
         }).catch(reason => { if (active) setError(reason.message); });
         return () => { active = false; };
     }, []);
@@ -60,15 +60,15 @@ export default function ImageStudio({ onSelect }: { onSelect: (asset: ImageAsset
         {providers && <>
             <label className="field-label" htmlFor="image-provider">Image provider</label>
             <select id="image-provider" className="input" value={provider} disabled={busy} onChange={e => setProvider(e.target.value)}>
-                <option value="cloudflare" disabled={!providers.cloudflare_available}>Shared free allowance{!providers.cloudflare_available ? ' — setup pending' : ''}</option>
-                <option value="pollinations">My Pollinations account</option>
+                <option value="cloudflare">Shared free allowance{!providers.cloudflare_available ? ' — setup pending' : ''}</option>
+                {(providers.pollinations_available || providers.pollinations_connected) && <option value="pollinations">My Pollinations account</option>}
             </select>
             {provider === 'pollinations' && <div style={{margin:'10px 0'}}>
                 <p style={{fontSize:12}}>Uses your provider balance and the budget you approve. Provider allowances, charges and expiry apply.</p>
                 {providers.pollinations_connected ? <button className="btn btn-ghost btn-sm" disabled={busy} onClick={disconnect}>Disconnect image account</button> :
                     <button className="btn btn-ghost btn-sm" disabled={busy || !providers.pollinations_available} onClick={connect}>{providers.pollinations_available ? 'Connect Pollinations' : 'Provider setup pending'}</button>}
             </div>}
-            {provider === 'cloudflare' && <p style={{fontSize:12}}>Availability depends on the shared provider allowance. Images are never published without scheduling.</p>}
+            {provider === 'cloudflare' && <p style={{fontSize:12}}>{providers.cloudflare_available ? 'Availability depends on the shared provider allowance. Images are never published without scheduling.' : 'Image generation is awaiting account setup by the app administrator. You can still upload a photo to your campaign.'}</p>}
             <label className="field-label" htmlFor="image-prompt">Image description</label>
             <textarea id="image-prompt" rows={3} maxLength={2000} value={prompt} disabled={busy} onChange={e => setPrompt(e.target.value)} placeholder="A warm, inviting café with fresh coffee and morning sunlight" />
             <button className="btn btn-ghost btn-sm" disabled={busy || !ready || prompt.trim().length < 5} onClick={generate}>{busy ? 'Working…' : 'Generate preview'}</button>
