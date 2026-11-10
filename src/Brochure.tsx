@@ -128,28 +128,28 @@ export default function Brochure() {
                     <div style={{ background: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: '16px', padding: '40px' }}>
                         <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: '24px' }}>
                             <li style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
-                                <div style={{ color: '#10B981', fontSize: '24px' }}>&#10003;</div> 
+                                <div style={{ color: '#10B981', fontSize: '24px' }}>&#10003;</div>
                                 <div>
                                     <strong style={{ display: 'block', fontSize: '16px', color: '#E2E8F0', marginBottom: '4px' }}>100% Response Rate</strong>
                                     <span style={{ color: '#94A3B8', fontSize: '14px' }}>Actively boosts your Map Pack ranking by showing Google you are highly responsive.</span>
                                 </div>
                             </li>
                             <li style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
-                                <div style={{ color: '#10B981', fontSize: '24px' }}>&#10003;</div> 
+                                <div style={{ color: '#10B981', fontSize: '24px' }}>&#10003;</div>
                                 <div>
                                     <strong style={{ display: 'block', fontSize: '16px', color: '#E2E8F0', marginBottom: '4px' }}>SEO Domination</strong>
                                     <span style={{ color: '#94A3B8', fontSize: '14px' }}>AI intelligently injects target SEO keywords into every reply automatically.</span>
                                 </div>
                             </li>
                             <li style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
-                                <div style={{ color: '#10B981', fontSize: '24px' }}>&#10003;</div> 
+                                <div style={{ color: '#10B981', fontSize: '24px' }}>&#10003;</div>
                                 <div>
                                     <strong style={{ display: 'block', fontSize: '16px', color: '#E2E8F0', marginBottom: '4px' }}>Establish Customer Trust</strong>
                                     <span style={{ color: '#94A3B8', fontSize: '14px' }}>Consistent profile activity and empathetic responses signal deep trust to new customers.</span>
                                 </div>
                             </li>
                             <li style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
-                                <div style={{ color: '#10B981', fontSize: '24px' }}>&#10003;</div> 
+                                <div style={{ color: '#10B981', fontSize: '24px' }}>&#10003;</div>
                                 <div>
                                     <strong style={{ display: 'block', fontSize: '16px', color: '#E2E8F0', marginBottom: '4px' }}>Reclaim Your Time</strong>
                                     <span style={{ color: '#94A3B8', fontSize: '14px' }}>Complete hands-off automation. Save 5+ hours a week and focus entirely on your business.</span>
