@@ -83,7 +83,7 @@ function App() {
     if (currentPath === '/support') return <SupportPage />;
     if (currentPath === '/plugin') return <ConnectionGuide />;
     if (currentPath === '/refund') return <Refund />;
-    if (currentPath === '/brochure') return <Brochure />;
+    if (currentPath === '/brochure' || currentPath === '/brochure.html') return <Brochure />;
     if (currentPath === '/demo') return <MuscleDemoHome />;
     if (currentPath === '/reset') return <div style={{ padding: 50 }}><h2>Resetting your account…</h2><button onClick={async () => {
       const { data: { session } } = await supabase.auth.getSession();
