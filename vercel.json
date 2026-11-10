@@ -1,4 +1,11 @@
 {
+  "redirects": [
+    {
+      "source": "/brochure.html",
+      "destination": "/brochure",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
       "source": "/(.*)",
