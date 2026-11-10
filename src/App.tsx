@@ -19,6 +19,7 @@ const MuscleDemoHome = lazy(() => import('./MuscleDemoHome').then(module => ({ d
 const AdminDashboard = lazy(() => import('./AdminDashboard'));
 const Brochure = lazy(() => import('./Brochure'));
 const OAuthConsent = lazy(() => import('./OAuthConsent'));
+const ImageConnect = lazy(() => import('./ImageConnect'));
 
 function App() {
   const [currentPath, setCurrentPath] = React.useState(window.location.pathname);
@@ -68,6 +69,7 @@ function App() {
   }, []);
 
   const renderRoute = () => {
+    if (currentPath === '/image-connect') return <ImageConnect />;
     if (currentPath === '/oauth/consent') return <OAuthConsent />;
     if (currentPath === '/signup') return <AuthPage />;
     if (['/', '/v2', '/landing'].includes(currentPath)) return <HomePage />;

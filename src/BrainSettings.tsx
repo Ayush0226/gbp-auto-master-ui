@@ -25,7 +25,7 @@ export default function BrainSettings({
     const [keywordInputText, setKeywordInputText] = useState('');
     const [searchKeywords, setSearchKeywords] = useState<any[]>([]);
     const [loadingAction, setLoadingAction] = useState(false);
-    const [maxSeoKeywords, setMaxSeoKeywords] = useState(5);
+    const [maxSeoKeywords, setMaxSeoKeywords] = useState<number | null>(2);
     const [automationMode, setAutomationMode] = useState<'draft' | 'approval' | 'auto_publish'>('approval');
     const [delayMinutes, setDelayMinutes] = useState(0);
     const [dailyLimit, setDailyLimit] = useState(20);
@@ -45,7 +45,7 @@ export default function BrainSettings({
                 });
                 if(profRes.ok) {
                     const profData = await profRes.json();
-                    if (profData.max_seo_keywords) setMaxSeoKeywords(profData.max_seo_keywords);
+                    setMaxSeoKeywords(profData.unlimited_access ? null : (profData.max_seo_keywords ?? 2));
                 }
 
                 // Get AI settings for specific location
@@ -188,7 +188,7 @@ export default function BrainSettings({
                 <div className="autopilot-copy">
                     <span className="workspace-kicker">{isAiActive && automationMode === 'auto_publish' ? 'AUTOPILOT LIVE' : 'AUTOPILOT READY'}</span>
                     <h3>{isAiActive && automationMode === 'auto_publish' ? 'New reviews can be handled while you work.' : 'Put new review replies on autopilot.'}</h3>
-                    <p>Google sends the review to GBP Master, AI writes a reply using these rules, and eligible replies publish after your chosen delay. Each published reply uses 2.5 credits.</p>
+                    <p>Google sends the review to GBP Master, AI writes a reply using these rules, and eligible replies publish after your chosen delay. </p>
                 </div>
                 <button className="btn btn-green" disabled={loadingAction || loadingSettings || !activeLocationId} onClick={enableAutopilot}>
                     {loadingAction ? 'Configuring…' : isAiActive && automationMode === 'auto_publish' ? 'Reconnect notifications' : 'Enable autopilot'}
@@ -202,7 +202,7 @@ export default function BrainSettings({
             <div className="card glass" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                 <div>
                     <p style={{ fontWeight: 600, fontSize: '15px', margin: 0 }}>Master Autopilot Switch</p>
-                    <p style={{ fontSize: '12.5px', color: 'var(--live-muted, rgba(255,255,255,.5))', margin: '4px 0 0' }}>Turn off to stop creating or publishing replies for incoming reviews.</p>
+                    <p style={{ fontSize: '12.5px', color: 'var(--live-muted, rgba(255,255,255,.5))', margin: '4px 0 0' }}>Turn off and save to stop new and queued automatic replies. A reply already being sent may finish.</p>
                 </div>
                 <div className={`toggle ${isAiActive ? 'on' : ''}`} onClick={() => setIsAiActive(!isAiActive)}><span className="knob"></span></div>
             </div>
@@ -268,7 +268,7 @@ export default function BrainSettings({
             </div>
 
             <div className="card glass" style={{ marginBottom: '16px' }}>
-                <label className="field-label">Target SEO Keywords (Max: {maxSeoKeywords})</label>
+                <label className="field-label">Target SEO Keywords ({maxSeoKeywords === null ? 'Unlimited' : `Max: ${maxSeoKeywords}`})</label>
                 <p style={{ fontSize: '12.5px', color: 'var(--live-muted, rgba(255,255,255,.5))', margin: '0 0 12px' }}>
                     Select auto-discovered local keywords or manually type your own separated by commas. AI will organically inject these into review replies.
                 </p>
@@ -297,7 +297,7 @@ export default function BrainSettings({
                                         if (isActive) {
                                             newKws = targetKeywords.filter(k => k !== kw.searchKeyword);
                                         } else {
-                                            if (targetKeywords.length >= maxSeoKeywords) {
+                                            if (maxSeoKeywords !== null && targetKeywords.length >= maxSeoKeywords) {
                                                 showToast(`You can only select up to ${maxSeoKeywords} keywords on your current plan.`, 'error');
                                                 return;
                                             }
@@ -329,7 +329,7 @@ export default function BrainSettings({
                     value={keywordInputText} 
                     onChange={(e) => {
                         const keywords = e.target.value.split(',').map(s => s.trim()).filter(s => s);
-                        if (keywords.length <= maxSeoKeywords) {
+                        if (maxSeoKeywords === null || keywords.length <= maxSeoKeywords) {
                             setKeywordInputText(e.target.value);
                             setTargetKeywords(keywords);
                         } else {

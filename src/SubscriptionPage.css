@@ -1,0 +1,17 @@
+.access-page { width: 100%; min-width: 0; overflow-wrap: anywhere; }
+.access-layout { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+.access-main { min-width: 0; }
+.access-page .access-summary-card, .access-page .access-benefits { min-width: 0; padding: 28px; }
+.access-page p { font-size: 14px; line-height: 1.7; }
+.access-page .access-summary-card h3 { font-size: clamp(24px, 2.2vw, 32px); line-height: 1.25; margin: 16px 0 12px; }
+.access-status { display: inline-block; border: 1px solid #d5e3c8; border-radius: 99px; padding: 5px 11px; font-size: 12px; color: #4f713f; background: #edf4e5; }
+.access-page .access-payment-note { margin-top: 22px; padding-top: 16px; border-top: 1px solid #e0e7d8; color: var(--live-muted, #788b69); font-size: 13px; }
+.access-benefits h3 { font-size: 20px; line-height: 1.35; margin: 0 0 20px; }
+.access-benefits ul { display: grid; gap: 18px; margin: 0 0 24px; padding: 0; list-style: none; }
+.access-benefits li { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 10px; font-size: 14px; line-height: 1.6; }
+.access-benefits li::before { content: '✓'; color: #557e43; font-weight: 700; }
+.access-benefits > p { margin: 0; padding-top: 20px; border-top: 1px solid #e0e7d8; color: var(--live-muted, #788b69); font-size: 13px; }
+.access-load-error { min-width: 0; display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; padding: 16px; border: 1px solid #e7cfc7; border-radius: 8px; background: #fcf2ed; }
+.access-load-error p { min-width: 0; flex: 1 1 200px; margin: 0; color: #a35748; }
+@media (max-width: 1100px) { .access-layout { grid-template-columns: minmax(0, 1fr); gap: 20px; } }
+@media (max-width: 640px) { .access-page .access-summary-card, .access-page .access-benefits { padding: 20px; } }

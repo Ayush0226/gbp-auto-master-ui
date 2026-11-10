@@ -11,7 +11,7 @@ export default function ReviewManager({
     activeLocationId, 
     handleSyncReviews,
     onReviewsChanged,
-    refreshTokens,
+    hasMoreReviews, loadingMoreReviews, loadMoreReviews,
     showToast 
 }: any) {
     const API_URL = import.meta.env.VITE_API_URL || 'https://gbp-auto-master-backend-us.onrender.com';
@@ -46,9 +46,9 @@ export default function ReviewManager({
             });
             const data = await response.json();
             if (!response.ok) throw new Error(data.detail || `Could not ${action} reply`);
-            showToast(action === 'approve' ? 'Reply approved. Publishing costs 2.5 credits.' : 'Reply cancelled.', 'success');
+            showToast(action === 'approve' ? 'Reply approved.' : 'Reply cancelled.', 'success');
             fetchReplyJobs();
-            refreshTokens?.();
+
         } catch (error: any) {
             showToast(error.message || `Could not ${action} reply`, 'error');
         }
@@ -132,7 +132,7 @@ export default function ReviewManager({
                 const data = await res.json();
                 const sent = data.replied?.filter((reply: any) => reply.status === "published").length || 0;
                 showToast(`${sent} replies published.`, sent ? "success" : "info");
-                onReviewsChanged?.(); refreshTokens?.();
+                onReviewsChanged?.();
             } else {
                 showToast("Failed to batch reply.", "error");
             }
@@ -158,7 +158,7 @@ export default function ReviewManager({
             });
             if (res.ok) {
                 showToast("Reply regenerated!", "success");
-                onReviewsChanged?.(); refreshTokens?.();
+                onReviewsChanged?.();
             } else {
                 showToast("Failed to regenerate reply", "error");
             }
@@ -214,7 +214,7 @@ export default function ReviewManager({
                                 {job.last_error && <p style={{ fontSize: '11px', color: '#fca5a5' }}>{job.last_error}</p>}
                                 <div style={{ display: 'flex', gap: '8px' }}>
                                     {['draft', 'pending_approval', 'failed'].includes(job.status) && (
-                                        <button className="btn btn-green btn-sm" onClick={() => updateReplyJob(job.id, 'approve')}>Approve · 2.5 credits</button>
+                                        <button className="btn btn-green btn-sm" onClick={() => updateReplyJob(job.id, 'approve')}>Approve</button>
                                     )}
                                     <button className="btn btn-ghost btn-sm" onClick={() => updateReplyJob(job.id, 'cancel')}>Cancel</button>
                                 </div>
@@ -335,6 +335,7 @@ export default function ReviewManager({
                     ))
                 )}
             </div>
+            {hasMoreReviews && <button className="btn btn-ghost btn-block" disabled={loadingMoreReviews} onClick={loadMoreReviews}>{loadingMoreReviews ? 'Loading…' : 'Load older reviews'}</button>}
         </div>
     );
 }

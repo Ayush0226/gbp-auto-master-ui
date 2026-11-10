@@ -1,6 +1,7 @@
 import { apiFetch } from './lib/api';
 import { useEffect, useState } from 'react';
 import { supabase } from './lib/supabase';
+import OperationsPanel from './OperationsPanel';
 
 export default function AdminDashboard({ onBackToApp }: { onBackToApp?: () => void }) {
     const [adminUser, setAdminUser] = useState<any>(null);
@@ -208,13 +209,14 @@ export default function AdminDashboard({ onBackToApp }: { onBackToApp?: () => vo
     
     // Estimate MRR (Monthly Recurring Revenue)
     const mrr = activeSubsList.reduce((acc: number, sub: any) => {
+        if (sub.is_lifetime) return acc;
         if (sub.plan_id === 'half_yearly') return acc + (1999 / 6);
         if (sub.plan_id === 'yearly') return acc + (3999 / 12);
         return acc;
     }, 0);
 
     const runScan = async () => {
-        if (!confirm("Are you sure you want to run the weekly competitor scan for all users? This will consume AI tokens.")) return;
+        if (!confirm("Are you sure you want to run the weekly competitor scan for all users? This uses the AI and search providers.")) return;
         setLoading(true);
         try {
             const res = await apiFetch('https://gbp-auto-master-backend-us.onrender.com/api/admin/run-competitor-scan', {
@@ -454,6 +456,7 @@ export default function AdminDashboard({ onBackToApp }: { onBackToApp?: () => vo
                         </div>
                     </div>
 
+                    {activeTab === 'system' && <OperationsPanel />}
                     <div className="grid grid-4" style={{ marginBottom: '40px' }}>
                         <div className="card glass glass-hover animate-in" style={{ '--delay': '0.1s' } as any}>
                             <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(59,130,246,.1)', color: 'var(--blue-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', marginBottom: '16px' }}>👥</div>

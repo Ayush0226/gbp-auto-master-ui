@@ -16,7 +16,7 @@ export default function Refund() {
 
                         <h2>3. Chargebacks and Payment Disputes</h2>
                         <p>
-                            If you initiate a chargeback or dispute with your bank or credit card company without first attempting to resolve the issue with our support team, we reserve the right to immediately suspend your account and contest the chargeback by providing this mutually agreed-upon policy to the payment gateway (Razorpay) and the issuing bank.
+                            If you initiate a chargeback or dispute with your bank or credit card company without first attempting to resolve the issue with our support team, we reserve the right to immediately suspend your account and contest the chargeback by providing this mutually agreed-upon policy to the original payment provider and the issuing bank.
                         </p>
 
                         <h2>4. Contact Us</h2>

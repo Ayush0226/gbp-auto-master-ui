@@ -148,7 +148,7 @@ export default function OAuthConsent() {
             <div className="oauth-permissions">
               <h2>GBP Master access</h2>
               <ul>
-                <li>View connected business accounts, locations, credits, reviews, campaigns, and delivery history</li>
+                <li>View connected business accounts, locations, reviews, campaigns, and delivery history</li>
                 <li>Create review-reply drafts and manage account or location automation rules</li>
                 <li>Publish approved replies and create, schedule, or cancel multi-location content campaigns</li>
               </ul>

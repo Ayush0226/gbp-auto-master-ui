@@ -2,7 +2,7 @@ const tools = [
   ['⭐', 'Reviews', 'Find unanswered reviews, draft replies, publish approved replies, and manage AI reply automation.'],
   ['📅', 'Content', 'Create campaigns, reuse photos, schedule Google posts, and manage multiple business locations.'],
   ['📍', 'Local rank', 'Measure one keyword in the first 11 Google local results and download the signed PDF report.'],
-  ['💳', 'Shared credits', 'See one account balance across every connected Google Business Profile location.'],
+  ['💳', 'Connected locations', 'Manage every connected Google Business Profile location in one workspace.'],
 ];
 
 const userSteps = [
@@ -10,7 +10,7 @@ const userSteps = [
   ['2', 'Sign in securely', 'Sign in to GBP Auto Master and approve the requested connection. Your Google password is never shared with the AI agent.'],
   ['3', 'Choose a business', 'Ask the agent to list your connected accounts and locations, then select the business you want to manage.'],
   ['4', 'Ask in normal language', 'For example: “Show unanswered reviews” or “Check my rank for coffee shop and give me the PDF.”'],
-  ['5', 'Confirm paid actions', 'The agent shows the exact action, target and credit charge before publishing, scheduling, or running a rank scan.'],
+  ['5', 'Confirm publication', 'The agent shows the exact action and target before publishing or scheduling.'],
   ['6', 'Receive the result', 'See the result in chat. Rank scans include a temporary downloadable PDF link.'],
 ];
 
@@ -55,7 +55,7 @@ export default function PluginGuide() {
 
       <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(290px,1fr))', gap: 22, marginBottom: 76 }}>
         <div className="card glass" style={{ padding: 26, textAlign: 'center' }}><div style={{ fontSize: 50 }}>💬</div><h2>ChatGPT or Codex</h2><p style={{ color: 'rgba(255,255,255,.65)' }}>Understands the request, selects the correct GBP Master tool, and asks for confirmation before a chargeable action.</p></div>
-        <div className="card glass" style={{ padding: 26, textAlign: 'center' }}><div style={{ fontSize: 50 }}>🔐</div><h2>GBP Master MCP</h2><p style={{ color: 'rgba(255,255,255,.65)' }}>Verifies OAuth identity, checks ownership, protects credentials, applies credit rules, and calls the requested service.</p></div>
+        <div className="card glass" style={{ padding: 26, textAlign: 'center' }}><div style={{ fontSize: 50 }}>🔐</div><h2>GBP Master MCP</h2><p style={{ color: 'rgba(255,255,255,.65)' }}>Verifies OAuth identity, checks ownership, protects credentials, and calls the requested service.</p></div>
         <div className="card glass" style={{ padding: 26, textAlign: 'center' }}><div style={{ fontSize: 50 }}>🏪</div><h2>Google Business Profile</h2><p style={{ color: 'rgba(255,255,255,.65)' }}>Returns business data or receives an approved reply or post. SerpApi supplies measured local rank results.</p></div>
       </section>
 
@@ -79,7 +79,7 @@ export default function PluginGuide() {
         <ul style={{ lineHeight: 1.9, color: 'rgba(255,255,255,.72)', paddingLeft: 22 }}>
           <li>OAuth determines the signed-in user; agents never request Google or Supabase tokens.</li>
           <li>Read operations and reply drafts are free.</li>
-          <li>Public replies cost 2.5 credits, scheduled posts cost 5 credits per location, and a local rank scan costs 10 credits.</li>
+          <li>Review the content and selected business before publishing replies or scheduling posts.</li>
           <li>The agent displays the content, target and charge before publishing, scheduling or scanning.</li>
           <li>A successful rank scan includes a signed PDF link that expires after one hour, with no extra PDF charge.</li>
         </ul>

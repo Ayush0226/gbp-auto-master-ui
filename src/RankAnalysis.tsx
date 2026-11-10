@@ -1,5 +1,6 @@
 import { apiFetch } from './lib/api';
-import React, { useState } from 'react';
+import { metricTotal } from './lib/analytics';
+import React, { useState, useRef } from 'react';
 
 interface RankAnalysisProps {
     analyticsData: any;
@@ -9,14 +10,15 @@ interface RankAnalysisProps {
     showToast: (msg: string, type: 'success' | 'error' | 'info') => void;
     searchKeywords: any[];
     providerToken: string;
-    refreshTokens?: () => void;
+
 }
 
 export default function RankAnalysis({
-    analyticsData, activeLocationId, user, liveReviews, showToast, searchKeywords, refreshTokens
+    analyticsData, activeLocationId, user, liveReviews, showToast, searchKeywords
 }: RankAnalysisProps) {
     const API_URL = import.meta.env.VITE_API_URL || 'https://gbp-auto-master-backend-us.onrender.com';
     const [generatingReport, setGeneratingReport] = useState(false);
+    const reportRequests = useRef<Record<string,string>>({});
     const [seoKeywords, setSeoKeywords] = useState<any[]>([]);
 
     let positive = 0;
@@ -133,22 +135,8 @@ export default function RankAnalysis({
     }, [user?.id, activeLocationId, API_URL]);
 
     const handleGenerateReport = async (keyword: string) => {
-        try {
-            const balRes = await apiFetch(`${API_URL}/api/tokens/balance`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user_id: user?.id, location_id: activeLocationId })
-            });
-            const balData = await balRes.json();
-            if (balData.balance < 10) {
-                showToast("Insufficient tokens (need 10)", "error");
-                return;
-            }
-        } catch (e: any) {
-            showToast("Failed to check token balance", "error");
-            return;
-        }
-
+        const requestKey = `${user?.id}:${activeLocationId}:${keyword}`;
+        const requestId = reportRequests.current[requestKey] ||= crypto.randomUUID();
         setGeneratingReport(true);
         showToast("Generating report...", "info");
         try {
@@ -159,11 +147,12 @@ export default function RankAnalysis({
                     user_id: user?.id,
                     keyword: keyword,
                     location_id: activeLocationId,
-                    request_id: crypto.randomUUID()
+                    request_id: requestId
                 })
             });
             const data = await res.json();
             if (data.status === 'success') {
+                delete reportRequests.current[requestKey];
                 const rank = data.found_in_top_11 ? `#${data.actual_rank}` : 'not found in the top 11';
                 showToast(`Measured Google local rank: ${rank}. Downloading report...`, 'success');
                 if (data.pdf_download_url) {
@@ -171,7 +160,7 @@ export default function RankAnalysis({
                 } else {
                     downloadKeywordPdf(keyword, data);
                 }
-                if (refreshTokens) refreshTokens();
+
             } else {
                 showToast(data.detail || data.message || "Failed to generate report", "error");
             }
@@ -183,10 +172,7 @@ export default function RankAnalysis({
     };
 
     const getMetricTotal = (metricName: string) => {
-        if (!analyticsData || !analyticsData.multiDailyMetricTimeSeries) return 0;
-        const series = analyticsData.multiDailyMetricTimeSeries.find((s: any) => s.dailyMetric === metricName);
-        if (!series || !series.timeSeries || !series.timeSeries.datedValues) return 0;
-        return series.timeSeries.datedValues.reduce((acc: number, val: any) => acc + parseInt(val.value || 0), 0);
+        return metricTotal(analyticsData, metricName);
     };
 
     const messages = getMetricTotal('BUSINESS_CONVERSATIONS');
@@ -209,7 +195,7 @@ export default function RankAnalysis({
                         onClick={() => handleGenerateReport('general')}
                         disabled={generatingReport}
                     >
-                        {generatingReport ? 'Scanning...' : 'Check “general” rank (10 credits)'}
+                        {generatingReport ? 'Scanning...' : 'Check “general” rank'}
                     </button>
                 </div>
             </div>
@@ -298,7 +284,7 @@ export default function RankAnalysis({
                                             disabled={generatingReport}
                                             style={{ width: '100%', background: 'rgba(255,255,255,.05)' }}
                                         >
-                                            {generatingReport ? 'Checking Google local results...' : 'Check top-11 rank (10 credits)'}
+                                            {generatingReport ? 'Checking Google local results...' : 'Check top-11 rank'}
                                         </button>
                                     </div>
                                 </div>

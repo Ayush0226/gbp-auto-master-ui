@@ -22,9 +22,9 @@ export default function DashboardV2() {
     const [user, setUser] = useState<any>(null);
     const [providerToken, setProviderToken] = useState<string | null>(null);
     const googleTokenExpiresAt = useRef(0);
-    const [activeView, setActiveView] = useState('dashboard');
+    const googleRefreshInFlight = useRef(false);
+    const [activeView, setActiveView] = useState(new URLSearchParams(window.location.search).get('view') === 'calendar' ? 'calendar' : 'dashboard');
     const [sidebarOpen, setSidebarOpen] = useState(false);
-    const [tokenBalance, setTokenBalance] = useState<number>(0);
 
     const [toast, setToast] = useState<{message: string, type: 'success' | 'error' | 'info'} | null>(null);
 
@@ -37,6 +37,8 @@ export default function DashboardV2() {
     const [liveReviews, setLiveReviews] = useState<any[]>([]);
     const [loadingReviews, setLoadingReviews] = useState(false);
     const [syncingReviews, setSyncingReviews] = useState(false);
+    const [nextReviewPage, setNextReviewPage] = useState<string | null>(null);
+    const [loadingMoreReviews, setLoadingMoreReviews] = useState(false);
 
     // ─── Analytics & Keywords ───
     const [analyticsData, setAnalyticsData] = useState<any>(null);
@@ -76,15 +78,12 @@ export default function DashboardV2() {
                 }
                 
                 const token = session.provider_token;
-                // Save refresh token to user metadata if it exists
-                if (session.provider_refresh_token && session.user.user_metadata?.google_refresh_token !== session.provider_refresh_token) {
-                    await supabase.auth.updateUser({
-                        data: { google_refresh_token: session.provider_refresh_token }
-                    });
+                if (session.provider_refresh_token) {
+                    await saveGoogleGrant(session.provider_refresh_token);
                 }
                 
                 // Fetch data in parallel
-                if (session.user.user_metadata?.google_refresh_token || session.provider_refresh_token) {
+                if (session.user.identities?.some(identity => identity.provider === 'google')) {
                     // The provider token in a persisted Supabase session can be old.
                     // Start with a fresh Google token from the stored server-side grant.
                     refreshGoogleToken(session.user.id);
@@ -109,10 +108,8 @@ export default function DashboardV2() {
                     if (session.provider_token) {
                         setProviderToken(session.provider_token);
                     }
-                    if (session.provider_refresh_token && session.user.user_metadata?.google_refresh_token !== session.provider_refresh_token) {
-                        await supabase.auth.updateUser({
-                            data: { google_refresh_token: session.provider_refresh_token }
-                        });
+                    if (_event === 'SIGNED_IN' && session.provider_refresh_token) {
+                        await saveGoogleGrant(session.provider_refresh_token);
                     }
                 } else {
                     setUser(null);
@@ -125,8 +122,17 @@ export default function DashboardV2() {
         return () => { disposed = true; unsubscribe(); };
     }, []);
 
-    // ─── Refresh Google Token via Backend ───
+    const saveGoogleGrant = async (refreshToken: string) => {
+        const response = await apiFetch(`${API_URL}/api/connections/google`, {
+            method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({refresh_token:refreshToken}),
+        });
+        if (!response.ok) showToast('Google connection could not be saved securely. Reconnect Google to enable scheduled work.', 'error');
+    };
+
+    // Refresh once per attempt; a failed location sync never recurses here.
     const refreshGoogleToken = async (userId: string) => {
+        if (googleRefreshInFlight.current) return;
+        googleRefreshInFlight.current = true;
         try {
             const res = await apiFetch(`${API_URL}/api/auth/refresh-google-token`, {
                 method: 'POST',
@@ -138,11 +144,17 @@ export default function DashboardV2() {
                 if (data.provider_token) {
                     setProviderToken(data.provider_token);
                     googleTokenExpiresAt.current = Date.now() + Math.max(5, Number(data.expires_in || 3600) - 300) * 1000;
-                    fetchLocations(userId, data.provider_token);
+                    await fetchLocations(userId, data.provider_token);
                 }
+            } else {
+                googleTokenExpiresAt.current = 0;
+                showToast('Reconnect Google Business Profile to restore access.', 'error');
             }
         } catch (e) {
-            console.error('Failed to refresh Google token:', e);
+            googleTokenExpiresAt.current = 0;
+            showToast('Could not refresh Google authorization. Please reconnect Google.', 'error');
+        } finally {
+            googleRefreshInFlight.current = false;
         }
     };
 
@@ -191,32 +203,6 @@ export default function DashboardV2() {
         }
     }, [activeLocationId, liveLocations]);
 
-    // ─── Fetch Token Balance ───
-    const fetchTokenBalance = async (userId: string, _locationId?: string) => {
-        try {
-            const res = await apiFetch(`${API_URL}/api/tokens/balance`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user_id: userId })
-            });
-            if (res.ok) {
-                const data = await res.json();
-                setTokenBalance(data.balance || 0);
-
-            }
-        } catch (error) {
-            console.error('Error fetching token balance:', error);
-        }
-    };
-
-    // Auto-fetch tokens when active location changes
-    React.useEffect(() => {
-        if (user?.id) {
-            fetchTokenBalance(user.id, activeLocationId);
-        }
-    }, [user?.id, activeLocationId]);
-
-    // ─── Fetch Google Locations ───
     const fetchLocations = async (userId: string, token: string) => {
         if (liveLocations.length === 0) setLoadingLocations(true);
         try {
@@ -228,23 +214,19 @@ export default function DashboardV2() {
             if (res.ok) {
                 const data = await res.json();
                 if (data.status === 'error') {
-                    console.error('Google API Error:', data.message);
-                    if (data.message.includes('401') || data.message.includes('unauthorized') || data.message.includes('invalid_grant')) {
-                        // Token might be expired, try refreshing
-                        refreshGoogleToken(userId);
-                    } else {
-                        // Show error so we know what's happening
-                        alert('Google Sync Error: ' + data.message);
-                    }
+                    showToast(data.message || 'Google location sync failed. Please reconnect Google.', 'error');
                     return;
                 }
                 const locs = data.locations || [];
                 setLiveLocations(locs);
-                fetchTokenBalance(userId);
+
                 setActiveLocationId(current => locs.some((location: any) => location.id === current) ? current : (locs[0]?.id || ''));
+            } else {
+                const data = await res.json().catch(() => ({}));
+                showToast(data.detail || 'Could not sync Google locations. Please reconnect Google.', 'error');
             }
         } catch (error) {
-            console.error('Error fetching locations:', error);
+            showToast('Could not load Google locations. Please try again.', 'error');
         } finally {
             setLoadingLocations(false);
         }
@@ -271,6 +253,7 @@ export default function DashboardV2() {
             if (res.ok) {
                 const data = await res.json();
                 setLiveReviews(data.reviews || []);
+                setNextReviewPage(data.nextPageToken || null);
                 if (data.totalReviewCount !== undefined) setTotalReviewCount(data.totalReviewCount);
                 if (data.averageRating !== undefined) setAverageRating(data.averageRating);
                 
@@ -280,11 +263,28 @@ export default function DashboardV2() {
                 });
             }
         } catch (error) {
-            console.error('Error fetching reviews:', error);
+            showToast('Could not load reviews. Please try again.', 'error');
         } finally {
             setLoadingReviews(false);
         }
     }, [providerToken, activeLocationId, user, liveLocations]);
+
+    const loadMoreReviews = async () => {
+        if (!nextReviewPage || loadingMoreReviews) return;
+        const location = activeLocationId;
+        setLoadingMoreReviews(true);
+        try {
+            const response = await apiFetch(`${API_URL}/api/google/get-reviews`, {
+                method:'POST', headers:{'Content-Type':'application/json'},
+                body:JSON.stringify({user_id:user.id,location_id:location,provider_token:providerToken,page_token:nextReviewPage}),
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.detail || 'Could not load older reviews');
+            setLiveReviews(current => [...new Map([...current, ...(data.reviews || [])].map(item => [item.id,item])).values()]);
+            setNextReviewPage(data.nextPageToken || null);
+        } catch (reason: any) { showToast(reason.message, 'error'); }
+        finally { setLoadingMoreReviews(false); }
+    };
 
     // ─── Sync (Auto-Reply) Reviews ───
     const handleSyncReviews = async () => {
@@ -379,7 +379,6 @@ export default function DashboardV2() {
         }
     };
 
-    // Daily Reward deprecated in favor of 200 sign up tokens
 
     // ─── Sign Out ───
     const handleSignOut = async () => {
@@ -421,7 +420,7 @@ export default function DashboardV2() {
             case 'calendar': return 'Content Calendar';
             case 'rank': return 'Rank Analysis';
             case 'brain': return 'AI Brain Settings';
-            case 'subscription': return 'Plans & credits';
+            case 'subscription': return 'Plans';
             case 'connections': return 'Connected AI Apps';
             case 'seo': return 'SEO Workbench';
             case 'profile': return 'Your profile';
@@ -472,7 +471,7 @@ export default function DashboardV2() {
                     <button className={`nav-item ${activeView === 'calendar' ? 'active' : ''}`} onClick={() => { setActiveView('calendar'); setSidebarOpen(false); }}><Icon name="calendar" size={17}/>Content Calendar</button>
                     <button className={`nav-item ${activeView === 'rank' ? 'active' : ''}`} onClick={() => { setActiveView('rank'); setSidebarOpen(false); }}><Icon name="chart" size={17}/>Rank Analysis</button>
                     <button className={`nav-item ${activeView === 'brain' ? 'active' : ''}`} onClick={() => { setActiveView('brain'); setSidebarOpen(false); }}><Icon name="settings" size={17}/>AI Brain Settings</button>
-                    <button className={`nav-item ${activeView === 'subscription' ? 'active' : ''}`} onClick={() => { setActiveView('subscription'); setSidebarOpen(false); }}><Icon name="spark" size={17}/>Plans & credits</button>
+                    <button className={`nav-item ${activeView === 'subscription' ? 'active' : ''}`} onClick={() => { setActiveView('subscription'); setSidebarOpen(false); }}><Icon name="spark" size={17}/>Plans</button>
                     <button className={`nav-item ${activeView === 'connections' ? 'active' : ''}`} onClick={() => { setActiveView('connections'); setSidebarOpen(false); }}><Icon name="link" size={17}/>Connected AI Apps</button>
                     <button className={`nav-item ${activeView === 'seo' ? 'active' : ''}`} onClick={() => { setActiveView('seo'); setSidebarOpen(false); }}><Icon name="globe" size={17}/>SEO Workbench</button>
                 </nav>
@@ -496,9 +495,7 @@ export default function DashboardV2() {
                         </button>
                         <span style={{ fontWeight: 'bold' }}>{getViewTitle()}</span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <strong style={{ fontSize: '14px', color: 'var(--blue-soft, #4F8CFF)' }}>{tokenBalance} 🪙</strong>
-                    </div>
+
                 </div>
 
                 <main className="main">
@@ -509,11 +506,7 @@ export default function DashboardV2() {
                             <p style={{ margin: 0, fontSize: '13px', color: 'var(--live-muted, rgba(255,255,255,0.5))' }}>{activeLocationName}</p>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.05)', padding: '8px 14px', borderRadius: '8px' }}>
-                                <span style={{ fontSize: '13px', color: 'var(--live-muted, rgba(255,255,255,0.6))' }}>Balance:</span>
-                                <strong style={{ fontSize: '16px', color: 'var(--blue-soft, #4F8CFF)' }}>{tokenBalance}</strong>
-                                <span style={{ fontSize: '12px', color: 'var(--live-muted, rgba(255,255,255,0.4))' }}>account credits</span>
-                            </div>
+
 
                         </div>
                     </header>
@@ -568,9 +561,9 @@ export default function DashboardV2() {
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(155px, 1fr))', gap: '14px', marginBottom: '24px' }}>
                                     <div className="stat-card">
                                         <div className="stat-icon"><Icon name="spark" size={20}/></div>
-                                        <div className="stat-label">Token Balance</div>
-                                        <div className="stat-value" style={{ color: '#4F8CFF' }}>{tokenBalance}</div>
-                                        <div className="stat-sub">AI credits remaining</div>
+                                        <div className="stat-label">Connected locations</div>
+                                        <div className="stat-value" style={{ color: '#4F8CFF' }}>{liveLocations.length}</div>
+                                        <div className="stat-sub">Business profiles in your account</div>
                                     </div>
                                     <div className="stat-card">
                                         <div className="stat-icon"><Icon name="star" size={20}/></div>
@@ -724,6 +717,9 @@ export default function DashboardV2() {
                     {activeView === 'reviews' && (
                         <ReviewManager 
                             liveReviews={liveReviews}
+                            hasMoreReviews={!!nextReviewPage}
+                            loadingMoreReviews={loadingMoreReviews}
+                            loadMoreReviews={loadMoreReviews}
                             setLiveReviews={setLiveReviews}
                             loadingReviews={loadingReviews}
                             syncingReviews={syncingReviews}
@@ -732,7 +728,7 @@ export default function DashboardV2() {
                             activeLocationId={activeLocationId}
                             handleSyncReviews={handleSyncReviews}
                             onReviewsChanged={fetchReviews}
-                            refreshTokens={() => fetchTokenBalance(user.id)}
+
                             showToast={showToast}
                         />
                     )}
@@ -743,8 +739,8 @@ export default function DashboardV2() {
                             user={user}
                             liveLocations={liveLocations}
                             activeLocationId={activeLocationId}
-                            tokenBalance={tokenBalance}
-                            refreshTokens={() => fetchTokenBalance(user.id)}
+
+
                             showToast={showToast}
                         />
                     )}
@@ -759,7 +755,7 @@ export default function DashboardV2() {
                             showToast={showToast}
                             searchKeywords={searchKeywords}
                             providerToken={providerToken || ''}
-                            refreshTokens={() => fetchTokenBalance(user.id, activeLocationId)}
+
                         />
                     )}
 
@@ -773,9 +769,9 @@ export default function DashboardV2() {
                         />
                     )}
 
-                    {/* ─── Subscription & Tokens ─── */}
+                    {/* ─── Subscription ─── */}
                     {activeView === 'subscription' && (
-                        <SubscriptionPage user={user} locationId={activeLocationId} refreshTokens={() => fetchTokenBalance(user.id, activeLocationId)} />
+                        <SubscriptionPage />
                     )}
 
                     {activeView === 'seo' && <SeoPlanner key={`${user.id}:${activeLocationId}`} storageScope={`${user.id}:${activeLocationId || 'account'}`} />}
@@ -785,7 +781,7 @@ export default function DashboardV2() {
                         <ConnectedApps showToast={showToast} />
                     )}
                     {activeView === 'profile' && (
-                        <ProfileSettings user={user} locationCount={liveLocations.length} tokenBalance={tokenBalance} onUserUpdated={setUser} onSignOut={handleSignOut} showToast={showToast} />
+                        <ProfileSettings user={user} locationCount={liveLocations.length} onUserUpdated={setUser} onSignOut={handleSignOut} showToast={showToast} />
                     )}
                 </div>
             </main>

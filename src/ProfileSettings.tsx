@@ -6,13 +6,12 @@ import Icon from './design/Icon';
 interface ProfileSettingsProps {
   user: any;
   locationCount: number;
-  tokenBalance: number;
   onUserUpdated: (user: any) => void;
   onSignOut: () => void;
   showToast: (message: string, type: 'success' | 'error' | 'info') => void;
 }
 
-export default function ProfileSettings({ user, locationCount, tokenBalance, onUserUpdated, onSignOut, showToast }: ProfileSettingsProps) {
+export default function ProfileSettings({ user, locationCount, onUserUpdated, onSignOut, showToast }: ProfileSettingsProps) {
   const initialName = user?.user_metadata?.full_name || user?.user_metadata?.name || '';
   const [fullName, setFullName] = useState(initialName);
   const [timezone, setTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Kolkata');
@@ -77,9 +76,8 @@ export default function ProfileSettings({ user, locationCount, tokenBalance, onU
           <div className="profile-avatar" aria-hidden="true">{initials}</div>
           <h3>{fullName || 'GBP Master user'}</h3>
           <p>{user?.email}</p>
-          <span className="profile-plan">{String(plan).replace(/_/g, ' ')} plan</span>
+          <span className="profile-plan">{overview?.subscription?.is_lifetime ? 'Yearly · Lifetime access' : `${String(plan).replace(/_/g, ' ')} plan`}</span>
           <div className="profile-metrics">
-            <div><strong>{tokenBalance}</strong><span>credits</span></div>
             <div><strong>{locationCount}</strong><span>locations</span></div>
           </div>
           <small>Member since {joined}</small>

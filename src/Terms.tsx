@@ -19,7 +19,7 @@ export default function Terms() {
 
                         <h2>4. Billing and Subscriptions</h2>
                         <p>
-                            Current plans are prepaid and do not renew automatically. Before payment, checkout shows the price, included credits, duration, and any applicable taxes. Payments are processed securely via Razorpay. Refund eligibility is governed by our Cancellation & Refund Policy.
+                            Payment checkout is temporarily paused. A valid launch access code grants the signed-in account lifetime yearly access to all currently supported GBP Master features, without an expiry date or renewal payment. Google permissions, third-party availability and user-configured publishing rules continue to apply. Existing payment or refund questions can be sent to support.
                         </p>
 
                         <h2>5. Contact Information</h2>

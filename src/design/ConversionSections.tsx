@@ -1,12 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import Icon from './Icon';
-import { ConnectButton } from './SiteShell';
 
 export function GuidedDemo() {
   const [step, setStep] = useState(0);
   const demos = [
     { label: 'Review', title: 'A new five-star review arrives', body: 'GBP Auto Master creates a draft in your preferred length and tone. Nothing is published in approval mode until you confirm it.', action: 'Approve sample reply' },
-    { label: 'Content', title: 'Turn an idea into a scheduled update', body: 'Choose locations, add an offer or update, attach media, and see the credit cost before scheduling.', action: 'Preview sample post' },
+    { label: 'Content', title: 'Turn an idea into a scheduled update', body: 'Choose locations, add an offer or update, attach media, and review every target before scheduling.', action: 'Preview sample post' },
     { label: 'Rank', title: 'Measure one local keyword', body: 'Run a top-11 scan for an area and download the measured results as a PDF. Rankings are a snapshot, not a promise.', action: 'Preview rank report' },
   ];
   const active = demos[step];
@@ -23,16 +22,4 @@ export function TrustSection() {
     ['message','Approval controls','Keep replies in an approval queue, or deliberately enable automation with rules you choose.'],
     ['link','Disconnect and delete','Revoke Google access from your Google Account. Request account and stored-data deletion from the privacy page.'],
   ].map(([icon,title,body])=><article key={title}><Icon name={icon as 'shield'} size={22}/><h3>{title}</h3><p>{body}</p></article>)}</div><div className="st-trust-actions"><a href="/privacy">Read the privacy policy <Icon name="arrow" size={14}/></a><a href="/support">Get account help <Icon name="arrow" size={14}/></a></div></div></section>;
-}
-
-export function CreditCalculator() {
-  const [locations,setLocations]=useState(1); const [replies,setReplies]=useState(20); const [posts,setPosts]=useState(4); const [scans,setScans]=useState(1);
-  const credits=useMemo(()=>replies*2.5+posts*locations*5+scans*10,[locations,replies,posts,scans]);
-  const recommendation=credits<=200?'Explore':credits<=350?'Starter':'Growth';
-  return <div className="st-calculator" aria-labelledby="calculator-title"><div><span className="st-eyebrow">MONTHLY CREDIT ESTIMATOR</span><h3 id="calculator-title">Plan with real numbers.</h3><p>This estimate uses today’s published action costs. Reading locations, balances and campaign lists costs zero credits.</p></div><div className="st-calculator-inputs">
-    <label>Locations<input type="number" min="1" max="100" value={locations} onChange={e=>setLocations(Math.max(1,Number(e.target.value)||1))}/></label>
-    <label>Replies / month<input type="number" min="0" value={replies} onChange={e=>setReplies(Math.max(0,Number(e.target.value)||0))}/></label>
-    <label>Posts / location<input type="number" min="0" value={posts} onChange={e=>setPosts(Math.max(0,Number(e.target.value)||0))}/></label>
-    <label>Rank scans<input type="number" min="0" value={scans} onChange={e=>setScans(Math.max(0,Number(e.target.value)||0))}/></label>
-  </div><div className="st-calculator-result"><span>Estimated use</span><strong>{credits.toLocaleString()} credits</strong><b>{recommendation} is the closest current plan</b><small>Estimate only. Any taxes and final terms appear at checkout.</small><ConnectButton label="Start with 200 free credits"/></div></div>;
 }

@@ -9,7 +9,7 @@ export default function Privacy() {
 
                         <h2>2. How We Use Your Information</h2>
                         <p>
-                            Any of the information we collect from you may be used to personalize your experience, improve our website, process transactions securely via Razorpay, and provide the AI automation services (e.g. replying to reviews on your behalf).
+                            Any of the information we collect from you may be used to personalize your experience, improve our website, manage account access and provide the AI automation services (e.g. replying to reviews on your behalf).
                         </p>
 
                         <h2>3. Google API Services Usage Disclosure</h2>

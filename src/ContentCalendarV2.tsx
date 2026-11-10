@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { API_URL, apiFetch } from './lib/api';
 import { supabase } from './lib/supabase';
+import ImageStudio from './ImageStudio';
+import type { ImageAsset } from './ImageStudio';
 
 type Location = { id: string; name: string; account_id?: string };
 type Delivery = { location_id: string; status: string; last_error?: string | null };
@@ -26,13 +28,13 @@ function localInputValue(date: Date) {
 }
 
 export default function ContentCalendarV2({
-    user, liveLocations, activeLocationId, tokenBalance, refreshTokens, showToast,
+    user, liveLocations, activeLocationId, showToast,
 }: {
     user: any;
     liveLocations: Location[];
     activeLocationId: string;
-    tokenBalance: number;
-    refreshTokens: () => void;
+
+
     showToast: (message: string, type?: 'success' | 'error' | 'info') => void;
 }) {
     const today = new Date();
@@ -54,6 +56,8 @@ export default function ContentCalendarV2({
     const [couponCode, setCouponCode] = useState('');
     const [terms, setTerms] = useState('');
     const [file, setFile] = useState<File | null>(null);
+    const [generatedImage, setGeneratedImage] = useState<ImageAsset | null>(null);
+    const [legacyAttention, setLegacyAttention] = useState<any[]>([]);
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Kolkata';
 
     const monthStart = useMemo(() => new Date(year, month, 1), [year, month]);
@@ -81,6 +85,11 @@ export default function ContentCalendarV2({
     }, [user?.id, monthStartIso, monthEndIso]);
 
     useEffect(() => { fetchCampaigns(); }, [fetchCampaigns]);
+    useEffect(() => {
+        apiFetch(`${API_URL}/api/platform/legacy-posts/attention`).then(async response => {
+            if (response.ok) setLegacyAttention((await response.json()).posts || []);
+        }).catch(() => showToast('Could not load older posts needing review.', 'error'));
+    }, [user?.id]);
     useEffect(() => {
         if (!locationIds.length && activeLocationId) setLocationIds([activeLocationId]);
     }, [activeLocationId, locationIds.length]);
@@ -110,6 +119,7 @@ export default function ContentCalendarV2({
     };
 
     const uploadMedia = async (): Promise<string | null> => {
+        if (generatedImage) return generatedImage.id;
         if (!file) return null;
         const safeName = file.name.replace(/[^A-Za-z0-9._-]/g, '_');
         const objectPath = `${user.id}/${crypto.randomUUID()}_${safeName}`;
@@ -137,8 +147,8 @@ export default function ContentCalendarV2({
         if (!publishLocal || Number.isNaN(publishDate.getTime()) || publishDate <= new Date()) return showToast('Choose a future publication time.', 'error');
         if (topicType !== 'STANDARD' && !eventTitle.trim()) return showToast('Add an event or offer title.', 'error');
         if (topicType !== 'STANDARD' && new Date(eventEndLocal) <= publishDate) return showToast('The event end must be after publication.', 'error');
-        const totalCost = locationIds.length * 5;
-        if (tokenBalance < totalCost) return showToast(`This campaign needs ${totalCost} credits.`, 'error');
+
+
         setLoading(true);
         try {
             const mediaAssetId = await uploadMedia();
@@ -162,11 +172,11 @@ export default function ContentCalendarV2({
             });
             const scheduled = await scheduleResponse.json();
             if (!scheduleResponse.ok) throw new Error(scheduled.detail || 'The draft was saved but could not be scheduled');
-            showToast(`Campaign scheduled for ${scheduled.location_count} location${scheduled.location_count === 1 ? '' : 's'}. ${scheduled.credits_charged} credits used.`, 'success');
-            setTitle(''); setSummary(''); setFile(null); setCouponCode(''); setTerms('');
+            showToast(`Campaign scheduled for ${scheduled.location_count} location${scheduled.location_count === 1 ? '' : 's'}.`, 'success');
+            setTitle(''); setSummary(''); setFile(null); setGeneratedImage(null); setCouponCode(''); setTerms('');
             setComposerOpen(false);
             await fetchCampaigns();
-            refreshTokens();
+
         } catch (error: any) {
             showToast(error.message || 'Could not schedule the campaign', 'error');
         } finally {
@@ -184,7 +194,7 @@ export default function ContentCalendarV2({
             });
             const result = await response.json();
             if (!response.ok) throw new Error(result.detail || 'Could not cancel the campaign');
-            showToast('Campaign cancelled. The original scheduling charge was not refunded.', 'info');
+            showToast('Campaign cancelled.', 'info');
             await fetchCampaigns();
         } catch (error: any) {
             showToast(error.message || 'Could not cancel the campaign', 'error');
@@ -208,6 +218,13 @@ export default function ContentCalendarV2({
             </div>
 
             <div className="card glass" style={{ padding: 18 }}>
+                {legacyAttention.length>0 && <div className="card-sm" style={{marginBottom:16}}><h3>Older posts need review</h3>
+                    <p>These posts were held during recovery. Review their content before scheduling them again.</p>
+                    {legacyAttention.map(post => <div key={post.id} style={{marginTop:12,overflowWrap:'anywhere'}}>
+                        <p>{post.caption}</p><small>{new Date(post.publish_at).toLocaleString()} · {post.status}</small>
+                        <button className="btn btn-ghost btn-sm" onClick={() => {setTitle('Reviewed older post');setSummary(post.caption || '');setLocationIds([post.location_id]);setComposerOpen(true);}}>Create a new draft from this text</button>
+                    </div>)}
+                </div>}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 6, fontSize: 11, color: 'var(--live-muted, rgba(255,255,255,.4))', textAlign: 'center', marginBottom: 8 }}>
                     {'Sun Mon Tue Wed Thu Fri Sat'.split(' ').map(day => <span key={day}>{day}</span>)}
                 </div>
@@ -240,7 +257,7 @@ export default function ContentCalendarV2({
             {composerOpen && <div style={{ position: 'fixed', inset: 0, zIndex: 80, background: 'rgba(0,0,0,.72)', overflowY: 'auto', padding: 24 }}>
                 <div className="card glass" style={{ maxWidth: 680, margin: '30px auto' }}>
                     <h3>Schedule a content campaign</h3>
-                    <p style={{ color: 'var(--orange-soft)', fontWeight: 700 }}>{locationIds.length * 5} credits for {locationIds.length} selected location{locationIds.length === 1 ? '' : 's'}</p>
+
                     <label className="field-label">Campaign title</label><input value={title} onChange={e => setTitle(e.target.value)} placeholder="Diwali admissions offer" />
                     <label className="field-label">Google post type</label><select className="input" value={topicType} onChange={e => setTopicType(e.target.value as any)}><option value="STANDARD">Update</option><option value="EVENT">Event</option><option value="OFFER">Offer</option></select>
                     <label className="field-label">Post text</label><textarea rows={4} value={summary} onChange={e => setSummary(e.target.value)} placeholder="Write the message customers will see on Google…" />
@@ -249,9 +266,11 @@ export default function ContentCalendarV2({
                     <label className="field-label">Publish date and time ({timezone})</label><input type="datetime-local" value={publishLocal} onChange={e => setPublishLocal(e.target.value)} />
                     {topicType !== 'STANDARD' && <><label className="field-label">{topicType === 'OFFER' ? 'Offer' : 'Event'} title</label><input value={eventTitle} onChange={e => setEventTitle(e.target.value)} /><label className="field-label">End date and time</label><input type="datetime-local" value={eventEndLocal} onChange={e => setEventEndLocal(e.target.value)} /></>}
                     {topicType === 'OFFER' && <><label className="field-label">Coupon code (optional)</label><input value={couponCode} onChange={e => setCouponCode(e.target.value)} /><label className="field-label">Terms (optional)</label><textarea rows={2} value={terms} onChange={e => setTerms(e.target.value)} /></>}
-                    <label className="field-label">Call to action</label><div style={{ display: 'grid', gridTemplateColumns: '160px 1fr', gap: 10 }}><select className="input" value={ctaType} onChange={e => setCtaType(e.target.value)}><option>LEARN_MORE</option><option>BOOK</option><option>SIGN_UP</option><option>ORDER</option><option>SHOP</option></select><input type="url" value={ctaUrl} onChange={e => setCtaUrl(e.target.value)} placeholder="https://example.com" /></div>
-                    <label className="field-label">Photo (optional)</label><input type="file" accept="image/*" onChange={e => setFile(e.target.files?.[0] || null)} />
-                    <div style={{ display: 'flex', gap: 10, marginTop: 22 }}><button className="btn btn-ghost btn-block" disabled={loading} onClick={() => setComposerOpen(false)}>Keep editing later</button><button className="btn btn-green btn-block" disabled={loading} onClick={createAndSchedule}>{loading ? 'Scheduling…' : `Schedule campaign · ${locationIds.length * 5} credits`}</button></div>
+                    <label className="field-label">Call to action</label><div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,2fr)', gap: 10 }}><select className="input" style={{minWidth:0}} value={ctaType} onChange={e => setCtaType(e.target.value)}><option>LEARN_MORE</option><option>BOOK</option><option>SIGN_UP</option><option>ORDER</option><option>SHOP</option></select><input style={{minWidth:0}} type="url" value={ctaUrl} onChange={e => setCtaUrl(e.target.value)} placeholder="https://example.com" /></div>
+                    <label className="field-label">Photo (optional)</label><input style={{width:'100%',minWidth:0,maxWidth:'100%',boxSizing:'border-box'}} type="file" accept="image/jpeg,image/png,image/webp" onChange={e => { setFile(e.target.files?.[0] || null); setGeneratedImage(null); }} />
+                    {generatedImage && <div><img src={generatedImage.public_url} alt="Selected campaign photo" style={{maxWidth:'100%',maxHeight:220,borderRadius:12,marginTop:12}} /><button className="btn btn-ghost btn-sm" onClick={() => setGeneratedImage(null)}>Remove image</button></div>}
+                    <ImageStudio onSelect={asset => { setGeneratedImage(asset); setFile(null); }} />
+                    <div style={{ display: 'flex', gap: 10, marginTop: 22 }}><button className="btn btn-ghost btn-block" disabled={loading} onClick={() => setComposerOpen(false)}>Keep editing later</button><button className="btn btn-green btn-block" disabled={loading} onClick={createAndSchedule}>{loading ? 'Scheduling…' : 'Schedule campaign'}</button></div>
                 </div>
             </div>}
         </section>

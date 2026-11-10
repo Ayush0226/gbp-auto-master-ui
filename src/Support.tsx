@@ -8,7 +8,7 @@ export default function Support() {
             <section className="home-section" style={{ paddingTop: 60, paddingBottom: 60 }}>
                 <div className="legal-container"><div className="legal-card">
                     <h1 className="home-grad-metal">Support</h1>
-                    <p>Get help with connecting Google Business Profile, credits, reviews, scheduled content, automation, and local rank reports.</p>
+                    <p>Get help with connecting Google Business Profile, reviews, scheduled content, automation, and local rank reports.</p>
                     <h2>Contact</h2>
                     <p>Email <a href="mailto:support@gbpautomaster.in">support@gbpautomaster.in</a>. Include your account email, affected business location, and a short description of the issue. Never send Google access tokens, refresh tokens, passwords, or payment card details.</p>
                     <h2>Account and data requests</h2>
