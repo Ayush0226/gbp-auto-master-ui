@@ -43,7 +43,7 @@ export default function AuthPage() {
         ['1','Create your account','Basic name and email for your GBP Auto Master account.'],
         ['2','Review Google access','See why Business Profile permission is needed before connecting.'],
         ['3','Choose your locations','Only profiles managed by the approved Google account can appear.'],
-        ['4','Approve every paid action','Drafts are free to review. Costs are shown before publishing.'],
+        ['4','Choose your publishing rules','Review drafts before publishing, or explicitly enable automation for your locations.'],
       ].map(([n,title,text])=><div key={n}><b>{n}</b><span><strong>{title}</strong><small>{text}</small></span></div>)}</aside>
     </div>
   </SiteShell>;

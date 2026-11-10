@@ -178,58 +178,23 @@ export default function Brochure() {
                         <div style={{ background: 'rgba(255,255,255,0.02)', padding: '24px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
                             <div style={{ color: '#60A5FA', fontSize: '32px', fontWeight: 900, marginBottom: '12px', opacity: 0.8 }}>3</div>
                             <strong style={{ display: 'block', fontSize: '18px', color: '#FFFFFF', marginBottom: '8px' }}>Hands-Free Growth</strong>
-                            <div style={{ color: '#94A3B8', fontSize: '14px', lineHeight: 1.6 }}>Sit back as the AI monitors your profile 24/7, replies instantly, and publishes updates.</div>
+                            <div style={{ color: '#94A3B8', fontSize: '14px', lineHeight: 1.6 }}>Review drafts or enable your preferred automation rules. Scheduled checks process reviews and publish approved updates.</div>
                         </div>
                     </div>
                 </section>
 
-                {/* Pricing */}
                 <section style={{ marginBottom: '60px' }}>
-                    <h2 style={{ fontSize: '28px', color: '#FFFFFF', borderLeft: '4px solid #3B82F6', paddingLeft: '16px', marginBottom: '32px', fontWeight: 800 }}>
-                        Simple, Transparent Pricing
+                    <h2 style={{ fontSize: '28px', color: '#FFFFFF', borderLeft: '4px solid #3B82F6', paddingLeft: '16px', marginBottom: '24px', fontWeight: 800 }}>
+                        Lifetime launch access
                     </h2>
-                    
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px' }}>
-                        {/* Monthly */}
-                        <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '16px', padding: '32px', textAlign: 'center' }}>
-                            <h3 style={{ fontSize: '20px', color: '#E2E8F0', marginBottom: '12px', fontWeight: 800 }}>Monthly Starter</h3>
-                            <div style={{ fontSize: '42px', fontWeight: 900, color: '#FFFFFF', marginBottom: '12px' }}>
-                                ?500 <span style={{ fontSize: '16px', color: '#94A3B8', fontWeight: 400 }}>/ mo</span>
-                            </div>
-                            <p style={{ color: '#60A5FA', fontSize: '14px', margin: 0, fontWeight: 500 }}>
-                                Perfect for trying the AI out
-                            </p>
-                        </div>
-                        
-                        {/* Half-Yearly */}
-                        <div style={{ background: 'linear-gradient(180deg, rgba(59,130,246,0.1) 0%, rgba(255,255,255,0.02) 100%)', border: '1px solid rgba(59,130,246,0.3)', borderRadius: '16px', padding: '32px', textAlign: 'center', position: 'relative' }}>
-                            <div style={{ position: 'absolute', top: '-14px', left: '50%', transform: 'translateX(-50%)', background: '#3B82F6', color: 'white', padding: '6px 16px', borderRadius: '100px', fontSize: '12px', fontWeight: 800, letterSpacing: '1px' }}>
-                                MOST POPULAR
-                            </div>
-                            <h3 style={{ fontSize: '20px', color: '#60A5FA', marginBottom: '12px', fontWeight: 800 }}>Half-Yearly Plan</h3>
-                            <div style={{ fontSize: '16px', color: '#94A3B8', textDecoration: 'line-through', marginBottom: '4px' }}>?3,000</div>
-                            <div style={{ fontSize: '42px', fontWeight: 900, color: '#FFFFFF', marginBottom: '12px' }}>
-                                ?2,500 <span style={{ fontSize: '16px', color: '#94A3B8', fontWeight: 400 }}>/ 6 mos</span>
-                            </div>
-                            <p style={{ color: '#60A5FA', fontSize: '14px', margin: 0, fontWeight: 500 }}>
-                                Ideal for steady growth
-                            </p>
-                        </div>
-
-                        {/* Yearly */}
-                        <div style={{ background: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.3)', borderRadius: '16px', padding: '32px', textAlign: 'center' }}>
-                            <h3 style={{ fontSize: '20px', color: '#10B981', marginBottom: '12px', fontWeight: 800 }}>Yearly Domination</h3>
-                            <div style={{ fontSize: '16px', color: '#94A3B8', textDecoration: 'line-through', marginBottom: '4px' }}>?6,000</div>
-                            <div style={{ fontSize: '42px', fontWeight: 900, color: '#FFFFFF', marginBottom: '12px' }}>
-                                ?5,000 <span style={{ fontSize: '16px', color: '#94A3B8', fontWeight: 400 }}>/ yr</span>
-                            </div>
-                            <p style={{ color: '#10B981', fontSize: '14px', margin: 0, fontWeight: 500 }}>
-                                Save over 15% instantly
-                            </p>
-                        </div>
+                    <div style={{ background: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.3)', borderRadius: '16px', padding: '32px' }}>
+                        <h3 style={{ fontSize: '22px', color: '#10B981', marginTop: 0 }}>Yearly plan · Lifetime access</h3>
+                        <p style={{ color: '#E2E8F0', lineHeight: 1.7 }}>Activate a valid launch code in Plans &amp; access after signing in. All currently supported GBP Master features are included, with unlimited app usage, connected locations and SEO keywords.</p>
+                        <p style={{ color: '#E2E8F0' }}>No expiry date. No renewal payment. Payment checkout is temporarily paused.</p>
+                        <p style={{ color: '#94A3B8', fontSize: '14px', lineHeight: 1.6 }}>Google permissions, provider availability and allowances, and your chosen publishing rules still apply.</p>
                     </div>
                 </section>
-                
+
                 <footer style={{ textAlign: 'center', color: '#64748B', fontSize: '14px', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '30px' }}>
                     <strong>GBP AutoMaster</strong><br/>
                     Securely powered by Google APIs and advanced AI Models.

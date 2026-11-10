@@ -54,7 +54,7 @@ export default function PluginGuide() {
       </section>
 
       <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(290px,1fr))', gap: 22, marginBottom: 76 }}>
-        <div className="card glass" style={{ padding: 26, textAlign: 'center' }}><div style={{ fontSize: 50 }}>💬</div><h2>ChatGPT or Codex</h2><p style={{ color: 'rgba(255,255,255,.65)' }}>Understands the request, selects the correct GBP Master tool, and asks for confirmation before a chargeable action.</p></div>
+        <div className="card glass" style={{ padding: 26, textAlign: 'center' }}><div style={{ fontSize: 50 }}>💬</div><h2>ChatGPT or Codex</h2><p style={{ color: 'rgba(255,255,255,.65)' }}>Understands the request, selects the correct GBP Master tool, and asks for confirmation before a public change or rank scan.</p></div>
         <div className="card glass" style={{ padding: 26, textAlign: 'center' }}><div style={{ fontSize: 50 }}>🔐</div><h2>GBP Master MCP</h2><p style={{ color: 'rgba(255,255,255,.65)' }}>Verifies OAuth identity, checks ownership, protects credentials, and calls the requested service.</p></div>
         <div className="card glass" style={{ padding: 26, textAlign: 'center' }}><div style={{ fontSize: 50 }}>🏪</div><h2>Google Business Profile</h2><p style={{ color: 'rgba(255,255,255,.65)' }}>Returns business data or receives an approved reply or post. SerpApi supplies measured local rank results.</p></div>
       </section>
@@ -80,7 +80,7 @@ export default function PluginGuide() {
           <li>OAuth determines the signed-in user; agents never request Google or Supabase tokens.</li>
           <li>Read operations and reply drafts are free.</li>
           <li>Review the content and selected business before publishing replies or scheduling posts.</li>
-          <li>The agent displays the content, target and charge before publishing, scheduling or scanning.</li>
+          <li>The agent displays the content, target and scope before publishing, scheduling or scanning.</li>
           <li>A successful rank scan includes a signed PDF link that expires after one hour, with no extra PDF charge.</li>
         </ul>
         <p style={{ marginBottom: 0 }}><a href="/privacy">Privacy Policy</a> · <a href="/terms">Terms</a> · <a href="/support">Support</a> · <a href="https://developers.openai.com/plugins/deploy/submission" target="_blank" rel="noreferrer">Official OpenAI submission guide</a></p>
