@@ -1,5 +1,5 @@
 import { apiFetch } from './lib/api';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 export default function ReviewManager({ 
     liveReviews, 
@@ -19,6 +19,8 @@ export default function ReviewManager({
     const [editReplyText, setEditReplyText] = useState('');
     const [savingReplyId, setSavingReplyId] = useState<string | null>(null);
     const [replyJobs, setReplyJobs] = useState<any[]>([]);
+    const [batchReplyCount, setBatchReplyCount] = useState<number | null>(null);
+    const batchInFlight = useRef(false);
     const reviewerName = (review: any) => typeof review?.reviewer === 'string'
         ? review.reviewer
         : (review?.reviewer?.displayName || review?.authorName || 'Anonymous');
@@ -115,6 +117,9 @@ export default function ReviewManager({
     };
 
     const handleBatchReply = async (count: number) => {
+        if (batchInFlight.current) return;
+        batchInFlight.current = true;
+        setBatchReplyCount(count);
         showToast(`Triggering reply to ${count} reviews...`, "info");
         try {
             const res = await apiFetch(`${API_URL}/api/reviews/batch-reply`, {
@@ -128,16 +133,28 @@ export default function ReviewManager({
                     count
                 })
             });
-            if (res.ok) {
-                const data = await res.json();
-                const sent = data.replied?.filter((reply: any) => reply.status === "published").length || 0;
-                showToast(`${sent} replies published.`, sent ? "success" : "info");
-                onReviewsChanged?.();
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                throw new Error(typeof data.detail === 'string'
+                    ? data.detail
+                    : `The reply request failed (${res.status}). Sync reviews before retrying.`);
+            }
+            const sent = data.replied?.filter((reply: any) => reply.status === 'published').length || 0;
+            const failed = data.replied?.filter((reply: any) => reply.status === 'failed') || [];
+            if (failed.length) {
+                const reason = typeof failed[0].error === 'string' ? ` ${failed[0].error}` : '';
+                showToast(`${sent} replies published; ${failed.length} could not be completed.${reason}`, 'error');
             } else {
-                showToast("Failed to batch reply.", "error");
+                showToast(data.message || (sent ? `${sent} replies published.` : 'No eligible unanswered reviews were found.'), sent ? 'success' : 'info');
             }
         } catch (e: any) {
-            showToast("Network Error: " + e.message, "error");
+            showToast(e instanceof TypeError
+                ? 'Could not confirm the reply result. Sync reviews before retrying; some replies may already have been published.'
+                : e.message || 'Could not complete replies. Sync reviews before retrying.', 'error');
+        } finally {
+            batchInFlight.current = false;
+            setBatchReplyCount(null);
+            onReviewsChanged?.();
         }
     };
 
@@ -180,14 +197,16 @@ export default function ReviewManager({
                     <button 
                         className="btn btn-ghost btn-sm" 
                         onClick={() => handleBatchReply(5)}
+                        disabled={batchReplyCount !== null || loadingReviews || syncingReviews || !providerToken || !activeLocationId}
                     >
-                        Reply to 5 Reviews
+                        {batchReplyCount === 5 ? 'Replying…' : 'Reply to 5 Reviews'}
                     </button>
                     <button 
                         className="btn btn-ghost btn-sm" 
                         onClick={() => handleBatchReply(25)}
+                        disabled={batchReplyCount !== null || loadingReviews || syncingReviews || !providerToken || !activeLocationId}
                     >
-                        Reply to All Unreplied (Max 25)
+                        {batchReplyCount === 25 ? 'Replying…' : 'Reply to All Unreplied (Max 25)'}
                     </button>
                     <button 
                         className="btn btn-green btn-sm" 
